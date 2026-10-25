@@ -432,7 +432,7 @@ function renderProducts() {
               onclick="addToCart('${item.id}')" 
               ${item.sold ? 'disabled' : ''}
             >
-              ${item.sold ? 'Sold Out' : '🛒 Add to Bag'}
+              ${item.sold ? 'Sold Out' : 'Add to Bag'}
             </button>
             
             <button 
@@ -440,7 +440,7 @@ function renderProducts() {
               onclick="orderOnWhatsApp('${item.id}')" 
               title="Order directly on WhatsApp"
             >
-              💬
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
             </button>
           </div>
         </div>
@@ -706,61 +706,150 @@ function selectPaymentMethod(method) {
       `;
       break;
 
-    case 'bkash':
+    case 'bkash': {
+      const bkashNum = storeContactInfo.bkash_number || '01700-000000';
       instructionsBox.innerHTML = `
-        <h5 style="font-weight:700; color:#e2136e; margin-bottom:0.35rem;">📱 bKash Personal / Merchant Send Money</h5>
-        <p style="font-size:0.85rem; color:var(--color-text-muted); margin-bottom:0.75rem;">
-          বিকাশ নম্বর: <strong style="color:var(--color-text-main); font-size:1rem;">${storeContactInfo.bkash_number || '01700-000000'}</strong> (Personal)<br>
-          টাকা সেন্ড মানি করে নিচের বক্সে আপনার বিকাশ নম্বর ও Transaction ID (TrxID) প্রদান করুন।
-        </p>
+        <h5 style="font-weight:700; color:#e2136e; margin-bottom:0.35rem;">bKash Personal / Merchant Send Money</h5>
+        <div style="font-size:0.85rem; color:var(--color-text-muted); margin-bottom:0.75rem;">
+          বিকাশ নম্বর:
+          <div style="display:inline-flex; align-items:center; gap:0.5rem; background:rgba(226, 19, 110, 0.08); padding:0.25rem 0.65rem; border-radius:6px; border:1px solid rgba(226, 19, 110, 0.2); margin:0.35rem 0;">
+            <strong style="color:#e2136e; font-size:1.05rem; letter-spacing:0.04em;">${bkashNum}</strong>
+            <button type="button" class="btn-copy-number" onclick="copyPaymentNumber('${bkashNum}', this)" title="Copy bKash Number" style="display:inline-flex; align-items:center; gap:0.25rem; font-size:0.75rem; font-weight:700; background:#e2136e; color:white; border:none; padding:0.25rem 0.55rem; border-radius:4px; cursor:pointer; transition:all 0.2s ease;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              <span>Copy</span>
+            </button>
+          </div>
+          <br>
+          টাকা সেন্ড মানি করে নিচের বক্সে আপনার প্রেরক বিকাশ নম্বর ও Transaction ID (TrxID) প্রদান করুন।
+        </div>
         <div class="form-row">
           <input type="text" class="form-input" id="trxIdInput" placeholder="bKash TrxID (যেমন: 9J3K8LM2)" required />
-          <input type="text" class="form-input" id="senderPhoneInput" placeholder="আপনার বিকাশ নম্বর" required />
+          <input type="text" class="form-input" id="senderPhoneInput" placeholder="যে বিকাশ নম্বর থেকে টাকা পাঠিয়েছেন *" required />
         </div>
       `;
       break;
+    }
 
-    case 'nagad':
+    case 'nagad': {
+      const nagadNum = storeContactInfo.nagad_number || '01700-000000';
       instructionsBox.innerHTML = `
-        <h5 style="font-weight:700; color:#f7941d; margin-bottom:0.35rem;">⚡ Nagad Send Money</h5>
-        <p style="font-size:0.85rem; color:var(--color-text-muted); margin-bottom:0.75rem;">
-          নগদ নম্বর: <strong style="color:var(--color-text-main); font-size:1rem;">${storeContactInfo.nagad_number || '01700-000000'}</strong> (Personal)<br>
-          টাকা পাঠিয়ে নিচের বক্সে আপনার Transaction ID ও নম্বর লিখুন।
-        </p>
+        <h5 style="font-weight:700; color:#f7941d; margin-bottom:0.35rem;">Nagad Send Money</h5>
+        <div style="font-size:0.85rem; color:var(--color-text-muted); margin-bottom:0.75rem;">
+          নগদ নম্বর:
+          <div style="display:inline-flex; align-items:center; gap:0.5rem; background:rgba(247, 148, 29, 0.08); padding:0.25rem 0.65rem; border-radius:6px; border:1px solid rgba(247, 148, 29, 0.2); margin:0.35rem 0;">
+            <strong style="color:#d97706; font-size:1.05rem; letter-spacing:0.04em;">${nagadNum}</strong>
+            <button type="button" class="btn-copy-number" onclick="copyPaymentNumber('${nagadNum}', this)" title="Copy Nagad Number" style="display:inline-flex; align-items:center; gap:0.25rem; font-size:0.75rem; font-weight:700; background:#d97706; color:white; border:none; padding:0.25rem 0.55rem; border-radius:4px; cursor:pointer; transition:all 0.2s ease;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              <span>Copy</span>
+            </button>
+          </div>
+          <br>
+          টাকা পাঠিয়ে নিচের বক্সে আপনার প্রেরক নগদ নম্বর ও Transaction ID লিখুন।
+        </div>
         <div class="form-row">
           <input type="text" class="form-input" id="trxIdInput" placeholder="Nagad TrxID" required />
-          <input type="text" class="form-input" id="senderPhoneInput" placeholder="আপনার নগদ নম্বর" required />
+          <input type="text" class="form-input" id="senderPhoneInput" placeholder="যে নগদ নম্বর থেকে টাকা পাঠিয়েছেন *" required />
         </div>
       `;
       break;
+    }
 
-    case 'rocket':
+    case 'rocket': {
+      const rocketNum = storeContactInfo.bkash_number ? `${storeContactInfo.bkash_number}-8` : '01700-000000-8';
       instructionsBox.innerHTML = `
-        <h5 style="font-weight:700; color:#8c3494; margin-bottom:0.35rem;">🚀 Dutch-Bangla Rocket</h5>
-        <p style="font-size:0.85rem; color:var(--color-text-muted); margin-bottom:0.75rem;">
-          রকেট নম্বর: <strong style="color:var(--color-text-main); font-size:1rem;">01700-000000-8</strong><br>
-          টাকা পাঠিয়ে Transaction ID নিচে লিখুন।
-        </p>
+        <h5 style="font-weight:700; color:#8c3494; margin-bottom:0.35rem;">Dutch-Bangla Rocket</h5>
+        <div style="font-size:0.85rem; color:var(--color-text-muted); margin-bottom:0.75rem;">
+          রকেট নম্বর:
+          <div style="display:inline-flex; align-items:center; gap:0.5rem; background:rgba(140, 52, 148, 0.08); padding:0.25rem 0.65rem; border-radius:6px; border:1px solid rgba(140, 52, 148, 0.2); margin:0.35rem 0;">
+            <strong style="color:#8c3494; font-size:1.05rem; letter-spacing:0.04em;">${rocketNum}</strong>
+            <button type="button" class="btn-copy-number" onclick="copyPaymentNumber('${rocketNum}', this)" title="Copy Rocket Number" style="display:inline-flex; align-items:center; gap:0.25rem; font-size:0.75rem; font-weight:700; background:#8c3494; color:white; border:none; padding:0.25rem 0.55rem; border-radius:4px; cursor:pointer; transition:all 0.2s ease;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              <span>Copy</span>
+            </button>
+          </div>
+          <br>
+          টাকা পাঠিয়ে Transaction ID ও প্রেরক নম্বর নিচে লিখুন।
+        </div>
         <div class="form-row">
           <input type="text" class="form-input" id="trxIdInput" placeholder="Rocket TrxID" required />
-          <input type="text" class="form-input" id="senderPhoneInput" placeholder="আপনার রকেট নম্বর" required />
+          <input type="text" class="form-input" id="senderPhoneInput" placeholder="যে রকেট নম্বর থেকে টাকা পাঠিয়েছেন *" required />
         </div>
       `;
       break;
+    }
 
-    case 'bank':
+    case 'bank': {
+      const bankAcc = '1102938475001';
       instructionsBox.innerHTML = `
-        <h5 style="font-weight:700; color:#1e40af; margin-bottom:0.35rem;">🏦 Bank Transfer (সরাসরি ব্যাংক ডিপোজিট)</h5>
-        <p style="font-size:0.85rem; color:var(--color-text-muted); margin-bottom:0.75rem;">
+        <h5 style="font-weight:700; color:#1e40af; margin-bottom:0.35rem;">Bank Transfer (সরাসরি ব্যাংক ডিপোজিট)</h5>
+        <div style="font-size:0.85rem; color:var(--color-text-muted); margin-bottom:0.75rem;">
           Bank Name: <strong>City Bank PLC / BRAC Bank</strong><br>
           Account Name: <strong>AUVARE VINTAGE STORE</strong><br>
-          Account No: <strong>1102938475001</strong> | Branch: <strong>Gulshan / Khulna</strong>
-        </p>
-        <input type="text" class="form-input" id="trxIdInput" placeholder="Deposit Slip Ref / Account Holder Name" required />
+          Account No: 
+          <div style="display:inline-flex; align-items:center; gap:0.5rem; background:rgba(30, 64, 175, 0.08); padding:0.2rem 0.55rem; border-radius:6px; border:1px solid rgba(30, 64, 175, 0.2); margin:0.2rem 0;">
+            <strong style="color:#1e40af; font-size:1rem; letter-spacing:0.04em;">${bankAcc}</strong>
+            <button type="button" class="btn-copy-number" onclick="copyPaymentNumber('${bankAcc}', this)" title="Copy Account No" style="display:inline-flex; align-items:center; gap:0.25rem; font-size:0.72rem; font-weight:700; background:#1e40af; color:white; border:none; padding:0.2rem 0.45rem; border-radius:4px; cursor:pointer;">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              <span>Copy</span>
+            </button>
+          </div>
+          | Branch: <strong>Gulshan / Khulna</strong>
+        </div>
+        <div class="form-row">
+          <input type="text" class="form-input" id="trxIdInput" placeholder="Deposit Slip Ref / TrxID" required />
+          <input type="text" class="form-input" id="senderPhoneInput" placeholder="প্রেরকের নাম অথবা ফোন নম্বর *" required />
+        </div>
       `;
       break;
+    }
   }
 }
+
+// 1-Click Copy Payment Number with feedback
+function copyPaymentNumber(text, btn) {
+  if (!text) return;
+  const cleanNumber = text.replace(/[^0-9+-]/g, '') || text;
+
+  const showSuccess = () => {
+    if (btn) {
+      const originalHTML = btn.innerHTML;
+      btn.innerHTML = `
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Copied! ✓</span>
+      `;
+      btn.style.background = '#16a34a';
+      setTimeout(() => {
+        btn.innerHTML = originalHTML;
+        btn.style.background = '';
+      }, 2000);
+    }
+  };
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(cleanNumber).then(showSuccess).catch(() => {
+      fallbackCopy(cleanNumber);
+      showSuccess();
+    });
+  } else {
+    fallbackCopy(cleanNumber);
+    showSuccess();
+  }
+
+  function fallbackCopy(str) {
+    const ta = document.createElement('textarea');
+    ta.value = str;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+      document.execCommand('copy');
+    } catch (e) {}
+    document.body.removeChild(ta);
+  }
+}
+window.copyPaymentNumber = copyPaymentNumber;
 
 async function handleCheckoutSubmit(e) {
   e.preventDefault();
@@ -770,6 +859,7 @@ async function handleCheckoutSubmit(e) {
   const address = document.getElementById('custAddress').value.trim();
   const notes = document.getElementById('custNotes').value.trim();
   const trxId = document.getElementById('trxIdInput')?.value.trim() || null;
+  const senderPhone = document.getElementById('senderPhoneInput')?.value.trim() || null;
   
   const subtotal = state.cart.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
   const shipping = state.deliveryZone === 'inside' ? 70 : 130;
@@ -785,10 +875,12 @@ async function handleCheckoutSubmit(e) {
     items: state.cart.map(c => ({ title: c.title, size: c.selectedSize || c.size || 'M', price: c.price, quantity: c.quantity || 1 })),
     deliveryZone: state.deliveryZone,
     paymentMethod: state.selectedPayment,
+    paymentSenderNumber: senderPhone,
     trxId,
     subtotal,
     shipping,
     total,
+    orderStatus: 'pending',
     date: new Date().toLocaleString()
   };
 
@@ -817,6 +909,7 @@ async function handleCheckoutSubmit(e) {
     `• Zone: ${state.deliveryZone === 'inside' ? 'Inside Dhaka (৳70)' : 'Outside Dhaka (৳130)'}\n\n` +
     `*Ordered Items (Sizes S, M, L, XL, XXL):*\n${itemListText}\n\n` +
     `*Payment Method:* ${state.selectedPayment.toUpperCase()}\n` +
+    (senderPhone ? `*Payment Sender Number:* ${senderPhone}\n` : '') +
     (trxId ? `*Transaction ID:* ${trxId}\n` : '') +
     `*Total Bill:* ৳${total}\n\n` +
     `Please process this drop delivery!`
@@ -841,6 +934,8 @@ async function handleCheckoutSubmit(e) {
         <p style="font-size:0.875rem;"><strong>Recipient:</strong> ${name} (${phone})</p>
         <p style="font-size:0.875rem;"><strong>Address:</strong> ${address}</p>
         <p style="font-size:0.875rem;"><strong>Payment Method:</strong> ${state.selectedPayment.toUpperCase()}</p>
+        ${senderPhone ? `<p style="font-size:0.875rem;"><strong>Payment From (Sender No):</strong> ${senderPhone}</p>` : ''}
+        ${trxId ? `<p style="font-size:0.875rem;"><strong>Transaction ID (TrxID):</strong> ${trxId}</p>` : ''}
         <p style="font-size:0.875rem; margin-top:0.5rem; color:var(--color-primary); font-weight:700;"><strong>Total Payable:</strong> ৳${total.toLocaleString()}</p>
       </div>
 

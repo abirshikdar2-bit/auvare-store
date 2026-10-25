@@ -289,19 +289,19 @@ function showAuthModalView(viewType, user = null, profile = null) {
       const avatar = user.user_metadata?.avatar_url;
       const name = user.user_metadata?.full_name || user.email?.split('@')[0];
       card.innerHTML = `
-        ${avatar ? `<img src="${avatar}" style="width:22px; height:22px; border-radius:50%;" referrerpolicy="no-referrer" />` : '👤'}
+        ${avatar ? `<img src="${avatar}" style="width:22px; height:22px; border-radius:50%;" referrerpolicy="no-referrer" />` : '<span style="font-weight:700;">U</span>'}
         <span><strong>${name}</strong> (${user.email})</span>
       `;
     }
     if (emailNotice) {
-      emailNotice.textContent = `আবেদনকারী: ${user.email}। আপনার রিকোয়েস্টটি Super Admin (Md Abir Shikdar)-এর কাছে জমা হয়েছে।`;
+      emailNotice.textContent = `আবেদনকারী: ${user.email}। আপনার রিকোয়েস্টটি Super Admin-এর কাছে জমা হয়েছে।`;
     }
   }
 
   if (viewType === 'rejected' && user) {
     const notice = document.getElementById('rejectedUserNotice');
     if (notice) {
-      notice.textContent = `আবেদনকারী: ${user.email}। সুপার অ্যাডমিন (Md Abir Shikdar) আপনার আগের রিকোয়েস্টটি বাতিল করেছেন।`;
+      notice.textContent = `আবেদনকারী: ${user.email}। সুপার অ্যাডমিন আপনার আগের রিকোয়েস্টটি বাতিল করেছেন।`;
     }
   }
 
@@ -709,10 +709,10 @@ function renderOrdersTable() {
   const tbody = document.getElementById('ordersTableBody');
   if (!tbody) return;
 
-  if (adminState.orders.length === 0) {
+  if (!adminState.orders || adminState.orders.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="7" style="text-align: center; padding: 3rem 1rem; color: var(--admin-text-muted);">
+        <td colspan="8" style="text-align: center; padding: 3rem 1rem; color: var(--admin-text-muted);">
           No customer orders recorded yet. Place an order on the storefront to test!
         </td>
       </tr>
@@ -720,40 +720,245 @@ function renderOrdersTable() {
     return;
   }
 
-  tbody.innerHTML = adminState.orders.map(order => `
-    <tr>
-      <td><strong>#${order.orderId || 'AUV-000'}</strong></td>
-      <td>
-        <div style="font-weight: 600;">${order.name}</div>
-        <div style="font-size: 0.75rem; color: var(--admin-text-muted);">${order.phone}</div>
-      </td>
-      <td>
-        <div style="font-size: 0.8rem; max-width: 200px;">${order.address}</div>
-      </td>
-      <td>
-        <div class="order-item-list">
-          ${(order.items || []).map(i => `• ${i.title} (Size: <strong>${i.size}</strong>)`).join('<br>')}
-        </div>
-      </td>
-      <td>
-        <span class="pay-badge-${order.paymentMethod ? order.paymentMethod.toLowerCase() : 'cod'}">
-          ${(order.paymentMethod || 'COD').toUpperCase()}
-        </span>
-      </td>
-      <td><strong>৳ ${(order.total || 0).toLocaleString()}</strong></td>
-      <td>
-        <a 
-          href="https://wa.me/88${order.phone}?text=Hello%20${encodeURIComponent(order.name)},%20AUVARE%20here%20regarding%20your%20Order%20%23${order.orderId}." 
-          target="_blank" 
-          class="btn-admin-outline" 
-          style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"
-        >
-          💬 WhatsApp
-        </a>
-      </td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = adminState.orders.map(order => {
+    const status = (order.status || order.orderStatus || 'pending').toLowerCase();
+    const payMethod = (order.paymentMethod || 'cod').toLowerCase();
+    const senderNumber = order.paymentSenderNumber || order.senderPhone || null;
+    const trxId = order.trxId || null;
+
+    return `
+      <tr class="order-row" onclick="openOrderDetailsModal('${order.orderId}')">
+        <td>
+          <strong style="color: var(--admin-text-main);">#${order.orderId || 'AUV-000'}</strong>
+          <div style="font-size: 0.72rem; color: var(--admin-text-muted);">${order.date ? order.date.split(',')[0] : ''}</div>
+        </td>
+        <td>
+          <div style="font-weight: 700; color: var(--admin-text-main);">${order.name}</div>
+          <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-family: monospace;">${order.phone}</div>
+        </td>
+        <td>
+          <div style="font-size: 0.8rem; max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${order.address}">
+            ${order.address}
+          </div>
+          <div style="font-size: 0.72rem; color: var(--admin-text-muted);">${order.deliveryZone === 'inside' ? 'Inside Dhaka' : 'Outside Dhaka'}</div>
+        </td>
+        <td>
+          <div class="order-item-list" style="font-size: 0.82rem;">
+            ${(order.items || []).map(i => `
+              <div style="display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.2rem;">
+                <span style="font-weight: 600;">${i.title}</span>
+                <span class="item-size-badge">${i.size || 'M'}</span>
+                <span style="color: var(--admin-text-muted); font-size: 0.75rem;">x${i.quantity || 1}</span>
+              </div>
+            `).join('')}
+          </div>
+        </td>
+        <td>
+          <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+            <span class="pay-badge-${payMethod}" style="width: fit-content;">
+              ${payMethod.toUpperCase()}
+            </span>
+            ${senderNumber ? `
+              <div style="font-size: 0.72rem; color: #0f172a; font-family: monospace; font-weight: 600;">
+                Sender: ${senderNumber}
+              </div>
+            ` : ''}
+            ${trxId ? `
+              <div style="font-size: 0.7rem; color: #64748b; font-family: monospace;">
+                Trx: ${trxId}
+              </div>
+            ` : ''}
+          </div>
+        </td>
+        <td>
+          <strong style="font-size: 0.92rem; color: var(--admin-text-main);">৳ ${(order.total || 0).toLocaleString()}</strong>
+        </td>
+        <td>
+          <span class="order-status-pill status-${status}">
+            ${status}
+          </span>
+        </td>
+        <td onclick="event.stopPropagation();">
+          <div style="display: flex; align-items: center; gap: 0.4rem;">
+            <button 
+              type="button" 
+              class="btn-admin-primary" 
+              style="padding: 0.3rem 0.65rem; font-size: 0.75rem;" 
+              onclick="openOrderDetailsModal('${order.orderId}')"
+            >
+              Details
+            </button>
+            <a 
+              href="https://wa.me/88${order.phone}?text=Hello%20${encodeURIComponent(order.name)},%20AUVARE%20here%20regarding%20your%20Order%20%23${order.orderId}." 
+              target="_blank" 
+              class="btn-admin-outline" 
+              style="padding: 0.3rem 0.55rem; font-size: 0.75rem; color: #16a34a; border-color: #bbf7d0;"
+              title="Message customer on WhatsApp"
+            >
+              WhatsApp
+            </a>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
+
+// Open Order Details Modal
+function openOrderDetailsModal(orderId) {
+  const order = adminState.orders.find(o => o.orderId === orderId);
+  if (!order) return;
+
+  adminState.activeModalOrderId = orderId;
+
+  const status = (order.status || order.orderStatus || 'pending').toLowerCase();
+  const senderNumber = order.paymentSenderNumber || order.senderPhone || 'N/A';
+  const trxId = order.trxId || 'N/A';
+  const subtotal = order.subtotal || ((order.items || []).reduce((acc, i) => acc + (i.price * (i.quantity || 1)), 0));
+  const shipping = order.shipping || (order.deliveryZone === 'inside' ? 70 : 130);
+  const total = order.total || (subtotal + shipping);
+
+  // Header
+  document.getElementById('modalOrderId').textContent = `#${order.orderId || 'AUV-000'}`;
+  document.getElementById('modalOrderDate').textContent = order.date || 'Recent';
+  
+  const statusBadge = document.getElementById('modalOrderStatusBadge');
+  if (statusBadge) {
+    statusBadge.className = `order-status-pill status-${status}`;
+    statusBadge.textContent = status.toUpperCase();
+  }
+
+  // Customer
+  document.getElementById('modalCustomerName').textContent = order.name || 'Anonymous Customer';
+  document.getElementById('modalCustomerPhone').textContent = order.phone || 'N/A';
+  
+  const waLink = document.getElementById('modalCustomerWaLink');
+  if (waLink) {
+    waLink.href = `https://wa.me/88${order.phone}?text=Hello%20${encodeURIComponent(order.name)},%20AUVARE%20Store%20here%20regarding%20your%20Order%20%23${order.orderId}.`;
+  }
+
+  document.getElementById('modalCustomerAddress').textContent = order.address || 'N/A';
+  document.getElementById('modalCustomerZone').textContent = order.deliveryZone === 'inside' ? 'Inside Dhaka (৳70 Delivery)' : 'Outside Dhaka (৳130 Delivery)';
+  document.getElementById('modalCustomerNotes').textContent = order.notes ? `Notes: "${order.notes}"` : 'No customer delivery notes provided.';
+
+  // Payment
+  const payBadgeEl = document.getElementById('modalPaymentMethod');
+  if (payBadgeEl) {
+    const payMethod = (order.paymentMethod || 'cod').toLowerCase();
+    payBadgeEl.innerHTML = `<span class="pay-badge-${payMethod}">${payMethod.toUpperCase()}</span>`;
+  }
+
+  document.getElementById('modalSenderNumber').textContent = senderNumber;
+  document.getElementById('modalTrxId').textContent = trxId;
+  document.getElementById('modalSubtotal').textContent = `৳ ${subtotal.toLocaleString()}`;
+  document.getElementById('modalShipping').textContent = `৳ ${shipping.toLocaleString()}`;
+  document.getElementById('modalTotalAmount').textContent = `৳ ${total.toLocaleString()}`;
+
+  // Items List
+  const itemsContainer = document.getElementById('modalOrderItemsList');
+  if (itemsContainer) {
+    itemsContainer.innerHTML = (order.items || []).map(item => `
+      <div class="order-item-card">
+        <div>
+          <div style="font-weight: 700; color: #0f172a; font-size: 0.9rem;">
+            ${item.title}
+            <span class="item-size-badge">${item.size || 'M'}</span>
+          </div>
+          <div style="font-size: 0.78rem; color: #64748b; margin-top: 0.15rem;">
+            ৳ ${(item.price || 0).toLocaleString()} × ${item.quantity || 1}
+          </div>
+        </div>
+        <div style="font-weight: 800; color: #0f172a; font-size: 0.95rem;">
+          ৳ ${((item.price || 0) * (item.quantity || 1)).toLocaleString()}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Status Select
+  const statusSelect = document.getElementById('modalStatusSelect');
+  if (statusSelect) {
+    statusSelect.value = status;
+  }
+
+  openAdminModal('orderDetailsModal');
+}
+window.openOrderDetailsModal = openOrderDetailsModal;
+
+// Update Order Status from Modal
+async function handleUpdateOrderStatusFromModal() {
+  const orderId = adminState.activeModalOrderId;
+  const statusSelect = document.getElementById('modalStatusSelect');
+  if (!orderId || !statusSelect) return;
+
+  const newStatus = statusSelect.value;
+  const order = adminState.orders.find(o => o.orderId === orderId);
+
+  if (order) {
+    order.status = newStatus;
+    order.orderStatus = newStatus;
+  }
+
+  if (window.SupabaseService) {
+    await window.SupabaseService.updateOrderStatus(orderId, newStatus);
+  }
+
+  // Update badge in modal
+  const statusBadge = document.getElementById('modalOrderStatusBadge');
+  if (statusBadge) {
+    statusBadge.className = `order-status-pill status-${newStatus}`;
+    statusBadge.textContent = newStatus.toUpperCase();
+  }
+
+  renderOrdersTable();
+  showAdminToast(`Order #${orderId} marked as ${newStatus.toUpperCase()}`, 'success');
+}
+window.handleUpdateOrderStatusFromModal = handleUpdateOrderStatusFromModal;
+
+// Copy text from modal field
+function copyModalField(elementId, btn) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  const text = el.textContent.trim();
+  if (!text || text === 'N/A') return;
+
+  const showSuccess = () => {
+    if (btn) {
+      const original = btn.textContent;
+      btn.textContent = 'Copied! ✓';
+      btn.style.background = '#16a34a';
+      setTimeout(() => {
+        btn.textContent = original;
+        btn.style.background = '';
+      }, 1800);
+    }
+  };
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(showSuccess).catch(() => {
+      fallbackCopy(text);
+      showSuccess();
+    });
+  } else {
+    fallbackCopy(text);
+    showSuccess();
+  }
+
+  function fallbackCopy(str) {
+    const ta = document.createElement('textarea');
+    ta.value = str;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+      document.execCommand('copy');
+    } catch (e) {}
+    document.body.removeChild(ta);
+  }
+}
+window.copyModalField = copyModalField;
 
 // ==========================================
 // Tab Switching (Shopify Admin Navigation)
@@ -1257,7 +1462,7 @@ async function loadAuthUsersTable() {
             <div style="line-height:1.2;">
               <span style="font-weight:700; color:#0f172a; font-size:0.83rem;">
                 ${u.display_name || 'Anonymous User'}
-                ${isUserSuperAdmin ? '<span class="owner-pill-tag" style="margin-left:0.25rem;">👑 Owner</span>' : ''}
+                ${isUserSuperAdmin ? '<span class="owner-pill-tag" style="margin-left:0.25rem;">Owner</span>' : ''}
               </span>
               <span style="display:block; font-size:0.72rem; color:#64748b;">${u.email}</span>
             </div>
@@ -1265,13 +1470,13 @@ async function loadAuthUsersTable() {
         </td>
         <td>
           <span class="badge-role ${u.role}" style="padding:0.2rem 0.6rem; font-size:0.72rem;">
-            ${u.role === 'super_admin' ? '👑 Super Admin' : (u.role === 'admin' ? '🛡️ Admin' : '👤 Customer')}
+            ${u.role === 'super_admin' ? 'Super Admin' : (u.role === 'admin' ? 'Admin' : 'Customer')}
           </span>
         </td>
         <td>
           <span class="premium-status-pill ${u.status}" style="padding:0.2rem 0.6rem; font-size:0.72rem; ${u.status === 'blocked' ? 'background:#fee2e2; color:#991b1b; border:1px solid #fecaca;' : ''}">
             <span class="status-pulse-dot dot-${u.status}" style="${u.status === 'blocked' ? 'background:#dc2626;' : ''}"></span>
-            ${u.status === 'approved' ? 'Approved' : (u.status === 'blocked' ? '🚫 Blocked' : 'Pending Review')}
+            ${u.status === 'approved' ? 'Approved' : (u.status === 'blocked' ? 'Blocked' : 'Pending Review')}
           </span>
         </td>
         <td>
@@ -1281,31 +1486,31 @@ async function loadAuthUsersTable() {
           ${userIsSuper ? `
             ${isUserSuperAdmin ? `
               <span class="badge-master-compact">
-                <span>👑</span> <span>Super Admin (Master)</span>
+                <span>Super Admin (Master)</span>
               </span>
             ` : `
               <div class="action-buttons-group">
                 ${u.status === 'blocked' ? `
                   <button class="btn-premium-unblock" style="padding:0.25rem 0.65rem; font-size:0.72rem; background:#2563eb; color:white; border:none; border-radius:4px; font-weight:700; cursor:pointer;" onclick="unblockUser('${u.id}', '${u.display_name}')" title="Unblock User">
-                    🔓 Unblock
+                    Unblock
                   </button>
                 ` : u.status === 'pending' ? `
                   <button class="btn-premium-approve" style="padding:0.25rem 0.65rem; font-size:0.72rem;" onclick="approveUser('${u.id}', '${u.display_name}')" title="Approve Request">
-                    ✓ Approve
+                    Approve
                   </button>
                   <button class="btn-premium-reject" style="padding:0.25rem 0.65rem; font-size:0.72rem;" onclick="openRejectModal('${u.id}', '${u.display_name}', '${u.email}')" title="Reject Request">
-                    ✕ Reject
+                    Reject
                   </button>
                 ` : `
                   <button class="btn-premium-reject" style="padding:0.25rem 0.65rem; font-size:0.72rem;" onclick="openRejectModal('${u.id}', '${u.display_name}', '${u.email}')" title="Reject Admin Access">
-                    ✕ Reject
+                    Reject
                   </button>
                 `}
               </div>
             `}
           ` : `
             <span style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.72rem; font-weight:700; color:#64748b; background:#f1f5f9; padding:0.25rem 0.6rem; border-radius:4px; border:1px solid #e2e8f0;">
-              <span>🔒</span> <span>Super Admin Only</span>
+              <span>Super Admin Only</span>
             </span>
           `}
         </td>
@@ -1317,7 +1522,7 @@ async function loadAuthUsersTable() {
 // Approve User Admin Request
 async function approveUser(userId, name) {
   if (!isSuperAdmin()) {
-    alert('⛔ Access Denied: Only Super Admin (Md Abir Shikdar) has authority to approve admin access requests.');
+    alert('Access Denied: Super Admin authority is required to approve admin access requests.');
     return;
   }
 
@@ -1326,7 +1531,7 @@ async function approveUser(userId, name) {
   if (window.SupabaseService) {
     const updated = await window.SupabaseService.updateUserStatus(userId, 'approved', 'admin');
     if (updated) {
-      showAdminToast(`✓ "${name}" approved as Admin successfully!`, 'success');
+      showAdminToast(`"${name}" approved as Admin successfully!`, 'success');
       loadAuthUsersTable();
     }
   }
@@ -1370,7 +1575,7 @@ function selectRejectOption(action) {
 
     if (btnSave) {
       btnSave.style.background = 'linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%)';
-      btnSave.innerHTML = '<span>Block User / ব্লক করুন</span> <span>🚫</span>';
+      btnSave.innerHTML = '<span>Block User / ব্লক করুন</span>';
     }
   } else {
     // Highlight Reject Card
@@ -1399,7 +1604,7 @@ function selectRejectOption(action) {
 
     if (btnSave) {
       btnSave.style.background = 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)';
-      btnSave.innerHTML = '<span>Reject Request / বাতিল করুন</span> <span>✓</span>';
+      btnSave.innerHTML = '<span>Reject Request / বাতিল করুন</span>';
     }
   }
 }
@@ -1408,7 +1613,7 @@ window.selectRejectOption = selectRejectOption;
 // Open Reject or Block Confirmation Modal
 function openRejectModal(userId, name, email) {
   if (!isSuperAdmin()) {
-    alert('⛔ Access Denied: Only Super Admin (Md Abir Shikdar) has authority to reject or block access.');
+    alert('Access Denied: Super Admin authority is required to reject or block access.');
     return;
   }
 
@@ -1438,7 +1643,7 @@ async function executeSelectedRejectAction() {
     if (window.SupabaseService) {
       const updated = await window.SupabaseService.blockUser(userId);
       if (updated) {
-        showAdminToast(`🚫 "${name}" has been permanently blocked! They cannot submit requests anymore.`, 'warning');
+        showAdminToast(`"${name}" has been permanently blocked. They cannot submit requests anymore.`, 'warning');
         loadAuthUsersTable();
       }
     }
@@ -1447,7 +1652,7 @@ async function executeSelectedRejectAction() {
     if (window.SupabaseService) {
       const updated = await window.SupabaseService.updateUserStatus(userId, 'rejected');
       if (updated) {
-        showAdminToast(`✕ Request for "${name}" rejected and removed from directory.`, 'info');
+        showAdminToast(`Request for "${name}" rejected and removed from directory.`, 'info');
         loadAuthUsersTable();
       }
     }
@@ -1458,7 +1663,7 @@ window.executeSelectedRejectAction = executeSelectedRejectAction;
 // Unblock User
 async function unblockUser(userId, name) {
   if (!isSuperAdmin()) {
-    alert('⛔ Access Denied: Only Super Admin (Md Abir Shikdar) has authority to unblock users.');
+    alert('Access Denied: Super Admin authority is required to unblock users.');
     return;
   }
 
@@ -1467,7 +1672,7 @@ async function unblockUser(userId, name) {
   if (window.SupabaseService) {
     const updated = await window.SupabaseService.unblockUser(userId);
     if (updated) {
-      showAdminToast(`🔓 "${name}" has been unblocked!`, 'success');
+      showAdminToast(`"${name}" has been unblocked.`, 'success');
       loadAuthUsersTable();
     }
   }
@@ -1484,19 +1689,20 @@ function handleModalStatusChange(status) {
     alertBox.style.background = '#fef2f2';
     alertBox.style.borderColor = '#fecaca';
     alertBox.style.color = '#991b1b';
-    alertText.innerHTML = '<strong>⛔ সতর্কতা (Remove/Reject):</strong> স্ট্যাটাস "Rejected" সিলেক্ট করলে এই অ্যাডমিন <strong>অবিলম্বে তালিকা থেকে রিমুভ</strong> হয়ে যাবে। তার অ্যাডমিন অ্যাক্সেস বাতিল হবে, তবে সে চাইলে পরবর্তীতে আবার আবেদন করতে পারবে।';
+    alertText.innerHTML = '<strong>সতর্কতা (Remove/Reject):</strong> স্ট্যাটাস "Rejected" সিলেক্ট করলে এই অ্যাডমিন <strong>অবিলম্বে তালিকা থেকে রিমুভ</strong> হয়ে যাবে। তার অ্যাডমিন অ্যাক্সেস বাতিল হবে, তবে সে চাইলে পরবর্তীতে আবার আবেদন করতে পারবে।';
   } else if (status === 'approved') {
     alertBox.style.background = '#f0fdf4';
     alertBox.style.borderColor = '#bbf7d0';
     alertBox.style.color = '#166534';
-    alertText.innerHTML = '<strong>✓ অনুমোদন (Approved):</strong> এই ইউজার সফলভাবে ড্যাশবোর্ডে প্রবেশ করে ইনভেন্টরি ও কাস্টমার অর্ডার পরিচালনা করতে পারবেন।';
+    alertText.innerHTML = '<strong>অনুমোদন (Approved):</strong> এই ইউজার সফলভাবে ড্যাশবোর্ডে প্রবেশ করে ইনভেন্টরি ও কাস্টমার অর্ডার পরিচালনা করতে পারবেন।';
   } else {
     alertBox.style.background = '#fffbeb';
     alertBox.style.borderColor = '#fde68a';
     alertBox.style.color = '#92400e';
-    alertText.innerHTML = '<strong>⏳ অপেক্ষারত (Pending Review):</strong> ইউজারের রিকোয়েস্টটি সুপার অ্যাডমিনের রিভিউর অপেক্ষায় থাকবে। অনুমোদন ছাড়া ড্যাশবোর্ডে ঢুকতে পারবে না।';
+    alertText.innerHTML = '<strong>অপেক্ষারত (Pending Review):</strong> ইউজারের রিকোয়েস্টটি সুপার অ্যাডমিনের রিভিউর অপেক্ষায় থাকবে। অনুমোদন ছাড়া ড্যাশবোর্ডে ঢুকতে পারবে না।';
   }
 }
+window.handleModalStatusChange = handleModalStatusChange;
 window.handleModalStatusChange = handleModalStatusChange;
 
 // Open Edit User Modal
@@ -1536,10 +1742,10 @@ function openEditUserModal(userId) {
   if (badgesEl) {
     badgesEl.innerHTML = `
       <span class="badge-role ${user.role}" style="padding:0.18rem 0.5rem; font-size:0.7rem;">
-        ${user.role === 'super_admin' ? '👑 Super Admin' : (user.role === 'admin' ? '🛡️ Admin' : '👤 Customer')}
+        ${user.role === 'super_admin' ? 'Super Admin' : (user.role === 'admin' ? 'Admin' : 'Customer')}
       </span>
       <span class="premium-status-pill ${user.status}" style="padding:0.18rem 0.5rem; font-size:0.7rem;">
-        ${user.status === 'approved' ? '✓ Approved' : (user.status === 'pending' ? '⏳ Pending' : '⛔ Rejected')}
+        ${user.status === 'approved' ? 'Approved' : (user.status === 'pending' ? 'Pending' : 'Rejected')}
       </span>
     `;
   }
@@ -1553,7 +1759,7 @@ async function handleSaveUserEdit(e) {
   e.preventDefault();
 
   if (!isSuperAdmin()) {
-    alert('⛔ Access Denied: Only Super Admin (Md Abir Shikdar) has authority to modify user details.');
+    alert('Access Denied: Super Admin authority is required to modify user details.');
     return;
   }
 
@@ -1571,9 +1777,9 @@ async function handleSaveUserEdit(e) {
 
     if (updated) {
       if (status === 'rejected') {
-        showAdminToast(`✕ "${displayName}" বাতিল/রিমুভ করা হয়েছে এবং তালিকা থেকে সরানো হয়েছে।`, 'info');
+        showAdminToast(`"${displayName}" বাতিল/রিমুভ করা হয়েছে এবং তালিকা থেকে সরানো হয়েছে।`, 'info');
       } else {
-        showAdminToast(`✓ "${displayName}"-এর রোল ও পারমিশন সফলভাবে আপডেট করা হয়েছে!`, 'success');
+        showAdminToast(`"${displayName}"-এর রোল ও পারমিশন সফলভাবে আপডেট করা হয়েছে!`, 'success');
       }
       closeAdminModal('editUserModal');
       loadAuthUsersTable();

@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
     delivery_address TEXT NOT NULL,
     delivery_zone TEXT NOT NULL,
     payment_method TEXT NOT NULL,
+    payment_sender_number TEXT,
     trx_id TEXT,
     items JSONB NOT NULL,
     subtotal NUMERIC NOT NULL,
@@ -38,6 +39,9 @@ CREATE TABLE IF NOT EXISTS public.orders (
     order_status TEXT DEFAULT 'pending' NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Ensure payment_sender_number exists if table already created
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_sender_number TEXT;
 
 -- 3. Create Store Contact Information Table
 CREATE TABLE IF NOT EXISTS public.store_contact_info (

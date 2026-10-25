@@ -8,15 +8,19 @@ resume**, not just a task name.
 
 ## Backlog
 
-- [x] `#1` Purge Supabase & Settings tab, eliminate all hardcoded credentials and AI slop across admin codebase.
-- [x] `#2` Overhaul admin sidebar navigation with AUVARE brand-matched styling and 5 clean items: Home, Products, Orders, Users, Categories.
-- [x] `#3` Implement Shopify-inspired Home Dashboard view with header metrics, greeting, quick actions, and 3-card insight grid.
-- [x] `#4` Implement Shopify-inspired 2-column Products view & Editor (Title, Rich Description Box, Media Grid, S-XXL sizes, Pricing & Status).
-- [x] `#5` Implement Users and Categories management views, connect Supabase real-time sync, and verify entire admin experience.
+_(no active backlog items)_
 
 ## In Progress
 
+_(none)_
+
 ## Done
+
+- `#6`-`#9` **2026-10-26** Interactive Admin Order Details Modal, Sender Phone Verification & Users Tab Cleanup:
+  - **Cleaned Users Tab Emojis & AI Slop**: Removed all emojis (`👑`, `🛡️`, `👤`, `✓`, `⏳`, `⛔`, `🚫`) and hardcoded names from `admin.html` and `admin.js`. Cleaned badges to pure text (`Super Admin`, `Admin`, `Customer`, `Approved`, `Pending Review`, `Blocked`, `Rejected`).
+  - **Storefront 1-Click Copy & Sender Phone Capture**: Added 1-click Copy button with "Copied! ✓" visual feedback next to bKash, Nagad, Rocket, and Bank numbers. Captured customer payment sender number (`paymentSenderNumber`) in checkout and forwarded in order payload and WhatsApp receipt.
+  - **Supabase Schema & Client Sync**: Added `payment_sender_number TEXT` to `orders` table in `supabase-schema.sql` and updated `insertOrder` and `getOrders` in `supabaseClient.js`. Implemented `updateOrderStatus` cloud sync with local storage fallback.
+  - **Admin Interactive Order Details Modal**: Added full details modal (`#orderDetailsModal`) displaying Customer Details (with 1-click WhatsApp chat link), Payment Verification (Method, Sender Number with copy, TrxID with copy, Financial breakdown), Ordered Items with bold Size Badges (S, M, L, XL, XXL), and Order Status management dropdown with instant update. Made admin orders table rows clickable with hover styling.
 
 - `#1`-`#5` **2026-10-26** Shopify-Inspired Admin Redesign & Security Purge for AUVARE Store:
   - **Purged Settings Tab & Credentials**: Completely removed `Supabase & Settings` tab and its input fields from UI. Removed all hardcoded credentials (`abirshikdar2@gmail.com`, `Md Abir Shikdar`). Dynamic database role verification via Supabase `auth_users` table.

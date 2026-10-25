@@ -522,9 +522,10 @@
                 <th>Customer</th>
                 <th>Delivery Address</th>
                 <th>Ordered Items & Size</th>
-                <th>Payment</th>
+                <th>Payment & Trx</th>
                 <th>Total</th>
-                <th>Contact</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="ordersTableBody">
@@ -742,12 +743,14 @@
       <!-- Rejected View (Allows Applicant to Re-apply anytime) -->
       <div id="authGateRejectedView" style="display: none;">
         <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-md); padding: 1.5rem 1.25rem; margin-bottom: 1.25rem; text-align: center;">
-          <div style="font-size: 2.25rem; margin-bottom: 0.5rem;">⛔</div>
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0.75rem;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          </div>
           <h4 style="font-size: 1.1rem; font-weight: 700; color: #991b1b; margin-bottom: 0.35rem;">
             Super Admin Rejected Your Request
           </h4>
           <p id="rejectedUserNotice" style="font-size: 0.82rem; color: #7f1d1d; line-height: 1.45; margin-bottom: 0.5rem;">
-            সুপার অ্যাডমিন (Md Abir Shikdar) আপনার অ্যাডমিন অ্যাক্সেস রিকোয়েস্টটি বাতিল করেছেন।
+            সুপার অ্যাডমিন আপনার অ্যাডমিন অ্যাক্সেস রিকোয়েস্টটি বাতিল করেছেন।
           </p>
           <p style="font-size: 0.78rem; color: #991b1b; opacity: 0.9; margin: 0;">
             আপনি চাইলে যেকোনো সময় পুনরায় আবেদন (Re-apply) করতে পারেন।
@@ -756,7 +759,7 @@
 
         <div style="display: flex; flex-direction: column; gap: 0.65rem;">
           <button type="button" id="btnReapplyAccess" class="btn-admin-primary" onclick="handleReapplyAccess()" style="width: 100%; justify-content: center; padding: 0.75rem 1rem; font-size: 0.88rem; background: linear-gradient(135deg, #105036 0%, #15803d 100%);">
-            <span>🔄 Re-apply for Admin Access (পুনরায় রিকোয়েস্ট পাঠান)</span>
+            <span>Re-apply for Admin Access (পুনরায় রিকোয়েস্ট পাঠান)</span>
           </button>
           
           <button type="button" class="btn-admin-outline" onclick="handleAdminLogout()" style="width: 100%; justify-content: center; font-size: 0.82rem; padding: 0.6rem 1rem;">
@@ -768,7 +771,9 @@
       <!-- Blocked / Banned View (Permanently blocks spam re-applicants) -->
       <div id="authGateBlockedView" style="display: none;">
         <div style="background: #450a0a; border: 1px solid #7f1d1d; border-radius: var(--radius-md); padding: 1.65rem 1.25rem; margin-bottom: 1.25rem; text-align: center; color: white;">
-          <div style="font-size: 2.75rem; margin-bottom: 0.5rem; filter: drop-shadow(0 2px 8px rgba(239, 68, 68, 0.4));">🚫</div>
+          <div style="width: 52px; height: 52px; border-radius: 50%; background: rgba(220, 38, 38, 0.2); color: #f87171; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0.75rem; border: 1px solid rgba(248, 113, 113, 0.4);">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+          </div>
           <h4 style="font-size: 1.2rem; font-weight: 800; color: #fecaca; margin-bottom: 0.4rem; letter-spacing: -0.01em;">
             Access Permanently Blocked
           </h4>
@@ -776,13 +781,13 @@
             আপনার অ্যাকাউন্টটি সুপার অ্যাডমিন কর্তৃক ব্লক করা হয়েছে।
           </p>
           <div style="background: rgba(0, 0, 0, 0.3); border: 1px dashed rgba(254, 202, 202, 0.3); border-radius: 8px; padding: 0.65rem 0.85rem; font-size: 0.78rem; color: #fecaca; line-height: 1.45;">
-            ⚠️ আপনি এই প্যানেলে আর কোনো অ্যাক্সেস রিকোয়েস্ট পাঠাতে পারবেন না। সুপার অ্যাডমিন (Md Abir Shikdar) আনব্লক না করা পর্যন্ত আবেদন বন্ধ থাকবে।
+            আপনি এই প্যানেলে আর কোনো অ্যাক্সেস রিকোয়েস্ট পাঠাতে পারবেন না। সুপার অ্যাডমিন আনব্লক না করা পর্যন্ত আবেদন বন্ধ থাকবে।
           </div>
         </div>
 
         <!-- Note: Strictly Sign Out only. NO RE-APPLY BUTTON FOR BLOCKED USERS! -->
         <button type="button" class="btn-admin-outline" onclick="handleAdminLogout()" style="width: 100%; justify-content: center; font-size: 0.85rem; padding: 0.7rem 1rem; color: #f87171; border-color: rgba(248, 113, 113, 0.4);">
-          🔒 Sign Out / বন্ধ করুন
+          Sign Out / বন্ধ করুন
         </button>
       </div>
 
@@ -796,18 +801,18 @@
       <!-- Brand & Super Admin Authority Header -->
       <div style="padding: 1.25rem 1.5rem; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08);">
         <div style="display: flex; align-items: center; gap: 0.85rem;">
-          <img src="assets/images/logo.jpg" alt="AUVARE Logo" style="width: 46px; height: 46px; border-radius: 50%; border: 2.5px solid #105036; box-shadow: 0 2px 8px rgba(0,0,0,0.4); object-fit: cover;" />
+          <img src="assets/images/logo.jpg" alt="AUVARE Logo" style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid #22c55e; box-shadow: 0 2px 8px rgba(0,0,0,0.4); object-fit: cover;" />
           <div>
             <div style="display: flex; align-items: center; gap: 0.45rem;">
               <span style="font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.05em; color: white;">AUVARE</span>
               <span style="font-size: 0.65rem; background: rgba(16, 80, 54, 0.7); color: #86efac; border: 1px solid rgba(134, 239, 172, 0.4); padding: 0.12rem 0.45rem; border-radius: 999px; font-weight: 700;">STORE</span>
             </div>
             <div style="font-size: 0.82rem; font-weight: 700; color: #fbbf24; display: flex; align-items: center; gap: 0.35rem; margin-top: 0.1rem;">
-              <span>👑</span> <span>Md Abir Shikdar</span> <span style="font-size: 0.7rem; color: #94a3b8; font-weight: 500;">(Super Admin)</span>
+              <span>Authorized Super Admin</span>
             </div>
           </div>
         </div>
-        <button type="button" onclick="closeAdminModal('rejectConfirmModal')" style="color: #94a3b8; background: rgba(255,255,255,0.06); border-radius: 6px; border: none; font-size: 1rem; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer;">✕</button>
+        <button type="button" onclick="closeAdminModal('rejectConfirmModal')" style="color: #94a3b8; background: rgba(255,255,255,0.06); border-radius: 6px; border: none; font-size: 1.1rem; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer;">&times;</button>
       </div>
 
       <div style="padding: 1.5rem;">
@@ -821,7 +826,7 @@
             Target Account (যাকে Reject বা Block করা হচ্ছে):
           </div>
           <div style="font-size: 0.92rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 0.4rem;">
-            <span>👤</span> <span id="rejectTargetDisplayName">User Name</span>
+            <span id="rejectTargetDisplayName">User Name</span>
           </div>
           <div style="font-size: 0.78rem; color: #475569; font-family: monospace; margin-top: 0.2rem;" id="rejectTargetDisplayEmail">
             user@example.com
@@ -837,12 +842,12 @@
           
           <!-- Card 1: Reject (Default Selected) -->
           <div id="cardSelectReject" onclick="selectRejectOption('reject')" style="text-align: left; background: #fff; border: 2px solid #ef4444; border-radius: 8px; padding: 0.9rem 1rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: flex-start; gap: 0.85rem; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.08);">
-            <div id="radioCircleReject" style="width: 20px; height: 20px; border-radius: 50%; border: 2px solid #dc2626; background: #dc2626; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.65rem; font-weight: 900; margin-top: 0.1rem; flex-shrink: 0;">
+            <div id="radioCircleReject" style="width: 20px; height: 20px; border-radius: 50%; border: 2px solid #dc2626; background: #dc2626; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.7rem; font-weight: 900; margin-top: 0.1rem; flex-shrink: 0;">
               ✓
             </div>
             <div>
               <div style="font-size: 0.88rem; font-weight: 700; color: #991b1b; margin-bottom: 0.2rem;">
-                ✕ Reject (সাধারণ বাতিল)
+                Reject (সাধারণ বাতিল)
               </div>
               <div style="font-size: 0.75rem; color: #64748b; line-height: 1.4;">
                 আবেদনটি সাময়িকভাবে বাতিল হবে ও তালিকা থেকে মুছে যাবে। ইউজার চাইলে পরবর্তীতে আবার রিকোয়েস্ট করতে পারবে।
@@ -852,11 +857,11 @@
 
           <!-- Card 2: Permanent Block against Spammers -->
           <div id="cardSelectBlock" onclick="selectRejectOption('block')" style="text-align: left; background: #fff; border: 2px solid #e2e8f0; border-radius: 8px; padding: 0.9rem 1rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: flex-start; gap: 0.85rem;">
-            <div id="radioCircleBlock" style="width: 20px; height: 20px; border-radius: 50%; border: 2px solid #cbd5e1; background: transparent; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.65rem; font-weight: 900; margin-top: 0.1rem; flex-shrink: 0;">
+            <div id="radioCircleBlock" style="width: 20px; height: 20px; border-radius: 50%; border: 2px solid #cbd5e1; background: transparent; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.7rem; font-weight: 900; margin-top: 0.1rem; flex-shrink: 0;">
             </div>
             <div>
               <div style="font-size: 0.88rem; font-weight: 700; color: #334155; margin-bottom: 0.2rem;">
-                🚫 Block (স্থায়ী ব্লক - স্প্যাম রোধ)
+                Block (স্থায়ী ব্লক - স্প্যাম রোধ)
               </div>
               <div style="font-size: 0.75rem; color: #64748b; line-height: 1.4;">
                 ইউজার স্থায়ীভাবে ব্লক হবে। সে আর <strong>কখনোই রিকোয়েস্ট পাঠাতে পারবে না</strong> (যতক্ষণ না আপনি নিজে আনব্লক করেন)।
@@ -872,7 +877,7 @@
             Cancel / বাতিল
           </button>
           <button type="button" id="btnSaveRejectAction" onclick="executeSelectedRejectAction()" class="btn-admin-primary" style="font-size: 0.85rem; padding: 0.65rem 1.35rem; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);">
-            <span>Reject Request / বাতিল করুন</span> <span>✓</span>
+            <span>Reject Request / বাতিল করুন</span>
           </button>
         </div>
       </div>
@@ -886,16 +891,16 @@
       <!-- Modal Header -->
       <div style="padding: 1.5rem 1.75rem; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; display: flex; align-items: flex-start; justify-content: space-between;">
         <div style="display: flex; align-items: center; gap: 0.85rem;">
-          <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
-            🛡️
+          <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; color: #22c55e;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
           </div>
           <div>
             <h3 style="font-size: 1.15rem; font-weight: 700; color: white; margin-bottom: 0.2rem;">User Access & Role Management</h3>
             <p style="font-size: 0.78rem; color: #94a3b8; margin: 0;">Modify permissions, role authority, or revoke admin access.</p>
           </div>
         </div>
-        <button type="button" class="btn-table-action" onclick="closeAdminModal('editUserModal')" style="color: #94a3b8; background: rgba(255,255,255,0.06); border-radius: 6px; border: none; font-size: 1rem; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-          ✕
+        <button type="button" class="btn-table-action" onclick="closeAdminModal('editUserModal')" style="color: #94a3b8; background: rgba(255,255,255,0.06); border-radius: 6px; border: none; font-size: 1.1rem; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+          &times;
         </button>
       </div>
 
@@ -908,7 +913,7 @@
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 1rem 1.15rem; margin-bottom: 1.35rem; display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 0.75rem;">
               <div id="editUserAvatarPreview" style="width: 40px; height: 40px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #475569; overflow: hidden;">
-                👤
+                U
               </div>
               <div>
                 <div id="editUserCardName" style="font-size: 0.9rem; font-weight: 700; color: #0f172a;">Loading...</div>
@@ -926,8 +931,7 @@
               User Email <span style="font-size: 0.72rem; font-weight: 500; color: #94a3b8;">(Permanent Google ID)</span>
             </label>
             <div style="position: relative;">
-              <input type="text" id="editUserEmail" class="toolbar-input" style="padding-left: 2.25rem; background: #f1f5f9; cursor: not-allowed; color: #475569;" readonly />
-              <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-size: 0.85rem; color: #94a3b8;">🔒</span>
+              <input type="text" id="editUserEmail" class="toolbar-input" style="padding-left: 1rem; background: #f1f5f9; cursor: not-allowed; color: #475569;" readonly />
             </div>
           </div>
 
@@ -945,9 +949,9 @@
                 System Role
               </label>
               <select id="editUserRole" class="toolbar-select" style="width: 100%; font-size: 0.83rem;">
-                <option value="customer">👤 Customer (কাস্টমার)</option>
-                <option value="admin">🛡️ Admin (অ্যাডমিন)</option>
-                <option value="super_admin">👑 Super Admin (সুপার অ্যাডমিন)</option>
+                <option value="customer">Customer (কাস্টমার)</option>
+                <option value="admin">Admin (অ্যাডমিন)</option>
+                <option value="super_admin">Super Admin (সুপার অ্যাডমিন)</option>
               </select>
             </div>
 
@@ -956,16 +960,16 @@
                 Approval Status
               </label>
               <select id="editUserStatus" class="toolbar-select" style="width: 100%; font-size: 0.83rem;" onchange="handleModalStatusChange(this.value)">
-                <option value="approved">✓ Approved (অনুমোদিত)</option>
-                <option value="pending">⏳ Pending Review (অপেক্ষারত)</option>
-                <option value="rejected">⛔ Rejected / Removed (বাতিল)</option>
+                <option value="approved">Approved (অনুমোদিত)</option>
+                <option value="pending">Pending Review (অপেক্ষারত)</option>
+                <option value="rejected">Rejected / Removed (বাতিল)</option>
               </select>
             </div>
           </div>
 
           <!-- Status Advisory Notice Box -->
           <div id="modalStatusAlertBox" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 0.85rem 1rem; margin-bottom: 1.5rem; font-size: 0.78rem; color: #64748b; line-height: 1.45;">
-            💡 <strong>Status Info:</strong> <span id="modalStatusAlertText">ইউজারের তথ্য ও পারমিশন পরিবর্তন করতে নিচে সেভ বাটনে চাপুন।</span>
+            <strong>Status Info:</strong> <span id="modalStatusAlertText">ইউজারের তথ্য ও পারমিশন পরিবর্তন করতে নিচে সেভ বাটনে চাপুন।</span>
           </div>
 
           <!-- Modal Footer Actions -->
@@ -974,12 +978,144 @@
               Cancel
             </button>
             <button type="submit" class="btn-admin-primary" style="font-size: 0.85rem; padding: 0.65rem 1.35rem; display: inline-flex; align-items: center; gap: 0.4rem;">
-              <span>Save User Details</span> <span>✓</span>
+              <span>Save User Details</span>
             </button>
           </div>
         </form>
       </div>
 
+    </div>
+  </div>
+
+  <!-- ================= MODAL: ORDER DETAILS & FULFILLMENT ================= -->
+  <div id="orderDetailsModal" class="admin-modal-overlay">
+    <div class="admin-modal-box" style="max-width: 780px; padding: 0; overflow: hidden; border-radius: var(--radius-lg); border: 1px solid var(--admin-border); box-shadow: var(--shadow-lg);">
+      
+      <!-- Modal Header -->
+      <div style="padding: 1.25rem 1.75rem; background: #0b1a13; color: white; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08);">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); display: flex; align-items: center; justify-content: center; color: #22c55e;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          </div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <h3 id="modalOrderId" style="font-size: 1.15rem; font-weight: 800; color: white; margin: 0;">#AUV-000000</h3>
+              <span id="modalOrderStatusBadge" class="order-status-pill status-pending">Pending</span>
+            </div>
+            <p id="modalOrderDate" style="font-size: 0.78rem; color: #94a3b8; margin: 0.15rem 0 0 0;">Date & Time</p>
+          </div>
+        </div>
+        <button type="button" class="btn-table-action" onclick="closeAdminModal('orderDetailsModal')" style="color: #94a3b8; background: rgba(255,255,255,0.06); border-radius: 6px; border: none; font-size: 1.25rem; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+          &times;
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div style="padding: 1.5rem 1.75rem; max-height: calc(85vh - 120px); overflow-y: auto;">
+        
+        <!-- Two Column Grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
+          
+          <!-- Column 1: Customer Details -->
+          <div style="background: #f8fafc; border: 1px solid var(--admin-border); border-radius: var(--radius-md); padding: 1.15rem;">
+            <h4 style="font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; border-bottom: 1px solid var(--admin-border); padding-bottom: 0.4rem;">
+              Customer Information
+            </h4>
+            <div style="margin-bottom: 0.65rem;">
+              <div style="font-size: 0.75rem; color: #64748b;">Customer Name</div>
+              <div id="modalCustomerName" style="font-size: 0.95rem; font-weight: 700; color: #0f172a;">Customer Name</div>
+            </div>
+            <div style="margin-bottom: 0.65rem;">
+              <div style="font-size: 0.75rem; color: #64748b;">Phone Number</div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.15rem;">
+                <span id="modalCustomerPhone" style="font-size: 0.92rem; font-weight: 700; color: #0f172a; font-family: monospace;">01700-000000</span>
+                <a id="modalCustomerWaLink" href="#" target="_blank" class="btn-admin-outline" style="font-size: 0.7rem; padding: 0.2rem 0.5rem; color: #16a34a; border-color: #bbf7d0; background: #f0fdf4;">WhatsApp</a>
+              </div>
+            </div>
+            <div style="margin-bottom: 0.65rem;">
+              <div style="font-size: 0.75rem; color: #64748b;">Delivery Address</div>
+              <div id="modalCustomerAddress" style="font-size: 0.85rem; color: #334155; line-height: 1.4; margin-top: 0.15rem;">Address text here</div>
+            </div>
+            <div>
+              <div style="font-size: 0.75rem; color: #64748b;">Delivery Zone & Notes</div>
+              <div id="modalCustomerZone" style="font-size: 0.82rem; font-weight: 600; color: #0f172a; margin-top: 0.15rem;">Inside Dhaka</div>
+              <div id="modalCustomerNotes" style="font-size: 0.78rem; color: #64748b; font-style: italic; margin-top: 0.2rem;"></div>
+            </div>
+          </div>
+
+          <!-- Column 2: Payment & Verification -->
+          <div style="background: #f8fafc; border: 1px solid var(--admin-border); border-radius: var(--radius-md); padding: 1.15rem;">
+            <h4 style="font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; border-bottom: 1px solid var(--admin-border); padding-bottom: 0.4rem;">
+              Payment Verification
+            </h4>
+            <div style="margin-bottom: 0.65rem;">
+              <div style="font-size: 0.75rem; color: #64748b;">Payment Method</div>
+              <div id="modalPaymentMethod" style="font-size: 0.9rem; font-weight: 700; margin-top: 0.15rem;">bKash</div>
+            </div>
+            <div style="margin-bottom: 0.65rem;">
+              <div style="font-size: 0.75rem; color: #64748b;">Payment Sender Number (যে নম্বর থেকে টাকা এসেছে)</div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.2rem;">
+                <span id="modalSenderNumber" style="font-size: 1rem; font-weight: 800; color: #0f172a; font-family: monospace; background: #e2e8f0; padding: 0.2rem 0.55rem; border-radius: 4px;">N/A</span>
+                <button type="button" class="btn-copy-number" onclick="copyModalField('modalSenderNumber', this)" style="padding: 0.2rem 0.45rem; font-size: 0.7rem; background: var(--admin-primary); color: white; border: none; border-radius: 4px; cursor: pointer;">Copy</button>
+              </div>
+            </div>
+            <div style="margin-bottom: 0.65rem;">
+              <div style="font-size: 0.75rem; color: #64748b;">Transaction ID (TrxID)</div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.2rem;">
+                <span id="modalTrxId" style="font-size: 0.95rem; font-weight: 800; color: #0f172a; font-family: monospace; background: #e2e8f0; padding: 0.2rem 0.55rem; border-radius: 4px;">N/A</span>
+                <button type="button" class="btn-copy-number" onclick="copyModalField('modalTrxId', this)" style="padding: 0.2rem 0.45rem; font-size: 0.7rem; background: var(--admin-primary); color: white; border: none; border-radius: 4px; cursor: pointer;">Copy</button>
+              </div>
+            </div>
+            <div style="border-top: 1px dashed var(--admin-border); padding-top: 0.5rem; margin-top: 0.5rem;">
+              <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: #64748b; margin-bottom: 0.2rem;">
+                <span>Subtotal:</span>
+                <span id="modalSubtotal">৳0</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: #64748b; margin-bottom: 0.2rem;">
+                <span>Delivery Charge:</span>
+                <span id="modalShipping">৳0</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.95rem; font-weight: 800; color: #0f172a; border-top: 1px solid var(--admin-border); padding-top: 0.35rem; margin-top: 0.2rem;">
+                <span>Total Amount:</span>
+                <span id="modalTotalAmount">৳0</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Ordered Items Section -->
+        <div style="background: #ffffff; border: 1px solid var(--admin-border); border-radius: var(--radius-md); padding: 1.15rem; margin-bottom: 1.25rem;">
+          <h4 style="font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">
+            Ordered Items & Sizing Variations
+          </h4>
+          <div id="modalOrderItemsList" style="display: flex; flex-direction: column; gap: 0.6rem;">
+            <!-- Items rendered via JS -->
+          </div>
+        </div>
+
+        <!-- Status Management Action Footer -->
+        <div style="background: #f1f5f9; border: 1px solid var(--admin-border); border-radius: var(--radius-md); padding: 1.15rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <label style="font-size: 0.82rem; font-weight: 700; color: #334155;">Update Status:</label>
+            <select id="modalStatusSelect" class="toolbar-select" style="font-size: 0.82rem; padding: 0.4rem 0.75rem;">
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="delivered">Delivered</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <button type="button" class="btn-admin-primary" onclick="handleUpdateOrderStatusFromModal()" style="font-size: 0.82rem; padding: 0.45rem 0.9rem;">
+              Save Status
+            </button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <button type="button" class="btn-admin-outline" onclick="closeAdminModal('orderDetailsModal')" style="font-size: 0.82rem; padding: 0.45rem 0.85rem;">
+              Close
+            </button>
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
 

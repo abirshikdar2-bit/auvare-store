@@ -162,13 +162,14 @@ const SupabaseService = (function() {
           delivery_address: order.address,
           delivery_zone: order.deliveryZone,
           payment_method: order.paymentMethod,
+          payment_sender_number: order.paymentSenderNumber || order.senderPhone || null,
           trx_id: order.trxId || null,
           items: order.items,
           subtotal: order.subtotal || 0,
           shipping_cost: order.shipping || 0,
           total_amount: order.total,
           notes: order.notes || null,
-          order_status: 'pending'
+          order_status: order.orderStatus || 'pending'
         };
         const { error } = await client.from('orders').insert([payload]);
         if (error) throw error;
@@ -194,8 +195,14 @@ const SupabaseService = (function() {
             address: o.delivery_address,
             deliveryZone: o.delivery_zone,
             paymentMethod: o.payment_method,
+            paymentSenderNumber: o.payment_sender_number || null,
+            trxId: o.trx_id || null,
             items: o.items,
+            subtotal: o.subtotal,
+            shipping: o.shipping_cost,
             total: o.total_amount,
+            notes: o.notes,
+            status: o.order_status || 'pending',
             date: new Date(o.created_at).toLocaleString()
           }));
         }
@@ -205,6 +212,33 @@ const SupabaseService = (function() {
     }
     const local = localStorage.getItem('auvare_orders_v1');
     return local ? JSON.parse(local) : [];
+  }
+
+  // Update Order Status
+  async function updateOrderStatus(orderId, newStatus) {
+    initClient();
+    if (client && orderId) {
+      try {
+        const { error } = await client
+          .from('orders')
+          .update({ order_status: newStatus })
+          .eq('order_id', orderId);
+        if (error) throw error;
+      } catch (err) {
+        console.warn('Supabase update order status error:', err);
+      }
+    }
+    // Update local storage copy
+    try {
+      const local = JSON.parse(localStorage.getItem('auvare_orders_v1') || '[]');
+      const target = local.find(o => o.orderId === orderId);
+      if (target) {
+        target.status = newStatus;
+        target.orderStatus = newStatus;
+        localStorage.setItem('auvare_orders_v1', JSON.stringify(local));
+      }
+    } catch (e) {}
+    return true;
   }
 
   // Auth Users & RBAC Methods
@@ -446,6 +480,7 @@ const SupabaseService = (function() {
     deleteProduct,
     insertOrder,
     getOrders,
+    updateOrderStatus,
     getUserProfile,
     registerOrRequestAdmin,
     getAllAuthUsers,
