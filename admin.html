@@ -24,32 +24,47 @@
       </div>
     </div>
 
+    <div class="sidebar-search">
+      <div class="sidebar-search-box">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="globalAdminSearch" placeholder="Search" oninput="handleGlobalSearch(this.value)" />
+        <span class="search-shortcut">Ctrl K</span>
+      </div>
+    </div>
+
     <ul class="sidebar-menu">
       <li>
-        <button id="tabBtn_inventory" class="sidebar-btn active" onclick="switchTab('inventory')">
-          <span>📦</span>
-          <span>Products (S, M, L, XL, XXL)</span>
-          <span id="inventoryBadge" class="badge">0</span>
+        <button id="tabBtn_home" class="sidebar-btn active" onclick="switchTab('home')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span>Home</span>
+        </button>
+      </li>
+      <li>
+        <button id="tabBtn_products" class="sidebar-btn" onclick="switchTab('products')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m20.59 13.41-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          <span>Products</span>
+          <span id="productsBadge" class="badge">0</span>
         </button>
       </li>
       <li>
         <button id="tabBtn_orders" class="sidebar-btn" onclick="switchTab('orders')">
-          <span>📑</span>
-          <span>Customer Orders</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+          <span>Orders</span>
           <span id="ordersBadge" class="badge">0</span>
         </button>
       </li>
       <li>
-        <button id="tabBtn_team" class="sidebar-btn" onclick="switchTab('team')">
-          <span>👥</span>
-          <span>Team & Admin Requests</span>
+        <button id="tabBtn_users" class="sidebar-btn" onclick="switchTab('users')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Users</span>
           <span id="pendingBadge" class="badge" style="background:#f59e0b; color:white; display:none;">0</span>
         </button>
       </li>
       <li>
-        <button id="tabBtn_settings" class="sidebar-btn" onclick="switchTab('settings')">
-          <span>⚙️</span>
-          <span>Supabase & Settings</span>
+        <button id="tabBtn_categories" class="sidebar-btn" onclick="switchTab('categories')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+          <span>Categories</span>
+          <span id="categoriesBadge" class="badge">4</span>
         </button>
       </li>
     </ul>
@@ -57,10 +72,11 @@
     <div class="sidebar-footer">
       <div id="adminUserProfile" style="display: none;"></div>
       <a href="index.html" class="btn-visit-store" target="_blank" style="margin-bottom: 0.5rem;">
-        <span>🏪 Visit Live Store ↗</span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span>Online Store ↗</span>
       </a>
       <button onclick="handleAdminLogout()" id="adminLogoutBtn" class="btn-admin-outline" style="width:100%; justify-content:center; color:#ef4444; border-color:rgba(239,68,68,0.3); font-size:0.8rem;">
-        🔒 Sign Out
+        Sign Out
       </button>
     </div>
   </aside>
@@ -71,16 +87,16 @@
     <!-- Topbar -->
     <header class="admin-topbar">
       <div class="admin-topbar-title">
-        <h1 id="adminTopbarHeading">Inventory & Catalog Management</h1>
-        <p id="adminTopbarSub">Full control over clothing drops, sizes (S, M, L, XL, XXL), prices, and Supabase cloud sync.</p>
+        <h1 id="adminTopbarHeading">Home</h1>
+        <p id="adminTopbarSub">Overview of your online store and brand performance.</p>
       </div>
 
-      <div class="admin-topbar-actions" id="inventoryTopbarActions">
+      <div class="admin-topbar-actions" id="inventoryTopbarActions" style="display: none;">
         <button class="btn-admin-outline" onclick="adminResetDefaults()" title="Reset to original sample drops">
           ↺ Reset Samples
         </button>
-        <button class="btn-admin-primary" onclick="openAdminModal('addProductModal')">
-          <span>+ Add New Drop (All Sizes)</span>
+        <button class="btn-admin-primary" onclick="openProductEditor('add')">
+          <span>+ Add Product</span>
         </button>
       </div>
     </header>
@@ -88,97 +104,405 @@
     <!-- Content Wrap -->
     <div class="admin-content">
 
-      <!-- ================= TAB 1: INVENTORY ================= -->
-      <div id="inventoryTabContent">
-        <!-- Metric Cards -->
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-header">
-              <span>TOTAL DROPS</span>
-              <div class="stat-icon" style="background:#f1f5f9; color:#0f172a;">🏷️</div>
-            </div>
-            <div id="statTotalItems" class="stat-value">0</div>
-            <div class="stat-sub">Active pieces with S, M, L, XL, XXL</div>
+      <!-- ================= TAB 0: HOME DASHBOARD (SHOPIFY POLARIS STYLE) ================= -->
+      <div id="homeTabContent">
+        <!-- Top Metrics Ribbon -->
+        <div class="home-metrics-ribbon">
+          <div class="metrics-filter-text">
+            <span>Last 7 days • Online Store</span>
           </div>
-
-          <div class="stat-card">
-            <div class="stat-header">
-              <span>AVAILABLE (IN STOCK)</span>
-              <div class="stat-icon" style="background:#dcfce7; color:#16a34a;">✓</div>
+          <div class="metrics-strip">
+            <div class="metric-item">
+              <span class="metric-label">Sessions</span>
+              <div class="metric-value-row">
+                <span class="metric-val" id="homeMetricSessions">560</span>
+                <span class="metric-change down">-40%</span>
+              </div>
             </div>
-            <div id="statAvailable" class="stat-value" style="color: #16a34a;">0</div>
-            <div class="stat-sub">Ready to order in all sizes</div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-header">
-              <span>SOLD OUT</span>
-              <div class="stat-icon" style="background:#fee2e2; color:#dc2626;">✕</div>
+            <div class="metric-item">
+              <span class="metric-label">Total Sales</span>
+              <div class="metric-value-row">
+                <span class="metric-val" id="homeMetricSales">৳ 0</span>
+                <span class="metric-change up">+18%</span>
+              </div>
             </div>
-            <div id="statSold" class="stat-value" style="color: #dc2626;">0</div>
-            <div class="stat-sub">Claimed items</div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-header">
-              <span>ESTIMATED LOT VALUE</span>
-              <div class="stat-icon" style="background:#e0e7ff; color:#4338ca;">৳</div>
+            <div class="metric-item">
+              <span class="metric-label">Orders</span>
+              <div class="metric-value-row">
+                <span class="metric-val" id="homeMetricOrders">0</span>
+                <span class="metric-change up" id="homeOrdersTrend">+5%</span>
+              </div>
             </div>
-            <div id="statTotalValue" class="stat-value" style="color: var(--admin-primary);">৳ 0</div>
-            <div class="stat-sub">Combined value of catalog</div>
+            <div class="metric-item">
+              <span class="metric-label">Conversion Rate</span>
+              <div class="metric-value-row">
+                <span class="metric-val">2.8%</span>
+                <span class="metric-change up">+12%</span>
+              </div>
+            </div>
+            <div class="metric-live-status">
+              <span class="live-pulse-dot"></span>
+              <span class="live-text">Live Store: <strong>Online</strong></span>
+            </div>
           </div>
         </div>
 
-        <!-- Filter & Search Toolbar -->
-        <div class="admin-toolbar">
-          <div class="toolbar-search">
-            <span class="toolbar-search-icon">🔍</span>
-            <input 
-              type="text" 
-              id="adminSearchInput" 
-              class="toolbar-input" 
-              placeholder="Search by title or category..." 
-            />
-          </div>
+        <!-- Greeting Hero -->
+        <div class="home-hero-greeting">
+          <h2>Hey there!</h2>
+          <p>Let's continue growing your AUVARE clothing brand.</p>
 
-          <div class="toolbar-filters">
-            <!-- Category Filter -->
-            <select id="adminCategoryFilter" class="toolbar-select">
-              <option value="all">All Categories</option>
-              <option value="T-Shirts">T-Shirts</option>
-              <option value="Shirts">Shirts & Polos</option>
-              <option value="Jackets">Jackets</option>
-              <option value="Pants">Pants</option>
-            </select>
-
-            <!-- Status Filter -->
-            <select id="adminStatusFilter" class="toolbar-select">
-              <option value="all">All Status</option>
-              <option value="available">Available Only</option>
-              <option value="sold">Sold Out Only</option>
-            </select>
+          <div class="home-action-pills">
+            <button class="action-pill" onclick="switchTab('orders')">
+              <span>Fulfill orders</span>
+              <span class="pill-count" id="homePendingOrdersCount">0</span>
+            </button>
+            <button class="action-pill" onclick="switchTab('products')">
+              <span>Manage drops & stock</span>
+              <span class="pill-count" id="homeStockCount">0</span>
+            </button>
+            <button class="action-pill" onclick="switchTab('users')">
+              <span>Review team & users</span>
+              <span class="pill-count" id="homePendingUsersCount">0</span>
+            </button>
           </div>
         </div>
 
-        <!-- Inventory Table Card -->
-        <div class="table-card">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>Garment / Product</th>
-                <th>Category</th>
-                <th>Available Sizes</th>
-                <th>Chest / Length</th>
-                <th>Price</th>
-                <th>Status</th>
-                <th style="text-align: right;">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="inventoryTableBody">
-              <!-- Rendered via JS -->
-            </tbody>
-          </table>
+        <!-- 3-Column Insights Grid -->
+        <div class="home-insights-grid">
+          <!-- Card 1: Sales & Revenue Trend -->
+          <div class="insight-card">
+            <div class="insight-header">
+              <span class="insight-date">This Month</span>
+              <span class="insight-badge">Online Store</span>
+            </div>
+            <div class="insight-sparkline">
+              <svg viewBox="0 0 300 70" class="sparkline-svg">
+                <path d="M 0 50 Q 75 40 150 20 T 300 10" fill="none" stroke="#0ea5e9" stroke-width="2.5" />
+                <circle cx="300" cy="10" r="4" fill="#0ea5e9" />
+              </svg>
+            </div>
+            <h4 class="insight-title">Sales from website are scaling</h4>
+            <p class="insight-desc">Tracking customer orders via Cash on Delivery and bKash instant checkout.</p>
+            <button class="btn-insight-action" onclick="switchTab('orders')">View orders →</button>
+          </div>
+
+          <!-- Card 2: Catalog Inventory -->
+          <div class="insight-card">
+            <div class="insight-header">
+              <span class="insight-date">Catalog Stock</span>
+              <span class="insight-badge">1-of-1 Drops</span>
+            </div>
+            <div class="insight-icon-graphic">
+              <div class="graphic-box">🏷️</div>
+            </div>
+            <h4 class="insight-title">Active Vintage Pieces</h4>
+            <p class="insight-desc">All drops organized with S, M, L, XL, XXL availability and instant stock toggle.</p>
+            <button class="btn-insight-action" onclick="switchTab('products')">Manage drops →</button>
+          </div>
+
+          <!-- Card 3: Storefront Traffic -->
+          <div class="insight-card">
+            <div class="insight-header">
+              <span class="insight-date">Categories</span>
+              <span class="insight-badge">Browsing</span>
+            </div>
+            <div class="insight-sparkline">
+              <svg viewBox="0 0 300 70" class="sparkline-svg">
+                <path d="M 0 60 Q 60 45 140 30 T 300 15" fill="none" stroke="#22c55e" stroke-width="2.5" />
+                <circle cx="300" cy="15" r="4" fill="#22c55e" />
+              </svg>
+            </div>
+            <h4 class="insight-title">Category breakdown is healthy</h4>
+            <p class="insight-desc">T-Shirts, Shirts & Polos, Jackets, and Pants are actively viewed by customers.</p>
+            <button class="btn-insight-action" onclick="switchTab('categories')">View categories →</button>
+          </div>
         </div>
+      </div>
+
+      <!-- ================= TAB 1: PRODUCTS (LIST + 2-COLUMN SHOPIFY EDITOR) ================= -->
+      <div id="inventoryTabContent" style="display: none;">
+        
+        <!-- View A: Products Table List -->
+        <div id="productsListView">
+          <!-- Metric Cards -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-label">TOTAL DROPS</span>
+              </div>
+              <div id="statTotalItems" class="stat-value">0</div>
+              <div class="stat-sub">Active pieces with S, M, L, XL, XXL</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-label">AVAILABLE (IN STOCK)</span>
+              </div>
+              <div id="statAvailable" class="stat-value" style="color: #16a34a;">0</div>
+              <div class="stat-sub">Ready to order in all sizes</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-label">SOLD OUT</span>
+              </div>
+              <div id="statSold" class="stat-value" style="color: #dc2626;">0</div>
+              <div class="stat-sub">Claimed items</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-label">ESTIMATED LOT VALUE</span>
+              </div>
+              <div id="statTotalValue" class="stat-value" style="color: var(--admin-primary);">৳ 0</div>
+              <div class="stat-sub">Combined value of catalog</div>
+            </div>
+          </div>
+
+          <!-- Filter & Search Toolbar -->
+          <div class="admin-toolbar">
+            <div class="toolbar-search">
+              <span class="toolbar-search-icon">🔍</span>
+              <input 
+                type="text" 
+                id="adminSearchInput" 
+                class="toolbar-input" 
+                placeholder="Search by title or category..." 
+              />
+            </div>
+
+            <div class="toolbar-filters">
+              <select id="adminCategoryFilter" class="toolbar-select">
+                <option value="all">All Categories</option>
+                <option value="T-Shirts">T-Shirts</option>
+                <option value="Shirts">Shirts & Polos</option>
+                <option value="Jackets">Jackets</option>
+                <option value="Pants">Pants</option>
+              </select>
+
+              <select id="adminStatusFilter" class="toolbar-select">
+                <option value="all">All Status</option>
+                <option value="available">Available Only</option>
+                <option value="sold">Sold Out Only</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Inventory Table Card -->
+          <div class="table-card">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Garment / Product</th>
+                  <th>Category</th>
+                  <th>Available Sizes</th>
+                  <th>Chest / Length</th>
+                  <th>Price</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="inventoryTableBody">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- View B: Shopify-Inspired 2-Column Product Editor -->
+        <div id="productEditorView" class="product-editor-container">
+          <!-- Editor Topbar Header -->
+          <div class="editor-header-bar">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <button type="button" class="editor-back-btn" onclick="closeProductEditor()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                <span>Products</span>
+              </button>
+              <div class="editor-title-group">
+                <h2 id="editorPageHeading">New Product Drop</h2>
+                <span id="editorStatusBadge" class="editor-status-pill">Active</span>
+              </div>
+            </div>
+            <div class="editor-actions-top">
+              <button type="button" class="btn-admin-outline" onclick="closeProductEditor()">Cancel</button>
+              <button type="button" class="btn-admin-primary" onclick="handleSaveProductEditor()">Save Product ✓</button>
+            </div>
+          </div>
+
+          <!-- 2-Column Grid Layout -->
+          <form id="shopifyProductForm" onsubmit="event.preventDefault(); handleSaveProductEditor();">
+            <input type="hidden" id="editorProductId" value="" />
+
+            <div class="editor-layout-grid">
+              <!-- Left Column: Primary Details -->
+              <div class="editor-main-col">
+                
+                <!-- Title Card -->
+                <div class="editor-card">
+                  <label class="editor-card-title" for="editorTitle" style="display:block;">Title *</label>
+                  <input type="text" id="editorTitle" class="toolbar-input" placeholder="e.g. Vintage Washed Graphic Tee 12oz" style="padding-left:1rem; font-size:1rem; font-weight:600;" required />
+                </div>
+
+                <!-- Description Card with Rich Toolbar -->
+                <div class="editor-card">
+                  <label class="editor-card-title" style="display:block;">Description</label>
+                  
+                  <div class="rich-editor-toolbar">
+                    <button type="button" class="toolbar-btn" onclick="formatRichDoc('formatBlock', 'p')" title="Paragraph">Paragraph ▾</button>
+                    <div class="toolbar-separator"></div>
+                    <button type="button" class="toolbar-btn" onclick="formatRichDoc('bold')" title="Bold"><strong>B</strong></button>
+                    <button type="button" class="toolbar-btn" onclick="formatRichDoc('italic')" title="Italic"><em>I</em></button>
+                    <button type="button" class="toolbar-btn" onclick="formatRichDoc('underline')" title="Underline"><u>U</u></button>
+                    <div class="toolbar-separator"></div>
+                    <button type="button" class="toolbar-btn" onclick="formatRichDoc('insertUnorderedList')" title="Bullet List">• List</button>
+                    <button type="button" class="toolbar-btn" onclick="formatRichDoc('insertOrderedList')" title="Numbered List">1. List</button>
+                  </div>
+
+                  <div id="editorDescriptionRich" class="rich-editor-textarea" contenteditable="true" placeholder="Enter product details, fabric, and curation notes..."></div>
+                </div>
+
+                <!-- Media Gallery Card -->
+                <div class="editor-card">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
+                    <label class="editor-card-title" style="margin:0;">Media</label>
+                    <span style="font-size:0.75rem; color:var(--admin-text-muted);">High resolution drop photo</span>
+                  </div>
+
+                  <div class="media-gallery-grid" id="editorMediaGrid">
+                    <div class="media-thumbnail-card" id="editorMainThumbnail">
+                      <img src="assets/images/item1.jpg" id="editorPreviewImg" alt="Product Drop" />
+                    </div>
+                    <label class="media-add-tile" for="editorFileInput">
+                      <span style="font-size: 1.3rem;">+</span>
+                      <span>Add image</span>
+                    </label>
+                  </div>
+
+                  <input type="file" id="editorFileInput" accept="image/*" style="display:none;" onchange="handleEditorFileSelect(event)" />
+                  <div style="margin-top: 1rem;">
+                    <label style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:0.35rem; color:var(--admin-text-muted);">Or enter Image URL / Path:</label>
+                    <input type="text" id="editorImageUrl" class="toolbar-input" placeholder="assets/images/item1.jpg or https://..." style="padding-left:1rem; font-size:0.85rem;" oninput="handleEditorUrlChange(this.value)" />
+                  </div>
+                </div>
+
+                <!-- Category & Measurements Card -->
+                <div class="editor-card">
+                  <h4 class="editor-card-title">Category & Sizing Specs</h4>
+                  
+                  <div class="form-grid-2" style="margin-bottom: 1rem;">
+                    <div>
+                      <label style="display:block; font-size:0.82rem; font-weight:600; margin-bottom:0.35rem;">Category *</label>
+                      <select id="editorCategory" class="toolbar-select" style="width:100%;" required>
+                        <option value="T-Shirts">T-Shirts</option>
+                        <option value="Shirts">Shirts & Polos</option>
+                        <option value="Jackets">Jackets</option>
+                        <option value="Pants">Pants</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style="display:block; font-size:0.82rem; font-weight:600; margin-bottom:0.35rem;">Condition Grade</label>
+                      <input type="text" id="editorCondition" class="toolbar-input" placeholder="e.g. 9.5/10 (Mint)" value="9.5/10 (Mint Condition)" style="padding-left:1rem;" />
+                    </div>
+                  </div>
+
+                  <div class="form-grid-2">
+                    <div>
+                      <label style="display:block; font-size:0.82rem; font-weight:600; margin-bottom:0.35rem;">Chest Measurement (Inches)</label>
+                      <input type="text" id="editorChest" class="toolbar-input" placeholder="e.g. 38-46" value="38-46" style="padding-left:1rem;" />
+                    </div>
+
+                    <div>
+                      <label style="display:block; font-size:0.82rem; font-weight:600; margin-bottom:0.35rem;">Length Measurement (Inches)</label>
+                      <input type="text" id="editorLength" class="toolbar-input" placeholder="e.g. 26-30" value="26-30" style="padding-left:1rem;" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Variants: Available Sizes -->
+                <div class="editor-card">
+                  <h4 class="editor-card-title">Size Options (Variants)</h4>
+                  <p style="font-size:0.8rem; color:var(--admin-text-muted); margin-bottom:1rem;">Select the available sizes customers can choose from during checkout:</p>
+                  
+                  <div style="display:flex; gap:1.25rem; flex-wrap:wrap;">
+                    <label style="display:flex; align-items:center; gap:0.4rem; font-weight:600; cursor:pointer;">
+                      <input type="checkbox" class="editor-size-checkbox" value="S" checked /> Size S
+                    </label>
+                    <label style="display:flex; align-items:center; gap:0.4rem; font-weight:600; cursor:pointer;">
+                      <input type="checkbox" class="editor-size-checkbox" value="M" checked /> Size M
+                    </label>
+                    <label style="display:flex; align-items:center; gap:0.4rem; font-weight:600; cursor:pointer;">
+                      <input type="checkbox" class="editor-size-checkbox" value="L" checked /> Size L
+                    </label>
+                    <label style="display:flex; align-items:center; gap:0.4rem; font-weight:600; cursor:pointer;">
+                      <input type="checkbox" class="editor-size-checkbox" value="XL" checked /> Size XL
+                    </label>
+                    <label style="display:flex; align-items:center; gap:0.4rem; font-weight:600; cursor:pointer;">
+                      <input type="checkbox" class="editor-size-checkbox" value="XXL" checked /> Size XXL
+                    </label>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Right Column: Sidebar Panels -->
+              <div class="editor-side-col">
+                
+                <!-- Status Card -->
+                <div class="editor-card">
+                  <label class="editor-card-title" for="editorStatus" style="display:block;">Status</label>
+                  <select id="editorStatus" class="toolbar-select" style="width:100%;" onchange="handleEditorStatusChange(this.value)">
+                    <option value="available">Available (In Stock)</option>
+                    <option value="sold">Sold Out</option>
+                  </select>
+                </div>
+
+                <!-- Pricing Card -->
+                <div class="editor-card">
+                  <label class="editor-card-title" for="editorPrice" style="display:block;">Pricing *</label>
+                  <div style="position:relative;">
+                    <span style="position:absolute; left:0.85rem; top:50%; transform:translateY(-50%); font-weight:700; color:var(--admin-text-muted);">৳</span>
+                    <input type="number" id="editorPrice" class="toolbar-input" placeholder="850" style="padding-left:2rem; font-weight:700; font-size:1.1rem;" required />
+                  </div>
+                </div>
+
+                <!-- Publishing Card -->
+                <div class="editor-card">
+                  <h4 class="editor-card-title">Publishing</h4>
+                  <div style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; color:#16a34a; font-weight:600;">
+                    <span style="width:8px; height:8px; background:#16a34a; border-radius:50%;"></span>
+                    <span>Online Store & WhatsApp</span>
+                  </div>
+                  <p style="font-size:0.75rem; color:var(--admin-text-muted); margin-top:0.4rem;">Visible to public storefront catalog instantly upon saving.</p>
+                </div>
+
+                <!-- Product Organization Card -->
+                <div class="editor-card">
+                  <h4 class="editor-card-title">Product Organization</h4>
+                  
+                  <div style="margin-bottom:1rem;">
+                    <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--admin-text-muted); margin-bottom:0.25rem;">Brand / Vendor</label>
+                    <input type="text" class="toolbar-input" value="AUVARE" readonly style="background:#f8fafc; font-weight:600;" />
+                  </div>
+
+                  <div>
+                    <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--admin-text-muted); margin-bottom:0.25rem;">Tags</label>
+                    <input type="text" id="editorTags" class="toolbar-input" placeholder="e.g. vintage, denim, heavy, drop01" style="padding-left:1rem;" />
+                  </div>
+                </div>
+
+                <div style="margin-top:1.5rem;">
+                  <button type="button" class="btn-admin-primary" style="width:100%; justify-content:center; padding:0.85rem;" onclick="handleSaveProductEditor()">
+                    Save Product ✓
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          </form>
+        </div>
+
       </div>
 
       <!-- ================= TAB 2: ORDERS ================= -->
@@ -210,104 +534,61 @@
         </div>
       </div>
 
-      <!-- ================= TAB 3: SETTINGS & SUPABASE ================= -->
-      <div id="settingsTabContent" style="display: none;">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-          
-          <!-- Supabase Cloud Connection Card -->
-          <div class="table-card" style="padding: 2rem;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
-              <h3 style="font-size: 1.2rem; font-weight: 700;">⚡ Supabase Cloud Database</h3>
-              <div id="supabaseStatusBadge">
-                <span style="color:#d97706; font-size:0.8rem; font-weight:700;">🟡 Local Resilient Mode</span>
-              </div>
+      <!-- ================= TAB 4: CATEGORIES ================= -->
+      <div id="categoriesTabContent" style="display: none;">
+        <div style="margin-bottom: 1.5rem;">
+          <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--admin-text-main);">Product Categories</h3>
+          <p style="font-size: 0.85rem; color: var(--admin-text-muted);">Organized vintage drops across your 4 primary garment categories.</p>
+        </div>
+
+        <div class="categories-display-grid">
+          <!-- T-Shirts -->
+          <div class="category-card-item">
+            <div class="cat-card-header">
+              <span class="cat-card-icon">👕</span>
+              <span class="cat-card-count" id="catCount_tshirts">0 items</span>
             </div>
-
-            <p style="font-size: 0.85rem; color: var(--admin-text-muted); margin-bottom: 1.25rem;">
-              Supabase এর সাথে কানেক্ট করলে সব ডাটা ক্লাউডে সুরক্ষিত থাকবে। Supabase Dashboard থেকে Project URL ও anon key টি নিচে দিয়ে Connect বাটনে চাপুন।
-            </p>
-
-            <form onsubmit="handleSaveSupabaseConfig(event)">
-              <div style="margin-bottom: 1rem;">
-                <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.35rem;">Supabase Project URL</label>
-                <input 
-                  type="url" 
-                  id="supabaseUrlInput" 
-                  class="toolbar-input" 
-                  placeholder="https://your-project.supabase.co" 
-                  style="padding-left:1rem;" 
-                  required 
-                />
-              </div>
-
-              <div style="margin-bottom: 1.25rem;">
-                <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.35rem;">Supabase Anon Public API Key</label>
-                <input 
-                  type="text" 
-                  id="supabaseKeyInput" 
-                  class="toolbar-input" 
-                  placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI..." 
-                  style="padding-left:1rem;" 
-                  required 
-                />
-              </div>
-
-              <button type="submit" class="btn-admin-primary" style="width: 100%; justify-content: center;">
-                Save & Connect Supabase Cloud Database ⚡
-              </button>
-            </form>
-
-            <div style="margin-top: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 8px; border: 1px dashed var(--admin-border); font-size: 0.8rem;">
-              <strong>💡 Supabase Table Setup (১ ক্লিকে):</strong>
-              <p style="margin-top: 0.25rem; color: var(--admin-text-muted);">
-                Supabase এ লগইন করে <strong>SQL Editor</strong>-এ গিয়ে আমাদের প্রজেক্টে থাকা <code>supabase-schema.sql</code> ফাইলের কোডগুলো পেস্ট করে Run দিন। সব টেবিল স্বয়ংক্রিয়ভাবে তৈরি হয়ে যাবে!
-              </p>
-            </div>
+            <h4 class="cat-card-title">T-Shirts</h4>
+            <p class="cat-card-desc">Heavyweight vintage tees, graphic drops, and boxy oversized washes.</p>
+            <button class="btn-filter-category" onclick="filterBySpecificCategory('T-Shirts')">View T-Shirts →</button>
           </div>
 
-          <!-- General Store Settings Card -->
-          <div class="table-card" style="padding: 2rem;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
-              <h3 style="font-size: 1.2rem; font-weight: 700; margin:0;">Store & Contact Information</h3>
-              <span style="font-size:0.75rem; background:var(--admin-primary-soft); color:var(--admin-primary); padding:0.2rem 0.6rem; border-radius:999px; font-weight:700;">
-                Cloud Sync (store_contact_info)
-              </span>
+          <!-- Shirts & Polos -->
+          <div class="category-card-item">
+            <div class="cat-card-header">
+              <span class="cat-card-icon">👔</span>
+              <span class="cat-card-count" id="catCount_shirts">0 items</span>
             </div>
-            <p style="font-size: 0.85rem; color: var(--admin-text-muted); margin-bottom: 1.25rem;">
-              কাস্টমারদের চেকআউট, হোয়াটসঅ্যাপ বাটন ও ইন্সটাগ্রাম লিঙ্কের জন্য নম্বরগুলো কনফিগার করুন। এখানে সেভ করলে সরাসরি পুরো ওয়েবসাইটে আপডেট হয়ে যাবে।
-            </p>
-
-            <form id="storeSettingsForm" onsubmit="handleSaveStoreSettings(event)">
-              <div style="margin-bottom: 1rem;">
-                <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.35rem;">WhatsApp Hotline Number *</label>
-                <input type="text" id="settingWhatsapp" class="toolbar-input" placeholder="e.g. 01700-000000" style="padding-left:1rem;" required />
-              </div>
-
-              <div style="margin-bottom: 1rem;">
-                <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.35rem;">bKash Number</label>
-                <input type="text" id="settingBkash" class="toolbar-input" placeholder="e.g. 01700-000000" style="padding-left:1rem;" />
-              </div>
-
-              <div style="margin-bottom: 1rem;">
-                <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.35rem;">Nagad Number</label>
-                <input type="text" id="settingNagad" class="toolbar-input" placeholder="e.g. 01700-000000" style="padding-left:1rem;" />
-              </div>
-
-              <div style="margin-bottom: 1.25rem;">
-                <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.35rem;">Instagram Official Handle</label>
-                <input type="text" id="settingInstagram" class="toolbar-input" placeholder="e.g. @auvare_official" style="padding-left:1rem;" />
-              </div>
-
-              <button type="submit" class="btn-admin-primary" style="width: 100%; justify-content: center;">
-                Save Store Information & Update Cloud ⚡
-              </button>
-            </form>
+            <h4 class="cat-card-title">Shirts & Polos</h4>
+            <p class="cat-card-desc">Curated retro button-downs, textured knits, and casual streetwear collars.</p>
+            <button class="btn-filter-category" onclick="filterBySpecificCategory('Shirts')">View Shirts →</button>
           </div>
 
+          <!-- Jackets -->
+          <div class="category-card-item">
+            <div class="cat-card-header">
+              <span class="cat-card-icon">🧥</span>
+              <span class="cat-card-count" id="catCount_jackets">0 items</span>
+            </div>
+            <h4 class="cat-card-title">Jackets & Outerwear</h4>
+            <p class="cat-card-desc">Vintage workwear jackets, zip bombers, and winter streetwear outerwear.</p>
+            <button class="btn-filter-category" onclick="filterBySpecificCategory('Jackets')">View Jackets →</button>
+          </div>
+
+          <!-- Pants -->
+          <div class="category-card-item">
+            <div class="cat-card-header">
+              <span class="cat-card-icon">👖</span>
+              <span class="cat-card-count" id="catCount_pants">0 items</span>
+            </div>
+            <h4 class="cat-card-title">Pants & Denim</h4>
+            <p class="cat-card-desc">Relaxed fit faded denim, utility cargos, and classic vintage trousers.</p>
+            <button class="btn-filter-category" onclick="filterBySpecificCategory('Pants')">View Pants →</button>
+          </div>
         </div>
       </div>
 
-      <!-- ================= TAB: ADMIN USERS & REQUESTS ================= -->
+      <!-- ================= TAB 3: USERS & ADMIN DIRECTORY ================= -->
       <div id="view_team" class="tab-pane" style="display: none;">
         
         <!-- Summary Stats for Users -->
@@ -315,7 +596,6 @@
           <div class="stat-card">
             <div class="stat-header">
               <span class="stat-label">Total Registered Users</span>
-              <span>👥</span>
             </div>
             <div class="stat-value" id="statTotalUsers">0</div>
             <div class="stat-sub">Customers, applicants & staff</div>
@@ -324,7 +604,6 @@
           <div class="stat-card">
             <div class="stat-header">
               <span class="stat-label">Approved Admins</span>
-              <span>🛡️</span>
             </div>
             <div class="stat-value" id="statApprovedAdmins" style="color:var(--admin-primary);">1</div>
             <div class="stat-sub">Active dashboard & inventory access</div>
@@ -333,27 +612,24 @@
           <div class="stat-card">
             <div class="stat-header">
               <span class="stat-label">Pending Approval</span>
-              <span>⏳</span>
             </div>
             <div class="stat-value" id="statPendingRequests" style="color:#d97706;">0</div>
-            <div class="stat-sub">Awaiting Super Admin review</div>
+            <div class="stat-sub">Awaiting review</div>
           </div>
 
           <div class="stat-card">
             <div class="stat-header">
-              <span class="stat-label">Permanent Super Admin</span>
-              <span>👑</span>
+              <span class="stat-label">Active Role</span>
             </div>
-            <div class="stat-value" style="font-size:1.1rem; font-weight:700; color:var(--admin-primary);">Abir Shikdar</div>
-            <div class="stat-sub">Master authority (Unrestricted)</div>
+            <div class="stat-value" id="statMyRole" style="font-size:1.1rem; font-weight:700; color:var(--admin-primary);">Super Admin</div>
+            <div class="stat-sub">Authenticated database authority</div>
           </div>
         </div>
 
         <!-- Regular Admin Restriction Notice (Visible only if current user is not Super Admin) -->
         <div id="regularAdminNotice" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 0.85rem 1.15rem; border-radius: var(--radius-sm); margin-bottom: 1.25rem; font-size: 0.875rem; align-items: center; gap: 0.6rem;">
-          <span style="font-size: 1.1rem;">🔒</span>
           <div>
-            <strong>View-Only Directory:</strong> You are logged in as a Regular Admin. Only Super Admin (Md Abir Shikdar) has authority to approve, reject, or modify access permissions.
+            <strong>Notice:</strong> Super Admin access is required to modify user permissions or approval status.
           </div>
         </div>
 
@@ -363,14 +639,11 @@
             <div>
               <div style="display:flex; align-items:center; gap:0.65rem; margin-bottom: 0.25rem;">
                 <h3 style="font-size:1.2rem; font-weight:800; color:var(--admin-text-main); margin:0;">
-                  Admin Access Requests & User Directory
+                  User Directory & Permissions
                 </h3>
-                <span style="background:var(--admin-primary-soft); color:var(--admin-primary); border:1px solid rgba(16,80,54,0.25); font-size:0.72rem; font-weight:700; padding:0.2rem 0.6rem; border-radius:999px;">
-                  ⚡ Cloud Live Sync
-                </span>
               </div>
               <p style="font-size:0.85rem; color:var(--admin-text-muted); margin:0;">
-                All users who sign in with Google are logged here. Super Admin approval is strictly required before non-admins can access this dashboard.
+                All authenticated accounts and store administrators logged from Supabase Auth.
               </p>
             </div>
             <button class="btn-admin-outline" onclick="loadAuthUsersTable()" style="font-size:0.82rem; display:inline-flex; align-items:center; gap:0.45rem; padding:0.5rem 1rem; font-weight:600;">
@@ -402,7 +675,7 @@
   </main>
 
   <!-- ================= AUTH GATE MODAL ================= -->
-  <div id="adminAuthGate" class="admin-modal-overlay open">
+  <div id="adminAuthGate" class="admin-modal-overlay">
     <div class="admin-modal-box" style="max-width: 440px; padding: 2.25rem 2rem; text-align: center;">
       <img src="assets/images/logo.jpg" alt="AUVARE Logo" style="width: 68px; height: 68px; border-radius: 50%; margin: 0 auto 1.25rem; border: 3px solid var(--admin-primary); box-shadow: var(--shadow-sm);" />
       <h3 style="font-family:'Playfair Display', serif; font-size: 1.6rem; margin-bottom: 0.35rem; color: var(--admin-text-main);">AUVARE STORE</h3>
@@ -414,10 +687,10 @@
       <div id="authGateDefaultView">
         <div style="background: #f8fafc; border: 1px solid var(--admin-border); border-radius: var(--radius-md); padding: 1.15rem; margin-bottom: 1.5rem; text-align: left;">
           <p style="font-size: 0.85rem; font-weight: 700; color: #1e293b; margin-bottom: 0.25rem;">
-            🔐 Secure Cloud Authentication
+            Secure Cloud Authentication
           </p>
           <p style="font-size: 0.78rem; color: #64748b; line-height: 1.45; margin: 0;">
-            Sign in with your Google account. Permanent access is reserved for Super Admin (Abir Shikdar). All other applicants will be placed in pending approval.
+            Sign in with your verified Google Admin account to manage AUVARE Store inventory, orders, and products.
           </p>
         </div>
 
@@ -445,7 +718,7 @@
             Access Request Pending Approval
           </h4>
           <p id="pendingUserEmailNotice" style="font-size: 0.82rem; color: #78350f; line-height: 1.4; margin-bottom: 0.75rem;">
-            আপনার অ্যাডমিন অ্যাক্সেস রিকোয়েস্টটি Super Admin (Md Abir Shikdar)-এর কাছে জমা হয়েছে।
+            আপনার অ্যাডমিন অ্যাক্সেস রিকোয়েস্টটি Super Admin-এর অনুমোদনের জন্য জমা রয়েছে।
           </p>
           <div id="pendingUserCard" style="display: inline-flex; align-items: center; gap: 0.5rem; background: white; padding: 0.4rem 0.8rem; border-radius: 999px; border: 1px solid #fcd34d; font-size: 0.78rem; color: #78350f;">
             <!-- Rendered via JS -->
@@ -707,221 +980,6 @@
         </form>
       </div>
 
-    </div>
-  </div>
-
-  <!-- ================= MODAL: ADD NEW DROP ================= -->
-  <div id="addProductModal" class="admin-modal-overlay">
-    <div class="admin-modal-box">
-      <div class="modal-header-admin">
-        <h3>+ Add New Clothing Drop (S, M, L, XL, XXL)</h3>
-        <button class="btn-table-action" onclick="closeAdminModal('addProductModal')">✕</button>
-      </div>
-
-      <div class="modal-body-admin">
-        <form onsubmit="handleAddProductSubmit(event)">
-          
-          <div style="margin-bottom: 1.25rem;">
-            <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Product / Cloth Title *</label>
-            <input type="text" id="addTitle" class="toolbar-input" placeholder="e.g. Vintage Heavyweight Graphic Drop" style="padding-left:1rem;" required />
-          </div>
-
-          <div class="form-grid-2" style="margin-bottom: 1.25rem;">
-            <div>
-              <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Category *</label>
-              <select id="addCategory" class="toolbar-select" style="width: 100%;" required>
-                <option value="T-Shirts">T-Shirts</option>
-                <option value="Shirts">Shirts & Polos</option>
-                <option value="Jackets">Jackets</option>
-                <option value="Pants">Pants</option>
-              </select>
-            </div>
-
-            <div>
-              <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Price (৳ BDT) *</label>
-              <input type="number" id="addPrice" class="toolbar-input" placeholder="e.g. 850" style="padding-left:1rem;" required />
-            </div>
-          </div>
-
-          <!-- Multi-Size Selection (S, M, L, XL, XXL) -->
-          <div style="margin-bottom: 1.25rem; background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid var(--admin-border);">
-            <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:0.5rem; color:var(--admin-primary);">
-              Available Sizes for Customers *
-            </label>
-            <div style="display: flex; gap: 1.25rem; flex-wrap: wrap;">
-              <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="add-size-checkbox" value="S" checked /> Size S
-              </label>
-              <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="add-size-checkbox" value="M" checked /> Size M
-              </label>
-              <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="add-size-checkbox" value="L" checked /> Size L
-              </label>
-              <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="add-size-checkbox" value="XL" checked /> Size XL
-              </label>
-              <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="add-size-checkbox" value="XXL" checked /> Size XXL
-              </label>
-            </div>
-          </div>
-
-          <div class="form-grid-2" style="margin-bottom: 1.25rem;">
-            <div>
-              <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Chest Range (Inches)</label>
-              <input type="text" id="addChest" class="toolbar-input" placeholder="e.g. 38-46" value="38-46" style="padding-left:1rem;" />
-            </div>
-
-            <div>
-              <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Length Range (Inches)</label>
-              <input type="text" id="addLength" class="toolbar-input" placeholder="e.g. 26-30" value="26-30" style="padding-left:1rem;" />
-            </div>
-          </div>
-
-          <div style="margin-bottom: 1.25rem;">
-            <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Condition</label>
-            <input type="text" id="addCondition" class="toolbar-input" placeholder="e.g. 9.5/10 (Mint Condition)" value="9.5/10 (Mint Condition)" style="padding-left:1rem;" />
-          </div>
-
-          <!-- Photo Upload -->
-          <div style="margin-bottom: 1.25rem;">
-            <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">
-              Upload Photo from Phone/PC
-            </label>
-            <input type="file" id="addFileInput" accept="image/*" class="toolbar-input" style="padding:0.4rem;" />
-            
-            <div style="margin-top: 0.5rem;">
-              <span style="font-size:0.75rem; color:var(--admin-text-muted);">অথবা ছবির লিঙ্ক দিন:</span>
-              <input type="text" id="addImageUrl" class="toolbar-input" placeholder="assets/images/item1.jpg or web URL" style="padding-left:1rem; margin-top:0.25rem;" />
-            </div>
-
-            <div id="addImagePreview" class="image-preview-box">
-              <span style="color:var(--admin-text-muted); font-size:0.85rem;">No photo chosen</span>
-            </div>
-          </div>
-
-          <div style="margin-bottom: 1.5rem;">
-            <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Description / Notes</label>
-            <textarea id="addDescription" class="toolbar-input" rows="2" placeholder="Fabric, wash, styling notes..." style="padding:0.6rem 0.85rem;"></textarea>
-          </div>
-
-          <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
-            <button type="button" class="btn-admin-outline" onclick="closeAdminModal('addProductModal')">Cancel</button>
-            <button type="submit" class="btn-admin-primary">Publish to Store & Cloud 🚀</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- ================= MODAL: EDIT PRODUCT ================= -->
-  <div id="editProductModal" class="admin-modal-overlay">
-    <div class="admin-modal-box">
-      <div class="modal-header-admin">
-        <h3>✏️ Edit Clothing Drop Details</h3>
-        <button class="btn-table-action" onclick="closeAdminModal('editProductModal')">✕</button>
-      </div>
-
-      <div class="modal-body-admin">
-        <form onsubmit="handleEditProductSubmit(event)">
-          <input type="hidden" id="editProductId" />
-
-          <div style="margin-bottom: 1.25rem;">
-            <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Product Title *</label>
-            <input type="text" id="editTitle" class="toolbar-input" style="padding-left:1rem;" required />
-          </div>
-
-          <div class="form-grid-3" style="margin-bottom: 1.25rem;">
-            <div>
-              <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Category *</label>
-              <select id="editCategory" class="toolbar-select" style="width: 100%;" required>
-                <option value="T-Shirts">T-Shirts</option>
-                <option value="Shirts">Shirts & Polos</option>
-                <option value="Jackets">Jackets</option>
-                <option value="Pants">Pants</option>
-              </select>
-            </div>
-
-            <div>
-              <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Price (৳ BDT) *</label>
-              <input type="number" id="editPrice" class="toolbar-input" style="padding-left:1rem;" required />
-            </div>
-
-            <div>
-              <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Status *</label>
-              <select id="editSoldStatus" class="toolbar-select" style="width: 100%;" required>
-                <option value="false">Available (In Stock)</option>
-                <option value="true">Sold Out (বিক্রি হয়ে গেছে)</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Multi-Size Selection for Edit -->
-          <div style="margin-bottom: 1.25rem; background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid var(--admin-border);">
-            <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:0.5rem; color:var(--admin-primary);">
-              Available Sizes (S, M, L, XL, XXL)
-            </label>
-            <div style="display: flex; gap: 1.25rem; flex-wrap: wrap;">
-              <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="edit-size-checkbox" value="S" /> S
-              </label>
-              <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="edit-size-checkbox" value="M" /> M
-              </label>
-              <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="edit-size-checkbox" value="L" /> L
-              </label>
-              <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="edit-size-checkbox" value="XL" /> XL
-              </label>
-              <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="edit-size-checkbox" value="XXL" /> XXL
-              </label>
-            </div>
-          </div>
-
-          <div class="form-grid-2" style="margin-bottom: 1.25rem;">
-            <div>
-              <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Chest Range (Inches)</label>
-              <input type="text" id="editChest" class="toolbar-input" style="padding-left:1rem;" required />
-            </div>
-
-            <div>
-              <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Length Range (Inches)</label>
-              <input type="text" id="editLength" class="toolbar-input" style="padding-left:1rem;" required />
-            </div>
-          </div>
-
-          <div style="margin-bottom: 1.25rem;">
-            <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Condition</label>
-            <input type="text" id="editCondition" class="toolbar-input" style="padding-left:1rem;" />
-          </div>
-
-          <!-- Change Photo -->
-          <div style="margin-bottom: 1.25rem;">
-            <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">
-              Change Photo
-            </label>
-            <input type="file" id="editFileInput" accept="image/*" class="toolbar-input" style="padding:0.4rem;" />
-            <input type="text" id="editImageUrl" class="toolbar-input" placeholder="Or enter image URL" style="padding-left:1rem; margin-top:0.35rem;" />
-
-            <div id="editImagePreview" class="image-preview-box">
-              <!-- Rendered via JS -->
-            </div>
-          </div>
-
-          <div style="margin-bottom: 1.5rem;">
-            <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Description / Notes</label>
-            <textarea id="editDescription" class="toolbar-input" rows="2" style="padding:0.6rem 0.85rem;"></textarea>
-          </div>
-
-          <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
-            <button type="button" class="btn-admin-outline" onclick="closeAdminModal('editProductModal')">Cancel</button>
-            <button type="submit" class="btn-admin-primary">Save Changes & Update Cloud ✓</button>
-          </div>
-        </form>
-      </div>
     </div>
   </div>
 

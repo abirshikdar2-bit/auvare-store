@@ -233,9 +233,6 @@ const SupabaseService = (function() {
         const email = user.email.toLowerCase().trim();
         const existing = await getUserProfile(email);
         
-        // Permanent Super Admin protection for Abir Shikdar
-        const isPermanentSuperAdmin = email === 'abirshikdar2@gmail.com';
-
         if (existing) {
           await client
             .from('auth_users')
@@ -243,13 +240,17 @@ const SupabaseService = (function() {
               last_sign_in_at: new Date().toISOString(),
               avatar_url: user.user_metadata?.avatar_url || existing.avatar_url,
               display_name: existing.display_name || user.user_metadata?.full_name || email.split('@')[0],
-              role: isPermanentSuperAdmin ? 'super_admin' : existing.role,
-              status: isPermanentSuperAdmin ? 'approved' : existing.status
+              role: existing.role,
+              status: existing.status
             })
             .eq('id', existing.id);
 
           return await getUserProfile(email);
         } else {
+          // Check if this is the first user in table
+          const { count } = await client.from('auth_users').select('*', { count: 'exact', head: true });
+          const isFirstUser = (count === 0);
+
           const payload = {
             email,
             display_name: user.user_metadata?.full_name || email.split('@')[0],
@@ -257,8 +258,8 @@ const SupabaseService = (function() {
             age: extra.age || null,
             date_of_birth: extra.date_of_birth || null,
             gender: extra.gender || null,
-            role: isPermanentSuperAdmin ? 'super_admin' : 'admin',
-            status: isPermanentSuperAdmin ? 'approved' : 'pending',
+            role: isFirstUser ? 'super_admin' : 'customer',
+            status: isFirstUser ? 'approved' : 'pending',
             request_note: extra.note || 'Requested admin portal access via Google OAuth'
           };
           const { data, error } = await client.from('auth_users').insert([payload]).select().single();

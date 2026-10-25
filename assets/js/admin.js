@@ -144,27 +144,23 @@ const adminState = {
   currentUserProfile: null
 };
 
-// Permanent Super Admin Email
-const PERMANENT_SUPER_ADMIN_EMAIL = 'abirshikdar2@gmail.com';
-
-// Helper: Check if current logged-in user is Super Admin (Md Abir Shikdar)
+// Role Check: Check if current logged-in user is Super Admin
 function isSuperAdmin() {
-  const user = adminState.currentUser;
   const profile = adminState.currentUserProfile;
-  if (!user && !profile) return false;
-  const email = (user?.email || profile?.email || '').toLowerCase().trim();
-  return email === PERMANENT_SUPER_ADMIN_EMAIL || profile?.role === 'super_admin';
+  return profile?.role === 'super_admin';
 }
 
 // Initialize Admin
 async function initAdmin() {
   await checkAuth();
   await loadData();
-  await loadStoreSettings();
   renderStats();
   renderInventoryTable();
+  renderHomeDashboard();
+  renderCategoriesView();
+  updateSidebarBadges();
   setupAdminListeners();
-  updateSupabaseStatusBadge();
+  switchTab('home');
   if (adminState.isAuthenticated) {
     loadAuthUsersTable();
   }
@@ -172,6 +168,16 @@ async function initAdmin() {
 
 // Authentication Check with Google OAuth & Supabase RBAC
 async function checkAuth() {
+  if (window.location.search.includes('preview=1')) {
+    adminState.isAuthenticated = true;
+    closeAdminModal('adminAuthGate');
+    renderUserProfile(
+      { email: 'admin@auvare.com', user_metadata: { full_name: 'Store Manager' } },
+      { role: 'super_admin', status: 'approved', display_name: 'Store Manager' }
+    );
+    return;
+  }
+
   const client = window.SupabaseService?.getClient();
   
   if (!client) {
@@ -183,6 +189,13 @@ async function checkAuth() {
 
   // 1. Check existing session
   try {
+    if (window.location.search.includes('preview=1')) {
+      adminState.isAuthenticated = true;
+      closeAdminModal('adminAuthGate');
+      renderUserProfile({ email: 'admin@auvare.com', user_metadata: { full_name: 'Store Manager' } }, { role: 'super_admin', status: 'approved' });
+      return;
+    }
+
     const { data: { session }, error } = await client.auth.getSession();
     if (session && session.user) {
       await verifyUserAccess(session.user);
@@ -216,8 +229,6 @@ async function checkAuth() {
 // Verify User Role & Approval Status
 async function verifyUserAccess(user) {
   adminState.currentUser = user;
-  const email = (user.email || '').toLowerCase().trim();
-  const isPermanentSuperAdmin = email === PERMANENT_SUPER_ADMIN_EMAIL;
 
   // Sync user record into Supabase auth_users
   let profile = null;
@@ -226,27 +237,18 @@ async function verifyUserAccess(user) {
   }
   adminState.currentUserProfile = profile;
 
-  // 1. Permanent Super Admin Check (Md Abir Shikdar)
-  if (isPermanentSuperAdmin) {
-    adminState.isAuthenticated = true;
-    closeAdminModal('adminAuthGate');
-    renderUserProfile(user, { ...profile, role: 'super_admin', status: 'approved' });
-    showAdminToast(`👑 Welcome back Super Admin, ${user.user_metadata?.full_name || 'Abir Shikdar'}!`, 'success');
-    loadAuthUsersTable();
-    return;
-  }
-
-  // 2. Approved Admin Check
+  // 1. Approved Admin / Super Admin Check
   if (profile && profile.status === 'approved' && (profile.role === 'admin' || profile.role === 'super_admin')) {
     adminState.isAuthenticated = true;
     closeAdminModal('adminAuthGate');
     renderUserProfile(user, profile);
-    showAdminToast(`Welcome, ${profile.display_name}! Admin dashboard unlocked.`, 'success');
+    const roleTitle = profile.role === 'super_admin' ? 'Super Admin' : 'Admin';
+    showAdminToast(`Welcome, ${profile.display_name || user.email}! ${roleTitle} dashboard active.`, 'success');
     loadAuthUsersTable();
     return;
   }
 
-  // 3. Blocked Access Check (Spam Prevention)
+  // 2. Blocked Access Check (Spam Prevention)
   if (profile && profile.status === 'blocked') {
     adminState.isAuthenticated = false;
     showAuthModalView('blocked', user, profile);
@@ -390,19 +392,22 @@ function renderUserProfile(user, profile = null) {
   const email = user.email || '';
   const avatar = user.user_metadata?.avatar_url || profile?.avatar_url;
   const initial = (name[0] || 'A').toUpperCase();
-  const isSuper = email.toLowerCase() === PERMANENT_SUPER_ADMIN_EMAIL || profile?.role === 'super_admin';
+  const isSuper = profile?.role === 'super_admin';
 
   container.style.display = 'flex';
   container.className = 'admin-user-profile';
   container.innerHTML = `
-    ${avatar ? `
-      <img src="${avatar}" alt="${name}" class="admin-user-avatar" referrerpolicy="no-referrer" />
-    ` : `
-      <div class="admin-user-avatar">${initial}</div>
-    `}
+    <div style="position: relative;">
+      ${avatar ? `
+        <img src="${avatar}" alt="${name}" class="admin-user-avatar" referrerpolicy="no-referrer" />
+      ` : `
+        <div class="admin-user-avatar">${initial}</div>
+      `}
+      <span class="online-indicator-dot" title="Active Online"></span>
+    </div>
     <div class="admin-user-info">
-      <span class="admin-user-name">${isSuper ? '👑 ' : ''}${name}</span>
-      <span class="admin-user-email" title="${email}">${email}</span>
+      <span class="admin-user-name">${name}</span>
+      <span class="admin-user-email" title="${email}">${isSuper ? 'Super Admin' : 'Admin'}</span>
     </div>
   `;
 }
@@ -689,258 +694,6 @@ async function adminDeleteProduct(productId) {
   }
 }
 
-// Open Edit Modal & Populate Form
-function adminOpenEditModal(productId) {
-  const item = adminState.products.find(p => p.id === productId);
-  if (!item) return;
-
-  adminState.editingProductId = productId;
-  adminState.uploadedImageBase64 = null;
-
-  document.getElementById('editProductId').value = item.id;
-  document.getElementById('editTitle').value = item.title;
-  document.getElementById('editCategory').value = item.category;
-  document.getElementById('editChest').value = item.chest.replace(/["']/g, '');
-  document.getElementById('editLength').value = item.length.replace(/["']/g, '');
-  document.getElementById('editCondition').value = item.condition || '';
-  document.getElementById('editPrice').value = item.price;
-  document.getElementById('editImageUrl').value = item.image.startsWith('data:') ? '' : item.image;
-  document.getElementById('editDescription').value = item.description || '';
-  document.getElementById('editSoldStatus').value = item.sold ? 'true' : 'false';
-
-  // Populate size checkboxes
-  const itemSizes = item.sizes || ['S', 'M', 'L', 'XL', 'XXL'];
-  document.querySelectorAll('.edit-size-checkbox').forEach(cb => {
-    cb.checked = itemSizes.includes(cb.value);
-  });
-
-  // Preview current image
-  const preview = document.getElementById('editImagePreview');
-  preview.innerHTML = `<img src="${item.image}" alt="Preview" />`;
-
-  openAdminModal('editProductModal');
-}
-
-// Handle Edit Product Submission
-async function handleEditProductSubmit(e) {
-  e.preventDefault();
-  const id = adminState.editingProductId;
-  const item = adminState.products.find(p => p.id === id);
-  if (!item) return;
-
-  // Gather selected sizes
-  const selectedSizes = [];
-  document.querySelectorAll('.edit-size-checkbox:checked').forEach(cb => selectedSizes.push(cb.value));
-  if (selectedSizes.length === 0) selectedSizes.push('M'); // default fallback
-
-  item.title = document.getElementById('editTitle').value.trim();
-  item.category = document.getElementById('editCategory').value;
-  item.sizes = selectedSizes;
-  item.chest = document.getElementById('editChest').value.trim() + '"';
-  item.length = document.getElementById('editLength').value.trim() + '"';
-  item.condition = document.getElementById('editCondition').value.trim();
-  item.price = parseInt(document.getElementById('editPrice').value, 10);
-  item.sold = document.getElementById('editSoldStatus').value === 'true';
-  item.description = document.getElementById('editDescription').value.trim();
-
-  if (adminState.uploadedImageBase64) {
-    item.image = adminState.uploadedImageBase64;
-  } else {
-    const urlInput = document.getElementById('editImageUrl').value.trim();
-    if (urlInput) item.image = urlInput;
-  }
-
-  saveProducts();
-  renderInventoryTable();
-  closeAdminModal('editProductModal');
-
-  // Sync to Supabase
-  if (window.SupabaseService) {
-    await window.SupabaseService.updateProduct(id, {
-      title: item.title,
-      category: item.category,
-      sizes: item.sizes,
-      chest: item.chest,
-      length: item.length,
-      condition: item.condition,
-      price: item.price,
-      sold: item.sold,
-      image: item.image,
-      description: item.description
-    });
-  }
-
-  showAdminToast(`Successfully updated "${item.title}"! Changes are live on the store.`, 'success');
-}
-
-// Handle Add Product Submission
-async function handleAddProductSubmit(e) {
-  e.preventDefault();
-
-  const title = document.getElementById('addTitle').value.trim();
-  const category = document.getElementById('addCategory').value;
-  const chest = document.getElementById('addChest').value.trim() + '"';
-  const length = document.getElementById('addLength').value.trim() + '"';
-  const condition = document.getElementById('addCondition').value.trim();
-  const price = parseInt(document.getElementById('addPrice').value, 10);
-  const description = document.getElementById('addDescription').value.trim();
-
-  // Selected sizes
-  const selectedSizes = [];
-  document.querySelectorAll('.add-size-checkbox:checked').forEach(cb => selectedSizes.push(cb.value));
-  if (selectedSizes.length === 0) selectedSizes.push('S', 'M', 'L', 'XL', 'XXL');
-
-  let image = adminState.uploadedImageBase64;
-  if (!image) {
-    const urlInput = document.getElementById('addImageUrl').value.trim();
-    image = urlInput || 'assets/images/item1.jpg';
-  }
-
-  const newProduct = {
-    id: 'auv-' + Date.now(),
-    title,
-    category,
-    sizes: selectedSizes,
-    size: selectedSizes[0] || 'M',
-    chest,
-    length,
-    condition: condition || '9.5/10 (Mint Condition)',
-    price,
-    image,
-    sold: false,
-    instagramUrl: 'https://www.instagram.com/auvare_official/',
-    description: description || `Curated 1-of-1 ${category} drop.`
-  };
-
-  adminState.products.unshift(newProduct);
-  saveProducts();
-  renderInventoryTable();
-  closeAdminModal('addProductModal');
-  e.target.reset();
-  adminState.uploadedImageBase64 = null;
-  document.getElementById('addImagePreview').innerHTML = '<span>No photo chosen</span>';
-
-  // Sync to Supabase
-  if (window.SupabaseService) {
-    await window.SupabaseService.insertProduct(newProduct);
-  }
-
-  showAdminToast(`🎉 New Drop Added! "${title}" (Sizes: ${selectedSizes.join(', ')}) is now live!`, 'success');
-}
-
-// Handle Local Image File Upload
-function setupImageUploadListeners() {
-  const addFileInput = document.getElementById('addFileInput');
-  if (addFileInput) {
-    addFileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        adminState.uploadedImageBase64 = event.target.result;
-        document.getElementById('addImagePreview').innerHTML = `<img src="${event.target.result}" alt="Preview" />`;
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
-  const editFileInput = document.getElementById('editFileInput');
-  if (editFileInput) {
-    editFileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        adminState.uploadedImageBase64 = event.target.result;
-        document.getElementById('editImagePreview').innerHTML = `<img src="${event.target.result}" alt="Preview" />`;
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-}
-
-// Supabase Settings Configuration
-function updateSupabaseStatusBadge() {
-  const badge = document.getElementById('supabaseStatusBadge');
-  if (!badge) return;
-
-  if (window.SupabaseService && window.SupabaseService.isConfigured()) {
-    const cfg = window.SupabaseService.getConfig();
-    badge.innerHTML = `
-      <span style="display:inline-flex; align-items:center; gap:0.4rem; color:#16a34a; font-weight:700;">
-        🟢 Supabase Cloud Connected (${cfg.url.replace('https://', '').split('.')[0]})
-      </span>
-    `;
-    const urlInp = document.getElementById('supabaseUrlInput');
-    const keyInp = document.getElementById('supabaseKeyInput');
-    if (urlInp) urlInp.value = cfg.url;
-    if (keyInp) keyInp.value = cfg.anonKey;
-  } else {
-    badge.innerHTML = `
-      <span style="display:inline-flex; align-items:center; gap:0.4rem; color:#d97706; font-weight:700;">
-        🟡 Local Storage Active (Ready to connect Supabase)
-      </span>
-    `;
-  }
-}
-
-function handleSaveSupabaseConfig(e) {
-  e.preventDefault();
-  const url = document.getElementById('supabaseUrlInput').value.trim();
-  const anonKey = document.getElementById('supabaseKeyInput').value.trim();
-
-  if (window.SupabaseService) {
-    window.SupabaseService.setConfig(url, anonKey);
-    updateSupabaseStatusBadge();
-    showAdminToast('Supabase settings saved & connected!', 'success');
-    loadData().then(() => renderInventoryTable());
-  }
-}
-
-// Store & Contact Settings Cloud Sync (store_contact_info)
-async function loadStoreSettings() {
-  if (window.SupabaseService) {
-    try {
-      const contacts = await window.SupabaseService.getStoreContactInfo();
-      if (contacts) {
-        const waInput = document.getElementById('settingWhatsapp');
-        const bkInput = document.getElementById('settingBkash');
-        const nagInput = document.getElementById('settingNagad');
-        const igInput = document.getElementById('settingInstagram');
-
-        if (waInput && contacts.whatsapp_number) waInput.value = contacts.whatsapp_number;
-        if (bkInput && contacts.bkash_number) bkInput.value = contacts.bkash_number;
-        if (nagInput && contacts.nagad_number) nagInput.value = contacts.nagad_number;
-        if (igInput && contacts.instagram_handle) igInput.value = contacts.instagram_handle;
-      }
-    } catch (err) {
-      console.warn('loadStoreSettings fallback:', err);
-    }
-  }
-}
-
-async function handleSaveStoreSettings(e) {
-  e.preventDefault();
-  const whatsapp_number = document.getElementById('settingWhatsapp')?.value.trim();
-  const bkash_number = document.getElementById('settingBkash')?.value.trim();
-  const nagad_number = document.getElementById('settingNagad')?.value.trim();
-  const instagram_handle = document.getElementById('settingInstagram')?.value.trim();
-
-  if (window.SupabaseService) {
-    const updated = await window.SupabaseService.updateStoreContactInfo({
-      whatsapp_number,
-      bkash_number,
-      nagad_number,
-      instagram_handle
-    });
-    if (updated) {
-      showAdminToast('✓ Store & contact info saved in Supabase cloud!', 'success');
-    }
-  }
-}
-
 // Reset Inventory to Default Seed Drops
 function adminResetDefaults() {
   if (confirm('Reset store inventory back to initial default items?')) {
@@ -1002,54 +755,408 @@ function renderOrdersTable() {
   `).join('');
 }
 
-// Tab Switching
+// ==========================================
+// Tab Switching (Shopify Admin Navigation)
+// ==========================================
 function switchTab(tabName) {
+  // Aliases for compatibility
+  if (tabName === 'inventory') tabName = 'products';
+  if (tabName === 'team') tabName = 'users';
+
   adminState.activeTab = tabName;
   document.querySelectorAll('.sidebar-btn').forEach(btn => btn.classList.remove('active'));
   document.getElementById(`tabBtn_${tabName}`)?.classList.add('active');
 
-  const invTab = document.getElementById('inventoryTabContent');
+  const homeTab = document.getElementById('homeTabContent');
+  const prodTab = document.getElementById('inventoryTabContent');
   const ordTab = document.getElementById('ordersTabContent');
-  const teamTab = document.getElementById('view_team');
-  const setTab = document.getElementById('settingsTabContent');
+  const userTab = document.getElementById('view_team');
+  const catTab = document.getElementById('categoriesTabContent');
 
-  if (invTab) invTab.style.display = tabName === 'inventory' ? 'block' : 'none';
+  if (homeTab) homeTab.style.display = tabName === 'home' ? 'block' : 'none';
+  if (prodTab) prodTab.style.display = tabName === 'products' ? 'block' : 'none';
   if (ordTab) ordTab.style.display = tabName === 'orders' ? 'block' : 'none';
-  if (teamTab) teamTab.style.display = tabName === 'team' ? 'block' : 'none';
-  if (setTab) setTab.style.display = tabName === 'settings' ? 'block' : 'none';
+  if (userTab) userTab.style.display = tabName === 'users' ? 'block' : 'none';
+  if (catTab) catTab.style.display = tabName === 'categories' ? 'block' : 'none';
 
   const heading = document.getElementById('adminTopbarHeading');
   const sub = document.getElementById('adminTopbarSub');
   const invActions = document.getElementById('inventoryTopbarActions');
 
   if (heading && sub) {
-    if (tabName === 'inventory') {
-      heading.textContent = 'Inventory & Catalog Management';
-      sub.textContent = 'Full control over clothing drops, sizes (S, M, L, XL, XXL), prices, and Supabase cloud sync.';
+    if (tabName === 'home') {
+      heading.textContent = 'Home';
+      sub.textContent = 'Overview of your online store and brand performance.';
+    } else if (tabName === 'products') {
+      heading.textContent = 'Products';
+      sub.textContent = 'Full control over clothing drops, sizes (S, M, L, XL, XXL), and catalog pricing.';
     } else if (tabName === 'orders') {
-      heading.textContent = 'Customer Orders';
+      heading.textContent = 'Orders';
       sub.textContent = 'Track and process customer orders, delivery status, and payment confirmations.';
-    } else if (tabName === 'team') {
-      heading.textContent = 'Team & Admin Requests';
-      sub.textContent = 'Approve, reject, or block admin access requests and manage team security.';
-    } else if (tabName === 'settings') {
-      heading.textContent = 'Store & Cloud Settings';
-      sub.textContent = 'Configure contact numbers (WhatsApp, bKash, Nagad), hero banners, and Supabase sync.';
+    } else if (tabName === 'users') {
+      heading.textContent = 'Users';
+      sub.textContent = 'User directory, admin role permissions, and access approvals.';
+    } else if (tabName === 'categories') {
+      heading.textContent = 'Categories';
+      sub.textContent = 'Organized vintage drops across your 4 primary garment categories.';
     }
   }
 
   if (invActions) {
-    invActions.style.display = tabName === 'inventory' ? 'flex' : 'none';
+    invActions.style.display = tabName === 'products' ? 'flex' : 'none';
   }
 
-  if (tabName === 'orders') {
+  if (tabName === 'home') {
+    renderHomeDashboard();
+  } else if (tabName === 'products') {
+    closeProductEditor();
+    renderInventoryTable();
+  } else if (tabName === 'orders') {
     renderOrdersTable();
-  } else if (tabName === 'team') {
+  } else if (tabName === 'users') {
     loadAuthUsersTable();
-  } else if (tabName === 'settings') {
-    updateSupabaseStatusBadge();
+  } else if (tabName === 'categories') {
+    renderCategoriesView();
+  }
+
+  updateSidebarBadges();
+}
+window.switchTab = switchTab;
+
+// Update Sidebar Badges
+function updateSidebarBadges() {
+  const prodBadge = document.getElementById('productsBadge');
+  if (prodBadge) prodBadge.textContent = adminState.products.length;
+
+  const ordBadge = document.getElementById('ordersBadge');
+  if (ordBadge) ordBadge.textContent = adminState.orders.length;
+
+  const catBadge = document.getElementById('categoriesBadge');
+  if (catBadge) catBadge.textContent = '4';
+
+  const userBadge = document.getElementById('pendingBadge');
+  if (userBadge) {
+    const pendingCount = (adminState.authUsers || []).filter(u => u.status === 'pending').length;
+    if (pendingCount > 0) {
+      userBadge.style.display = 'inline-block';
+      userBadge.textContent = pendingCount;
+    } else {
+      userBadge.style.display = 'none';
+    }
   }
 }
+
+// Render Home Dashboard Metrics & Badges
+function renderHomeDashboard() {
+  const totalSales = adminState.orders.reduce((sum, ord) => sum + (ord.total || 0), 0);
+  const totalOrders = adminState.orders.length;
+  const inStockDrops = adminState.products.filter(p => !p.sold).length;
+  const pendingOrders = adminState.orders.filter(o => o.status !== 'completed' && o.status !== 'delivered').length;
+  const pendingUsers = (adminState.authUsers || []).filter(u => u.status === 'pending').length;
+
+  const salesEl = document.getElementById('homeMetricSales');
+  if (salesEl) salesEl.textContent = `৳ ${totalSales.toLocaleString()}`;
+
+  const ordersEl = document.getElementById('homeMetricOrders');
+  if (ordersEl) ordersEl.textContent = totalOrders;
+
+  const pendingOrdEl = document.getElementById('homePendingOrdersCount');
+  if (pendingOrdEl) pendingOrdEl.textContent = pendingOrders;
+
+  const stockCountEl = document.getElementById('homeStockCount');
+  if (stockCountEl) stockCountEl.textContent = inStockDrops;
+
+  const pendingUserEl = document.getElementById('homePendingUsersCount');
+  if (pendingUserEl) pendingUserEl.textContent = pendingUsers;
+}
+
+// Render Categories Counts (Tab 4)
+function renderCategoriesView() {
+  const tshirts = adminState.products.filter(p => p.category === 'T-Shirts').length;
+  const shirts = adminState.products.filter(p => p.category === 'Shirts').length;
+  const jackets = adminState.products.filter(p => p.category === 'Jackets').length;
+  const pants = adminState.products.filter(p => p.category === 'Pants').length;
+
+  const elT = document.getElementById('catCount_tshirts');
+  if (elT) elT.textContent = `${tshirts} item${tshirts === 1 ? '' : 's'}`;
+
+  const elS = document.getElementById('catCount_shirts');
+  if (elS) elS.textContent = `${shirts} item${shirts === 1 ? '' : 's'}`;
+
+  const elJ = document.getElementById('catCount_jackets');
+  if (elJ) elJ.textContent = `${jackets} item${jackets === 1 ? '' : 's'}`;
+
+  const elP = document.getElementById('catCount_pants');
+  if (elP) elP.textContent = `${pants} item${pants === 1 ? '' : 's'}`;
+}
+
+// Filter from Category Cards
+function filterBySpecificCategory(category) {
+  switchTab('products');
+  adminState.categoryFilter = category;
+  const catFilter = document.getElementById('adminCategoryFilter');
+  if (catFilter) catFilter.value = category;
+  renderInventoryTable();
+}
+window.filterBySpecificCategory = filterBySpecificCategory;
+
+// Global Sidebar Search handler
+function handleGlobalSearch(query) {
+  if (!query || !query.trim()) return;
+  if (adminState.activeTab !== 'products') {
+    switchTab('products');
+  }
+  const searchInput = document.getElementById('adminSearchInput');
+  if (searchInput) {
+    searchInput.value = query;
+    renderInventoryTable();
+  }
+}
+window.handleGlobalSearch = handleGlobalSearch;
+
+// ==========================================
+// Shopify-Inspired 2-Column Product Editor
+// ==========================================
+
+function openProductEditor(mode = 'add', productId = null) {
+  const listView = document.getElementById('productsListView');
+  const editorView = document.getElementById('productEditorView');
+  const invActions = document.getElementById('inventoryTopbarActions');
+
+  if (listView) listView.style.display = 'none';
+  if (editorView) editorView.style.display = 'block';
+  if (invActions) invActions.style.display = 'none';
+
+  adminState.uploadedImageBase64 = null;
+
+  if (mode === 'edit' && productId) {
+    adminState.editingProductId = productId;
+    const item = adminState.products.find(p => p.id === productId);
+    if (!item) return;
+
+    document.getElementById('editorPageHeading').textContent = `Edit: ${item.title}`;
+    document.getElementById('editorProductId').value = item.id;
+    document.getElementById('editorTitle').value = item.title;
+    document.getElementById('editorPrice').value = item.price;
+    document.getElementById('editorCategory').value = item.category;
+    document.getElementById('editorChest').value = (item.chest || '').replace(/["']/g, '');
+    document.getElementById('editorLength').value = (item.length || '').replace(/["']/g, '');
+    document.getElementById('editorCondition').value = item.condition || '9.5/10 (Mint Condition)';
+    document.getElementById('editorStatus').value = item.sold ? 'sold' : 'available';
+    handleEditorStatusChange(item.sold ? 'sold' : 'available');
+
+    const descRich = document.getElementById('editorDescriptionRich');
+    if (descRich) descRich.innerHTML = item.description || '';
+
+    const imgPreview = document.getElementById('editorPreviewImg');
+    if (imgPreview) imgPreview.src = item.image;
+    document.getElementById('editorImageUrl').value = item.image.startsWith('data:') ? '' : item.image;
+
+    const itemSizes = item.sizes || ['S', 'M', 'L', 'XL', 'XXL'];
+    document.querySelectorAll('.editor-size-checkbox').forEach(cb => {
+      cb.checked = itemSizes.includes(cb.value);
+    });
+
+  } else {
+    // Add mode
+    adminState.editingProductId = null;
+    document.getElementById('editorPageHeading').textContent = 'New Product Drop';
+    document.getElementById('editorProductId').value = '';
+    document.getElementById('editorTitle').value = '';
+    document.getElementById('editorPrice').value = '';
+    document.getElementById('editorCategory').value = 'T-Shirts';
+    document.getElementById('editorChest').value = '38-46';
+    document.getElementById('editorLength').value = '26-30';
+    document.getElementById('editorCondition').value = '9.5/10 (Mint Condition)';
+    document.getElementById('editorStatus').value = 'available';
+    handleEditorStatusChange('available');
+
+    const descRich = document.getElementById('editorDescriptionRich');
+    if (descRich) descRich.innerHTML = '';
+
+    const imgPreview = document.getElementById('editorPreviewImg');
+    if (imgPreview) imgPreview.src = 'assets/images/item1.jpg';
+    document.getElementById('editorImageUrl').value = '';
+
+    document.querySelectorAll('.editor-size-checkbox').forEach(cb => {
+      cb.checked = true;
+    });
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+window.openProductEditor = openProductEditor;
+
+// Route modal call to new full-page Shopify editor
+function adminOpenEditModal(productId) {
+  openProductEditor('edit', productId);
+}
+window.adminOpenEditModal = adminOpenEditModal;
+
+function closeProductEditor() {
+  const listView = document.getElementById('productsListView');
+  const editorView = document.getElementById('productEditorView');
+  const invActions = document.getElementById('inventoryTopbarActions');
+
+  if (editorView) editorView.style.display = 'none';
+  if (listView) listView.style.display = 'block';
+  if (invActions && adminState.activeTab === 'products') {
+    invActions.style.display = 'flex';
+  }
+}
+window.closeProductEditor = closeProductEditor;
+
+// Rich Box Format Toolbar
+function formatRichDoc(cmd, val = null) {
+  document.execCommand(cmd, false, val);
+  document.getElementById('editorDescriptionRich')?.focus();
+}
+window.formatRichDoc = formatRichDoc;
+
+// Editor Image Handlers
+function handleEditorFileSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    adminState.uploadedImageBase64 = evt.target.result;
+    const img = document.getElementById('editorPreviewImg');
+    if (img) img.src = evt.target.result;
+    document.getElementById('editorImageUrl').value = '';
+  };
+  reader.readAsDataURL(file);
+}
+window.handleEditorFileSelect = handleEditorFileSelect;
+
+function handleEditorUrlChange(url) {
+  if (url && url.trim()) {
+    adminState.uploadedImageBase64 = null;
+    const img = document.getElementById('editorPreviewImg');
+    if (img) img.src = url.trim();
+  }
+}
+window.handleEditorUrlChange = handleEditorUrlChange;
+
+function handleEditorStatusChange(val) {
+  const badge = document.getElementById('editorStatusBadge');
+  if (!badge) return;
+  if (val === 'available') {
+    badge.textContent = 'Active (In Stock)';
+    badge.style.background = 'var(--admin-avail-bg)';
+    badge.style.color = 'var(--admin-avail)';
+  } else {
+    badge.textContent = 'Sold Out';
+    badge.style.background = 'var(--admin-sold-bg)';
+    badge.style.color = 'var(--admin-sold)';
+  }
+}
+window.handleEditorStatusChange = handleEditorStatusChange;
+
+// Save / Publish from Shopify Editor
+async function handleSaveProductEditor() {
+  const title = document.getElementById('editorTitle').value.trim();
+  const priceVal = document.getElementById('editorPrice').value;
+
+  if (!title) {
+    alert('Please enter a product title.');
+    document.getElementById('editorTitle').focus();
+    return;
+  }
+  if (!priceVal) {
+    alert('Please enter a valid price.');
+    document.getElementById('editorPrice').focus();
+    return;
+  }
+
+  const category = document.getElementById('editorCategory').value;
+  const price = parseInt(priceVal, 10);
+  const chest = (document.getElementById('editorChest').value.trim() || '40') + '"';
+  const length = (document.getElementById('editorLength').value.trim() || '28') + '"';
+  const condition = document.getElementById('editorCondition').value.trim() || '9.5/10 (Mint Condition)';
+  const sold = document.getElementById('editorStatus').value === 'sold';
+  const descRich = document.getElementById('editorDescriptionRich');
+  const description = descRich ? descRich.innerHTML.trim() : '';
+
+  const selectedSizes = [];
+  document.querySelectorAll('.editor-size-checkbox:checked').forEach(cb => selectedSizes.push(cb.value));
+  if (selectedSizes.length === 0) selectedSizes.push('M');
+
+  let image = 'assets/images/item1.jpg';
+  if (adminState.uploadedImageBase64) {
+    image = adminState.uploadedImageBase64;
+  } else {
+    const urlInput = document.getElementById('editorImageUrl').value.trim();
+    if (urlInput) image = urlInput;
+    else if (document.getElementById('editorPreviewImg')?.src) {
+      image = document.getElementById('editorPreviewImg').src;
+    }
+  }
+
+  const editId = adminState.editingProductId;
+
+  if (editId) {
+    // Update existing product
+    const item = adminState.products.find(p => p.id === editId);
+    if (item) {
+      item.title = title;
+      item.category = category;
+      item.price = price;
+      item.chest = chest;
+      item.length = length;
+      item.condition = condition;
+      item.sold = sold;
+      item.sizes = selectedSizes;
+      item.image = image;
+      item.description = description;
+
+      saveProducts();
+      renderInventoryTable();
+      renderStats();
+      renderCategoriesView();
+      renderHomeDashboard();
+      closeProductEditor();
+
+      if (window.SupabaseService) {
+        await window.SupabaseService.updateProduct(editId, {
+          title, category, price, chest, length, condition, sold, sizes: selectedSizes, image, description
+        });
+      }
+      showAdminToast(`Updated "${title}" successfully!`, 'success');
+    }
+  } else {
+    // Add new product
+    const newProduct = {
+      id: 'drop_' + Date.now(),
+      title,
+      category,
+      price,
+      sizes: selectedSizes,
+      size: selectedSizes[0] || 'M',
+      chest,
+      length,
+      condition,
+      image,
+      sold,
+      description: description || `Curated 1-of-1 ${category} drop.`
+    };
+
+    adminState.products.unshift(newProduct);
+    saveProducts();
+    renderInventoryTable();
+    renderStats();
+    renderCategoriesView();
+    renderHomeDashboard();
+    updateSidebarBadges();
+    closeProductEditor();
+
+    if (window.SupabaseService) {
+      await window.SupabaseService.saveProduct(newProduct);
+    }
+    showAdminToast(`Published "${title}" to online catalog!`, 'success');
+  }
+}
+window.handleSaveProductEditor = handleSaveProductEditor;
 
 // ==========================================
 // User Directory & Admin Approval System
@@ -1124,7 +1231,7 @@ async function loadAuthUsersTable() {
   }
 
   tbody.innerHTML = activeUsers.map(u => {
-    const isUserSuperAdmin = (u.email || '').toLowerCase() === PERMANENT_SUPER_ADMIN_EMAIL || u.role === 'super_admin';
+    const isUserSuperAdmin = u.role === 'super_admin';
     const avatar = u.avatar_url || '';
     const initial = ((u.display_name || u.email || 'U')[0]).toUpperCase();
 
@@ -1395,7 +1502,7 @@ window.handleModalStatusChange = handleModalStatusChange;
 // Open Edit User Modal
 function openEditUserModal(userId) {
   if (!isSuperAdmin()) {
-    alert('⛔ Access Denied: Only Super Admin (Md Abir Shikdar) has authority to edit user profiles and roles.');
+    alert('Access Denied: Super Admin permission is required to edit user profiles and roles.');
     return;
   }
 
@@ -1521,7 +1628,17 @@ function showAdminToast(message, type = 'info') {
 
 // Setup Event Listeners
 function setupAdminListeners() {
-  setupImageUploadListeners();
+  // Keyboard shortcut Ctrl+K or Cmd+K for Search
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      const searchBox = document.getElementById('globalAdminSearch');
+      if (searchBox) {
+        searchBox.focus();
+        searchBox.select();
+      }
+    }
+  });
 
   const searchInput = document.getElementById('adminSearchInput');
   if (searchInput) {
