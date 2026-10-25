@@ -875,6 +875,7 @@ async function handleCheckoutSubmit(e) {
     items: state.cart.map(c => ({ title: c.title, size: c.selectedSize || c.size || 'M', price: c.price, quantity: c.quantity || 1 })),
     deliveryZone: state.deliveryZone,
     paymentMethod: state.selectedPayment,
+    paymentNumber: senderPhone,
     paymentSenderNumber: senderPhone,
     trxId,
     subtotal,
@@ -886,7 +887,11 @@ async function handleCheckoutSubmit(e) {
 
   // 1. Save to Supabase Cloud if configured
   if (window.SupabaseService) {
-    window.SupabaseService.insertOrder(orderData);
+    try {
+      await window.SupabaseService.insertOrder(orderData);
+    } catch (err) {
+      console.warn('Supabase insertOrder error:', err);
+    }
   }
 
   // 2. Save locally for instantaneous fallback

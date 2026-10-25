@@ -164,6 +164,27 @@ async function initAdmin() {
   if (adminState.isAuthenticated) {
     loadAuthUsersTable();
   }
+
+  // Real-time listener for incoming orders from public storefront
+  if (window.SupabaseService) {
+    const client = window.SupabaseService.getClient();
+    if (client) {
+      try {
+        client.channel('admin_live_orders').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, async () => {
+          console.log('Realtime change in orders table detected! Fetching latest orders...');
+          const fresh = await window.SupabaseService.getOrders();
+          if (fresh) {
+            adminState.orders = fresh;
+            renderOrdersTable();
+            updateSidebarBadges();
+            showAdminToast('New order received from storefront!', 'success');
+          }
+        }).subscribe();
+      } catch (err) {
+        console.warn('Realtime channel subscription error:', err);
+      }
+    }
+  }
 }
 
 // Authentication Check with Google OAuth & Supabase RBAC
@@ -723,7 +744,7 @@ function renderOrdersTable() {
   tbody.innerHTML = adminState.orders.map(order => {
     const status = (order.status || order.orderStatus || 'pending').toLowerCase();
     const payMethod = (order.paymentMethod || 'cod').toLowerCase();
-    const senderNumber = order.paymentSenderNumber || order.senderPhone || null;
+    const senderNumber = order.paymentNumber || order.paymentSenderNumber || order.senderPhone || null;
     const trxId = order.trxId || null;
 
     return `
@@ -759,8 +780,8 @@ function renderOrdersTable() {
               ${payMethod.toUpperCase()}
             </span>
             ${senderNumber ? `
-              <div style="font-size: 0.72rem; color: #0f172a; font-family: monospace; font-weight: 600;">
-                Sender: ${senderNumber}
+              <div style="font-size: 0.72rem; color: #0f172a; font-family: monospace; font-weight: 700;">
+                Pay No: ${senderNumber}
               </div>
             ` : ''}
             ${trxId ? `
@@ -812,7 +833,7 @@ function openOrderDetailsModal(orderId) {
   adminState.activeModalOrderId = orderId;
 
   const status = (order.status || order.orderStatus || 'pending').toLowerCase();
-  const senderNumber = order.paymentSenderNumber || order.senderPhone || 'N/A';
+  const senderNumber = order.paymentNumber || order.paymentSenderNumber || order.senderPhone || 'N/A';
   const trxId = order.trxId || 'N/A';
   const subtotal = order.subtotal || ((order.items || []).reduce((acc, i) => acc + (i.price * (i.quantity || 1)), 0));
   const shipping = order.shipping || (order.deliveryZone === 'inside' ? 70 : 130);
@@ -960,6 +981,36 @@ function copyModalField(elementId, btn) {
 }
 window.copyModalField = copyModalField;
 
+// Refresh Orders from Supabase Cloud
+async function refreshAdminOrders(btn) {
+  if (btn) {
+    const orig = btn.innerHTML;
+    btn.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+      <span>Refreshing...</span>
+    `;
+    btn.disabled = true;
+
+    if (window.SupabaseService) {
+      try {
+        const fresh = await window.SupabaseService.getOrders();
+        if (fresh) {
+          adminState.orders = fresh;
+          renderOrdersTable();
+          updateSidebarBadges();
+        }
+      } catch (err) {
+        console.warn('Refresh orders error:', err);
+      }
+    }
+
+    btn.innerHTML = orig;
+    btn.disabled = false;
+    showAdminToast('Orders refreshed from database!', 'success');
+  }
+}
+window.refreshAdminOrders = refreshAdminOrders;
+
 // ==========================================
 // Tab Switching (Shopify Admin Navigation)
 // ==========================================
@@ -1018,6 +1069,16 @@ function switchTab(tabName) {
     renderInventoryTable();
   } else if (tabName === 'orders') {
     renderOrdersTable();
+    // Auto-fetch latest orders whenever Orders tab is opened
+    if (window.SupabaseService) {
+      window.SupabaseService.getOrders().then(fresh => {
+        if (fresh && fresh.length > 0) {
+          adminState.orders = fresh;
+          renderOrdersTable();
+          updateSidebarBadges();
+        }
+      }).catch(err => console.warn('Auto fetch orders error:', err));
+    }
   } else if (tabName === 'users') {
     loadAuthUsersTable();
   } else if (tabName === 'categories') {

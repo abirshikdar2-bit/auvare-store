@@ -153,30 +153,57 @@ const SupabaseService = (function() {
   // Save Order
   async function insertOrder(order) {
     initClient();
-    if (client) {
-      try {
-        const payload = {
-          order_id: order.orderId,
-          customer_name: order.name,
-          customer_phone: order.phone,
-          delivery_address: order.address,
-          delivery_zone: order.deliveryZone,
-          payment_method: order.paymentMethod,
-          payment_sender_number: order.paymentSenderNumber || order.senderPhone || null,
-          trx_id: order.trxId || null,
-          items: order.items,
-          subtotal: order.subtotal || 0,
-          shipping_cost: order.shipping || 0,
-          total_amount: order.total,
-          notes: order.notes || null,
-          order_status: order.orderStatus || 'pending'
-        };
-        const { error } = await client.from('orders').insert([payload]);
-        if (error) throw error;
-        console.log('✓ Order saved to Supabase cloud database!');
-      } catch (err) {
-        console.warn('Supabase order insert error, order kept in local storage:', err);
+    if (!client) return false;
+
+    const paymentNumber = order.paymentNumber || order.paymentSenderNumber || order.senderPhone || null;
+    const basePayload = {
+      order_id: order.orderId,
+      customer_name: order.name,
+      customer_phone: order.phone,
+      delivery_address: order.address,
+      delivery_zone: order.deliveryZone,
+      payment_method: order.paymentMethod,
+      trx_id: order.trxId || null,
+      items: order.items,
+      subtotal: order.subtotal || 0,
+      shipping_cost: order.shipping || 0,
+      total_amount: order.total,
+      notes: order.notes || null,
+      order_status: order.orderStatus || 'pending'
+    };
+
+    // 1. Try with payment_number column first
+    try {
+      const payloadWithPaymentNumber = {
+        ...basePayload,
+        payment_number: paymentNumber
+      };
+      const { data, error } = await client.from('orders').insert([payloadWithPaymentNumber]).select();
+      if (!error) {
+        console.log('✓ Order saved to Supabase cloud database with payment_number!');
+        return data;
       }
+      
+      // If error is about missing column in schema cache, fallback to base insert
+      if (error.code === 'PGRST204' || error.message?.includes('payment_number') || error.message?.includes('column')) {
+        console.warn('payment_number column not found in schema cache, storing in notes fallback...');
+        const fallbackNotes = paymentNumber
+          ? `${basePayload.notes ? basePayload.notes + ' | ' : ''}Payment Number: ${paymentNumber}`
+          : basePayload.notes;
+        
+        const fallbackPayload = {
+          ...basePayload,
+          notes: fallbackNotes
+        };
+        const { data: fbData, error: fbError } = await client.from('orders').insert([fallbackPayload]).select();
+        if (fbError) throw fbError;
+        console.log('✓ Order saved to Supabase cloud database via fallback notes!');
+        return fbData;
+      }
+      throw error;
+    } catch (err) {
+      console.error('Supabase order insert error, order kept in local storage:', err);
+      return false;
     }
   }
 
@@ -188,23 +215,32 @@ const SupabaseService = (function() {
         const { data, error } = await client.from('orders').select('*').order('created_at', { ascending: false });
         if (!error && data) {
           // Format orders for dashboard
-          return data.map(o => ({
-            orderId: o.order_id,
-            name: o.customer_name,
-            phone: o.customer_phone,
-            address: o.delivery_address,
-            deliveryZone: o.delivery_zone,
-            paymentMethod: o.payment_method,
-            paymentSenderNumber: o.payment_sender_number || null,
-            trxId: o.trx_id || null,
-            items: o.items,
-            subtotal: o.subtotal,
-            shipping: o.shipping_cost,
-            total: o.total_amount,
-            notes: o.notes,
-            status: o.order_status || 'pending',
-            date: new Date(o.created_at).toLocaleString()
-          }));
+          return data.map(o => {
+            let pNum = o.payment_number || o.payment_sender_number || null;
+            if (!pNum && o.notes && o.notes.includes('Payment Number:')) {
+              const match = o.notes.match(/Payment Number:\s*([^\s|]+)/);
+              if (match) pNum = match[1];
+            }
+
+            return {
+              orderId: o.order_id,
+              name: o.customer_name,
+              phone: o.customer_phone,
+              address: o.delivery_address,
+              deliveryZone: o.delivery_zone,
+              paymentMethod: o.payment_method,
+              paymentNumber: pNum,
+              paymentSenderNumber: pNum,
+              trxId: o.trx_id || null,
+              items: o.items,
+              subtotal: o.subtotal,
+              shipping: o.shipping_cost,
+              total: o.total_amount,
+              notes: o.notes,
+              status: o.order_status || 'pending',
+              date: new Date(o.created_at).toLocaleString()
+            };
+          });
         }
       } catch (err) {
         console.warn('Supabase fetch orders error, fallback to local storage:', err);

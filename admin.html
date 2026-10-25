@@ -513,6 +513,12 @@
               <h3 style="font-size: 1.15rem; font-weight: 700;">Customer Orders</h3>
               <p style="font-size: 0.8rem; color: var(--admin-text-muted);">Real-time customer checkout requests with chosen size (S/M/L/XL/XXL) & payment info.</p>
             </div>
+            <div>
+              <button type="button" class="btn-admin-outline" onclick="refreshAdminOrders(this)" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 600;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                <span>Refresh Orders</span>
+              </button>
+            </div>
           </div>
 
           <table class="admin-table">
@@ -522,7 +528,7 @@
                 <th>Customer</th>
                 <th>Delivery Address</th>
                 <th>Ordered Items & Size</th>
-                <th>Payment & Trx</th>
+                <th>Payment Number & Trx</th>
                 <th>Total</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -1053,7 +1059,7 @@
               <div id="modalPaymentMethod" style="font-size: 0.9rem; font-weight: 700; margin-top: 0.15rem;">bKash</div>
             </div>
             <div style="margin-bottom: 0.65rem;">
-              <div style="font-size: 0.75rem; color: #64748b;">Payment Sender Number (যে নম্বর থেকে টাকা এসেছে)</div>
+              <div style="font-size: 0.75rem; color: #64748b;">Payment Number (যে নম্বর থেকে কাস্টমার পেমেন্ট করেছে)</div>
               <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.2rem;">
                 <span id="modalSenderNumber" style="font-size: 1rem; font-weight: 800; color: #0f172a; font-family: monospace; background: #e2e8f0; padding: 0.2rem 0.55rem; border-radius: 4px;">N/A</span>
                 <button type="button" class="btn-copy-number" onclick="copyModalField('modalSenderNumber', this)" style="padding: 0.2rem 0.45rem; font-size: 0.7rem; background: var(--admin-primary); color: white; border: none; border-radius: 4px; cursor: pointer;">Copy</button>
