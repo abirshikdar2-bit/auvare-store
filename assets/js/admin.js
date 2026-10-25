@@ -759,7 +759,7 @@ function renderOrdersTable() {
   if (!adminState.orders || adminState.orders.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="10" style="text-align: center; padding: 3rem 1rem; color: var(--admin-text-muted);">
+        <td colspan="8" style="text-align: center; padding: 3rem 1rem; color: var(--admin-text-muted);">
           No customer orders recorded yet. Place an order on the storefront to test!
         </td>
       </tr>
@@ -772,7 +772,6 @@ function renderOrdersTable() {
     const payMethod = (order.paymentMethod || 'cod').toLowerCase();
     const senderNumber = order.paymentNumber || order.paymentSenderNumber || order.senderPhone || null;
     const trxId = order.trxId || null;
-    const orderSize = order.size || (order.items && order.items.length ? order.items.map(i => i.size).filter(Boolean).join(', ') : 'M');
 
     return `
       <tr class="order-row" onclick="openOrderDetailsModal('${order.orderId}')">
@@ -785,44 +784,38 @@ function renderOrdersTable() {
           <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-family: monospace;">${order.phone}</div>
         </td>
         <td>
-          <div style="font-size: 0.8rem; max-width: 170px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${order.address}">
+          <div style="font-size: 0.8rem; max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${order.address}">
             ${order.address}
           </div>
           <div style="font-size: 0.72rem; color: var(--admin-text-muted);">${order.deliveryZone === 'inside' ? 'Inside Dhaka' : 'Outside Dhaka'}</div>
         </td>
         <td>
-          <div class="order-item-list" style="font-size: 0.82rem; max-width: 190px;">
+          <div class="order-item-list" style="font-size: 0.82rem;">
             ${(order.items || []).map(i => `
               <div style="display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.2rem;">
-                <span style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${i.title}">${i.title}</span>
+                <span style="font-weight: 600;">${i.title}</span>
+                <span class="item-size-badge">${i.size || 'M'}</span>
                 <span style="color: var(--admin-text-muted); font-size: 0.75rem;">x${i.quantity || 1}</span>
               </div>
             `).join('')}
           </div>
         </td>
         <td>
-          ${senderNumber ? `
-            <div style="font-size: 0.78rem; color: #0b1a13; font-family: monospace; font-weight: 700; background: #eaf3ee; border: 1px solid #bbf7d0; padding: 0.2rem 0.5rem; border-radius: 4px; display: inline-block;">
-              ${senderNumber}
-            </div>
-            <div style="font-size: 0.68rem; color: var(--admin-text-muted); margin-top: 0.15rem; text-transform: uppercase;">${payMethod}</div>
-          ` : `
-            <span style="font-size: 0.75rem; color: #94a3b8;">${payMethod === 'cod' ? 'Cash on Delivery' : '—'}</span>
-          `}
-        </td>
-        <td>
-          ${trxId ? `
-            <div style="font-size: 0.75rem; color: #334155; font-family: monospace; font-weight: 600; background: #f1f5f9; border: 1px solid #e2e8f0; padding: 0.2rem 0.45rem; border-radius: 4px; display: inline-block;">
-              ${trxId}
-            </div>
-          ` : `
-            <span style="font-size: 0.75rem; color: #94a3b8;">—</span>
-          `}
-        </td>
-        <td>
-          <span class="item-size-badge" style="background: #0b1a13; color: #ffffff; font-weight: 800; font-size: 0.82rem; padding: 0.25rem 0.65rem; border-radius: 4px; display: inline-block; letter-spacing: 0.5px;">
-            ${orderSize}
-          </span>
+          <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+            <span class="pay-badge-${payMethod}" style="width: fit-content;">
+              ${payMethod.toUpperCase()}
+            </span>
+            ${senderNumber ? `
+              <div style="font-size: 0.72rem; color: #0f172a; font-family: monospace; font-weight: 700;">
+                Pay No: ${senderNumber}
+              </div>
+            ` : ''}
+            ${trxId ? `
+              <div style="font-size: 0.7rem; color: #64748b; font-family: monospace;">
+                Trx: ${trxId}
+              </div>
+            ` : ''}
+          </div>
         </td>
         <td>
           <strong style="font-size: 0.92rem; color: var(--admin-text-main);">৳ ${(order.total || 0).toLocaleString()}</strong>
@@ -868,7 +861,6 @@ function openOrderDetailsModal(orderId) {
   const status = (order.status || order.orderStatus || 'pending').toLowerCase();
   const senderNumber = order.paymentNumber || order.paymentSenderNumber || order.senderPhone || 'N/A';
   const trxId = order.trxId || 'N/A';
-  const orderSize = order.size || (order.items && order.items.length ? order.items.map(i => i.size).filter(Boolean).join(', ') : 'M');
   const subtotal = order.subtotal || ((order.items || []).reduce((acc, i) => acc + (i.price * (i.quantity || 1)), 0));
   const shipping = order.shipping || (order.deliveryZone === 'inside' ? 70 : 130);
   const total = order.total || (subtotal + shipping);
@@ -905,10 +897,6 @@ function openOrderDetailsModal(orderId) {
 
   document.getElementById('modalSenderNumber').textContent = senderNumber;
   document.getElementById('modalTrxId').textContent = trxId;
-
-  const sizeEl = document.getElementById('modalOrderSize');
-  if (sizeEl) sizeEl.textContent = orderSize;
-
   document.getElementById('modalSubtotal').textContent = `৳ ${subtotal.toLocaleString()}`;
   document.getElementById('modalShipping').textContent = `৳ ${shipping.toLocaleString()}`;
   document.getElementById('modalTotalAmount').textContent = `৳ ${total.toLocaleString()}`;
