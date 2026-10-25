@@ -2018,10 +2018,16 @@ async function handleSaveUserEdit(e) {
 // Modal Helpers
 function openAdminModal(id) {
   document.getElementById(id)?.classList.add('open');
+  if (id === 'adminAuthGate') {
+    document.body.classList.add('auth-gate-active');
+  }
 }
 
 function closeAdminModal(id) {
   document.getElementById(id)?.classList.remove('open');
+  if (id === 'adminAuthGate') {
+    document.body.classList.remove('auth-gate-active');
+  }
 }
 
 // Toast

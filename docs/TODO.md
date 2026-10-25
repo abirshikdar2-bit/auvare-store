@@ -16,6 +16,14 @@ _(none)_
 
 ## Done
 
+- `#20` **2026-10-26** Solid Brand Forest Green Security Backdrop for Admin Auth Gate:
+  - **Identified User Requirement**: Replace transparent blurred overlay on the Admin Auth Gate (`#adminAuthGate`) with a 100% solid, opaque background matching the AUVARE brand logo deep forest green (`#0b1a13`). Prevent unauthorized applicants, visitors, or attackers from previewing or guessing any internal dashboard metrics, charts, sidebar items, or orders behind the modal.
+  - **Implemented Solid Brand Security Layer**:
+    - Overrode `#adminAuthGate.admin-modal-overlay` with solid `background: #0b1a13 !important;` and disabled backdrop blur (`backdrop-filter: none;`).
+    - Added `auth-gate-active` state to `<body>` by default and wired `openAdminModal` / `closeAdminModal` to toggle it.
+    - Set `visibility: hidden !important; pointer-events: none !important;` on all dashboard structural elements (`.admin-sidebar`, `.admin-header`, `.admin-main`, `.admin-content`, and tab views) whenever the auth gate is active.
+  - **Asset Versioning**: Bumped `admin.css?v=2.6` and `admin.js?v=3.8`.
+
 - `#19` **2026-10-26** Strict Rejection Enforcement, Session Immunity Fix & Real-Time Kickout:
   - **Identified Root Causes**:
     1. *Hardcoded Master Exemption Bug*: `shikdaraiworld@gmail.com` had previously been placed alongside `abirshikdar2@gmail.com` in `verifyUserAccess()`, which artificially forced its profile status to `approved` and role to `super_admin`, completely disregarding Supabase's actual `rejected` status upon login.
