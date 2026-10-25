@@ -146,17 +146,17 @@ const adminState = {
 
 // Role Check: Check if current logged-in user is Super Admin
 function isSuperAdmin() {
-  // 1. Preview mode is always Store Owner (Super Admin)
-  if (window.location.search.includes('preview=1')) {
+  // If user profile explicitly has status 'rejected' or 'blocked', they have zero authority
+  if (adminState.currentUserProfile?.status === 'rejected' || adminState.currentUserProfile?.status === 'blocked') {
+    return false;
+  }
+
+  // 1. Profile role check (Must be approved super_admin)
+  if (adminState.currentUserProfile?.role === 'super_admin' && adminState.currentUserProfile?.status === 'approved') {
     return true;
   }
 
-  // 2. Profile role check
-  if (adminState.currentUserProfile?.role === 'super_admin') {
-    return true;
-  }
-
-  // 3. Known Super Admin / Store Owner emails
+  // 2. Known Super Admin master owner email
   const activeEmail = (
     adminState.currentUser?.email ||
     adminState.currentUserProfile?.email ||
@@ -164,18 +164,12 @@ function isSuperAdmin() {
     ''
   ).toLowerCase().trim();
 
-  const superAdminEmails = [
-    'abirshikdar2@gmail.com',
-    'shikdaraiworld@gmail.com',
-    'admin@auvare.com'
-  ];
-
-  if (superAdminEmails.includes(activeEmail)) {
+  if (activeEmail === 'abirshikdar2@gmail.com') {
     return true;
   }
 
-  // 4. Default if authenticated as master
-  if (adminState.isAuthenticated && (!adminState.currentUserProfile || adminState.currentUserProfile.role === 'super_admin')) {
+  // 3. Preview mode (Only when not signed in as a rejected or blocked user)
+  if (window.location.search.includes('preview=1') && adminState.currentUserProfile?.status !== 'rejected' && adminState.currentUserProfile?.status !== 'blocked') {
     return true;
   }
 
@@ -243,10 +237,92 @@ async function initAdmin() {
       // Polling fail silent
     }
   }, 5000);
+
+  // 3. Live Active User Session & Status Enforcement (Checks every 4 seconds)
+  // If Super Admin approves, rejects, or blocks any active user in real-time,
+  // immediately update their access or kick them out to the appropriate modal!
+  setInterval(async () => {
+    if (!adminState.currentUser?.email) return;
+    const currentEmail = adminState.currentUser.email.toLowerCase().trim();
+    if (currentEmail === 'abirshikdar2@gmail.com') return; // Master owner immune
+
+    if (window.SupabaseService) {
+      try {
+        const freshProfile = await window.SupabaseService.getUserProfile(currentEmail);
+        if (freshProfile) {
+          if (freshProfile.status === 'rejected' || freshProfile.status === 'blocked') {
+            if (adminState.isAuthenticated) {
+              adminState.isAuthenticated = false;
+              adminState.currentUserProfile = freshProfile;
+              renderUserProfile(null);
+              showAuthModalView(freshProfile.status, adminState.currentUser, freshProfile);
+              openAdminModal('adminAuthGate');
+              showAdminToast('Your access status has been updated by Super Admin.', 'error');
+            }
+          } else if (freshProfile.status === 'approved' && (freshProfile.role === 'admin' || freshProfile.role === 'super_admin')) {
+            if (!adminState.isAuthenticated) {
+              adminState.isAuthenticated = true;
+              adminState.currentUserProfile = freshProfile;
+              closeAdminModal('adminAuthGate');
+              renderUserProfile(adminState.currentUser, freshProfile);
+              showAdminToast('Your admin request has been approved by Super Admin!', 'success');
+              loadAuthUsersTable();
+            }
+          }
+        }
+      } catch (e) {
+        // silent
+      }
+    }
+  }, 4000);
+
+  // 4. Real-time Supabase Auth Users table listener
+  if (window.SupabaseService) {
+    const client = window.SupabaseService.getClient();
+    if (client) {
+      try {
+        client.channel('admin_auth_users_live').on('postgres_changes', { event: '*', schema: 'public', table: 'auth_users' }, async (payload) => {
+          if (adminState.isAuthenticated) {
+            loadAuthUsersTable();
+          }
+          const activeEmail = adminState.currentUser?.email?.toLowerCase().trim();
+          if (activeEmail && activeEmail !== 'abirshikdar2@gmail.com' && payload.new && payload.new.email?.toLowerCase().trim() === activeEmail) {
+            const newStatus = payload.new.status;
+            if (newStatus === 'rejected' || newStatus === 'blocked') {
+              adminState.isAuthenticated = false;
+              adminState.currentUserProfile = payload.new;
+              renderUserProfile(null);
+              showAuthModalView(newStatus, adminState.currentUser, payload.new);
+              openAdminModal('adminAuthGate');
+            }
+          }
+        }).subscribe();
+      } catch (err) {
+        console.warn('Realtime auth_users channel error:', err);
+      }
+    }
+  }
 }
 
 // Authentication Check with Google OAuth & Supabase RBAC
 async function checkAuth() {
+  const client = window.SupabaseService?.getClient();
+
+  // 1. Check if an active Google/Supabase OAuth session exists
+  if (client) {
+    try {
+      const { data: { session }, error } = await client.auth.getSession();
+      if (session && session.user) {
+        // Real user signed in: Strictly verify their actual database status and role
+        await verifyUserAccess(session.user);
+        return;
+      }
+    } catch (err) {
+      console.warn('Session check error:', err);
+    }
+  }
+
+  // 2. Only if NO active session is signed in, check if Owner Preview Mode is active:
   if (window.location.search.includes('preview=1')) {
     adminState.isAuthenticated = true;
     adminState.currentUser = { email: 'abirshikdar2@gmail.com', user_metadata: { full_name: 'Md Abir Shikdar' } };
@@ -263,50 +339,13 @@ async function checkAuth() {
     return;
   }
 
-  const client = window.SupabaseService?.getClient();
-  
-  if (!client) {
-    adminState.isAuthenticated = false;
-    showAuthModalView('default');
-    openAdminModal('adminAuthGate');
-    return;
-  }
+  // 3. No session & no preview: present standard Google sign-in gate
+  adminState.isAuthenticated = false;
+  showAuthModalView('default');
+  openAdminModal('adminAuthGate');
 
-  // 1. Check existing session
-  try {
-    if (window.location.search.includes('preview=1')) {
-    adminState.isAuthenticated = true;
-    adminState.currentUser = { email: 'abirshikdar2@gmail.com', user_metadata: { full_name: 'Md Abir Shikdar' } };
-    adminState.currentUserProfile = {
-      id: '81c10ad2-3813-4b91-b515-626a5f223588',
-      email: 'abirshikdar2@gmail.com',
-      role: 'super_admin',
-      status: 'approved',
-      display_name: 'Md Abir Shikdar'
-    };
-    closeAdminModal('adminAuthGate');
-    renderUserProfile(adminState.currentUser, adminState.currentUserProfile);
-    loadAuthUsersTable();
-    return;
-  }
-
-    const { data: { session }, error } = await client.auth.getSession();
-    if (session && session.user) {
-      await verifyUserAccess(session.user);
-    } else {
-      adminState.isAuthenticated = false;
-      showAuthModalView('default');
-      openAdminModal('adminAuthGate');
-    }
-  } catch (err) {
-    console.warn('Auth check error:', err);
-    adminState.isAuthenticated = false;
-    showAuthModalView('default');
-    openAdminModal('adminAuthGate');
-  }
-
-  // 2. Real-time auth state listener
-  client.auth.onAuthStateChange(async (event, session) => {
+  // 4. Real-time auth state listener
+  client?.auth.onAuthStateChange(async (event, session) => {
     if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
       await verifyUserAccess(session.user);
     } else if (event === 'SIGNED_OUT') {
@@ -337,7 +376,8 @@ async function verifyUserAccess(user) {
   }
 
   const normalizedEmail = (user?.email || '').toLowerCase().trim();
-  if (normalizedEmail === 'abirshikdar2@gmail.com' || normalizedEmail === 'shikdaraiworld@gmail.com') {
+  // Strictly only the master owner email is guaranteed super_admin
+  if (normalizedEmail === 'abirshikdar2@gmail.com') {
     if (!profile) {
       profile = {
         id: '81c10ad2-3813-4b91-b515-626a5f223588',

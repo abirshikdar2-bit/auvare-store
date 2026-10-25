@@ -16,6 +16,17 @@ _(none)_
 
 ## Done
 
+- `#19` **2026-10-26** Strict Rejection Enforcement, Session Immunity Fix & Real-Time Kickout:
+  - **Identified Root Causes**:
+    1. *Hardcoded Master Exemption Bug*: `shikdaraiworld@gmail.com` had previously been placed alongside `abirshikdar2@gmail.com` in `verifyUserAccess()`, which artificially forced its profile status to `approved` and role to `super_admin`, completely disregarding Supabase's actual `rejected` status upon login.
+    2. *Preview Mode Precedence Bug*: `checkAuth()` checked `preview=1` prior to evaluating `client.auth.getSession()`. If a secondary browser loaded `admin.html?preview=1` while signed in with a rejected account, the preview logic short-circuited session verification.
+    3. *Absence of Live Revocation Listener*: When Super Admin clicked "Reject" or "Block", the target user's browser was never actively notified or revoked in real-time, allowing them to remain on the dashboard until manual logout.
+  - **Implemented Comprehensive Fixes**:
+    - *Strict Master Exemption*: Confined the master owner fallback exclusively to `abirshikdar2@gmail.com`. All secondary accounts (including `shikdaraiworld@gmail.com`) strictly adhere to Supabase database statuses.
+    - *Prioritized Session Verification*: Reordered `checkAuth()` to always evaluate `client.auth.getSession()` first; real signed-in users are verified against the database and blocked/rejected users are immediately locked out even if `?preview=1` is in the URL.
+    - *Instant Live Kickout*: Added a 4-second active session polling watcher and Supabase Realtime table listener on `public.auth_users`. Any user rejected or blocked by Super Admin is immediately ejected from the dashboard and gated by the modal.
+  - **Asset Versioning**: Bumped `admin.js?v=3.7`.
+
 - `#18` **2026-10-26** Fully Dynamic Live Hero Showcase Card with Real-Time Cloud Sync:
   - **Identified Root Cause**: In `assets/js/app.js`, `renderProducts()` updated `#heroFeaturedTitle`, `#heroFeaturedPrice`, and `#heroFeaturedSub`, but completely omitted updating `#heroFeaturedImg.src`. Furthermore, it was hardcoded to look for `auv-1`. When `auv-1` was deleted, the text changed to the next drop (`auv-2`), but the image permanently displayed `assets/images/item1.jpg`. Additionally, the storefront lacked a real-time listener or polling mechanism for remote product catalog changes.
   - **Implemented Dynamic Hero Showcase & Cloud Live-Sync**:
