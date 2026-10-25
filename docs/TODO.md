@@ -16,6 +16,15 @@ _(none)_
 
 ## Done
 
+- `#18` **2026-10-26** Fully Dynamic Live Hero Showcase Card with Real-Time Cloud Sync:
+  - **Identified Root Cause**: In `assets/js/app.js`, `renderProducts()` updated `#heroFeaturedTitle`, `#heroFeaturedPrice`, and `#heroFeaturedSub`, but completely omitted updating `#heroFeaturedImg.src`. Furthermore, it was hardcoded to look for `auv-1`. When `auv-1` was deleted, the text changed to the next drop (`auv-2`), but the image permanently displayed `assets/images/item1.jpg`. Additionally, the storefront lacked a real-time listener or polling mechanism for remote product catalog changes.
+  - **Implemented Dynamic Hero Showcase & Cloud Live-Sync**:
+    - Updated `renderProducts()` in `app.js` to dynamically select the top active/available drop (`state.products.find(p => !p.sold) || state.products[0]`).
+    - Explicitly bound `heroImgEl.src` to `heroFeatured.image`, title, formatted price (`৳ ...`), and garment specs (chest, length, condition).
+    - Made the hero showcase card clickable (`.hero-card-stack`), smoothly scrolling to and highlighting the featured drop in the catalog.
+    - Connected Supabase Realtime channel (`public_products_live`) and a 5-second background polling fallback to immediately reflect any admin additions, deletions, or edits on the storefront hero and grid.
+  - **Asset Versioning**: Bumped `app.js?v=3.8`.
+
 - `#17` **2026-10-26** Fix Super Admin User Management Authority & Cloud Product Creation:
   - **Identified Root Causes**:
     1. *Super Admin Authority Lockout*: `isSuperAdmin()` strictly checked `adminState.currentUserProfile?.role === 'super_admin'`. In `preview=1` mode and during initial auth loads, `currentUserProfile` was not initialized, causing `isSuperAdmin()` to evaluate to `false`. This rendered "Super Admin Only" in the Users table, blocked Approve/Reject/Unblock actions, and displayed the regular admin warning.

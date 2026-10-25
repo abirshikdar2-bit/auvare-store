@@ -316,14 +316,51 @@ function renderProducts() {
   if (!grid) return;
 
   // Dynamically sync Hero Featured Card with live product data
-  const heroFeatured = state.products.find(p => p.id === 'auv-1') || state.products[0];
+  // Select the top active/available product from the catalog
+  const heroFeatured = (state.products && state.products.length > 0)
+    ? (state.products.find(p => !p.sold) || state.products[0])
+    : null;
+
   if (heroFeatured) {
+    const heroImgEl = document.getElementById('heroFeaturedImg');
     const heroPriceEl = document.getElementById('heroFeaturedPrice');
     const heroTitleEl = document.getElementById('heroFeaturedTitle');
     const heroSubEl = document.getElementById('heroFeaturedSub');
-    if (heroPriceEl && heroFeatured.price) heroPriceEl.textContent = `৳ ${heroFeatured.price.toLocaleString()}`;
-    if (heroTitleEl && heroFeatured.title) heroTitleEl.textContent = heroFeatured.title;
-    if (heroSubEl) heroSubEl.textContent = `Chest: ${heroFeatured.chest || '38"'} • L: ${heroFeatured.length || '24"'} • ${heroFeatured.condition || '9.5/10 Mint'}`;
+    const heroCardStack = document.querySelector('.hero-card-stack');
+
+    if (heroImgEl && heroFeatured.image) {
+      if (heroImgEl.getAttribute('src') !== heroFeatured.image) {
+        heroImgEl.src = heroFeatured.image;
+      }
+      heroImgEl.alt = heroFeatured.title || 'AUVARE Featured Drop';
+    }
+    if (heroPriceEl && heroFeatured.price !== undefined) {
+      heroPriceEl.textContent = `৳ ${Number(heroFeatured.price).toLocaleString()}`;
+    }
+    if (heroTitleEl && heroFeatured.title) {
+      heroTitleEl.textContent = heroFeatured.title;
+    }
+    if (heroSubEl) {
+      const parts = [];
+      if (heroFeatured.chest) parts.push(`Chest: ${heroFeatured.chest}`);
+      if (heroFeatured.length) parts.push(`L: ${heroFeatured.length}`);
+      if (heroFeatured.condition) parts.push(heroFeatured.condition.split('(')[0].trim());
+      heroSubEl.textContent = parts.length > 0 ? parts.join(' • ') : '1-of-1 Curated Drop • Mint';
+    }
+    if (heroCardStack) {
+      heroCardStack.style.cursor = 'pointer';
+      heroCardStack.title = `View ${heroFeatured.title}`;
+      heroCardStack.onclick = () => {
+        const productEl = document.querySelector(`.product-card[data-id="${heroFeatured.id}"]`);
+        if (productEl) {
+          productEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          productEl.style.boxShadow = '0 0 0 3px var(--color-primary)';
+          setTimeout(() => { productEl.style.boxShadow = ''; }, 2000);
+        } else {
+          document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
+        }
+      };
+    }
   }
 
   const filtered = state.products.filter(item => {
@@ -1232,6 +1269,39 @@ function setupEventListeners() {
   window.addEventListener('focus', () => {
     loadProducts().then(() => renderProducts());
   });
+
+  // Supabase Real-time Cloud Synchronization
+  if (window.SupabaseService) {
+    const client = window.SupabaseService.getClient();
+    if (client) {
+      try {
+        client.channel('public_products_live').on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, async () => {
+          console.log('Realtime product change detected! Syncing storefront...');
+          await loadProducts();
+          renderProducts();
+        }).subscribe();
+      } catch (err) {
+        console.warn('Realtime channel subscription error:', err);
+      }
+    }
+  }
+
+  // 5-second background polling fallback to ensure storefront is always 100% in sync with admin changes
+  setInterval(async () => {
+    if (window.SupabaseService && window.SupabaseService.isConfigured()) {
+      try {
+        const cloudProducts = await window.SupabaseService.getProducts();
+        if (cloudProducts && Array.isArray(cloudProducts) && cloudProducts.length > 0) {
+          const currentSignature = (state.products || []).map(p => `${p.id}:${p.price}:${p.sold}:${p.title}:${p.image}`).join('|');
+          const newSignature = cloudProducts.map(p => `${p.id}:${p.price}:${p.sold}:${p.title}:${p.image}`).join('|');
+          if (currentSignature !== newSignature) {
+            state.products = cloudProducts;
+            renderProducts();
+          }
+        }
+      } catch (e) {}
+    }
+  }, 5000);
 }
 
 // Run on page load
