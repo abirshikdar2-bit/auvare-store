@@ -1,0 +1,11 @@
+# Secrets & Environment variables
+.env
+.env.local
+.env.*.local
+*.env
+
+# Local development and deployment scripts
+deploy-vercel.ps1
+.vscode/
+.idea/
+*.log

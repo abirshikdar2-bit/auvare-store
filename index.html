@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AUVARE — Curated Vintage & Pre-loved Clothing • 1-of-1 Drops</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/jpeg" href="assets/images/logo.jpg">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="assets/css/style.css?v=2.4">
+
+  <script>
+    // Force manual scroll restoration so refreshes always start at homepage top
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    // If URL has anchor hash on reload, strip it cleanly
+    if (window.location.hash) {
+      history.replaceState(null, null, window.location.pathname + window.location.search);
+    }
+    window.scrollTo(0, 0);
+  </script>
+</head>
+<body>
+
+  <!-- Sticky Header -->
+  <header class="site-header">
+    <div class="container nav-wrapper">
+      <!-- Brand Logo -->
+      <a href="#hero" class="brand-link" id="brandHomeLink">
+        <img src="assets/images/logo.jpg" alt="AUVARE Crest" class="brand-crest">
+        <div class="brand-text-group">
+          <span class="brand-title">AUVARE</span>
+          <span class="brand-sub">Curated • Vintage</span>
+        </div>
+      </a>
+
+      <!-- Navigation Links -->
+      <nav>
+        <ul class="nav-links" id="mainNavLinks">
+          <li>
+            <a href="#hero" class="nav-link active" data-target="hero" title="Home">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+              <span>Home</span>
+            </a>
+          </li>
+          <li><a href="#catalog" class="nav-link" data-category="All">All Drops</a></li>
+          <li><a href="#catalog" class="nav-link" data-category="T-Shirts">T-Shirts</a></li>
+          <li><a href="#catalog" class="nav-link" data-category="Shirts">Shirts & Polos</a></li>
+          <li><a href="#catalog" class="nav-link" data-category="Jackets">Jackets</a></li>
+          <li><a href="#catalog" class="nav-link" data-category="Pants">Pants</a></li>
+          <li><a href="#instagram" class="nav-link" data-target="instagram">Instagram Feed</a></li>
+          <div class="nav-slider-indicator" id="navSliderIndicator"></div>
+        </ul>
+      </nav>
+
+      <!-- Action Buttons -->
+      <div class="nav-actions">
+        <!-- Cart Button -->
+        <button class="btn-icon" onclick="openCart()" title="View Shopping Bag">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+            <path d="M3 6h18"></path>
+            <path d="M16 10a4 4 0 0 1-8 0"></path>
+          </svg>
+          <span id="cartBadge" class="cart-badge">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section" id="hero">
+    <div class="container hero-grid">
+      <div class="hero-content">
+        <div class="hero-tag">
+          <span>✨</span>
+          <span>New Lot Drop Just Landed</span>
+        </div>
+        
+        <h1 class="hero-title">
+          Curated Stuff, <span>Personal Taste.</span>
+        </h1>
+        
+        <p class="hero-desc">
+          Hand-picked vintage & pre-loved imported garments. Every piece in our store is an authentic 1-of-1 item—once it’s claimed, it’s gone forever.
+        </p>
+
+        <div class="hero-actions">
+          <a href="#catalog" class="btn-primary">
+            Explore Latest Drop ↓
+          </a>
+          <a href="https://wa.me/8801734018155?text=Hello%20AUVARE,%20I%20want%20to%20inquire%20about%20your%20drops!" target="_blank" class="btn-wa-cta" id="heroChatWaBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
+            </svg>
+            Chat on WhatsApp
+          </a>
+        </div>
+      </div>
+
+      <!-- Hero Visual Card (Authentic Drop Preview) -->
+      <div class="hero-visual">
+        <div class="hero-card-stack">
+          <img src="assets/images/item1.jpg" alt="AUVARE Featured Drop" class="hero-card-img" id="heroFeaturedImg">
+          <div class="hero-floating-badge">
+            <div class="badge-info">
+              <h4 id="heroFeaturedTitle">Vintage Graphic Tee</h4>
+              <p id="heroFeaturedSub">Chest: 38" • Length: 24" • Grade 9.5/10</p>
+            </div>
+            <div class="badge-price" id="heroFeaturedPrice">৳ 1,250</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Value Pillars / Service Guarantees -->
+  <section class="features-bar">
+    <div class="container features-grid">
+      
+      <!-- Card 1: 1/2 Days Delivery -->
+      <div class="feature-item">
+        <div class="feature-icon-circle">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m7.5 4.27 9 5.15"></path>
+            <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path>
+            <path d="m3.3 7 8.7 5 8.7-5"></path>
+            <path d="M12 22V12"></path>
+          </svg>
+        </div>
+        <div class="feature-text">
+          <h4>1/2 Days Delivery</h4>
+          <p>fastest delivery</p>
+        </div>
+      </div>
+
+      <!-- Card 2: Authorized Product -->
+      <div class="feature-item">
+        <div class="feature-icon-circle">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="6"></circle>
+            <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"></path>
+          </svg>
+        </div>
+        <div class="feature-text">
+          <h4>Authorized Product</h4>
+          <p>within 30 days for an exchange</p>
+        </div>
+      </div>
+
+      <!-- Card 3: Customer Service Support -->
+      <div class="feature-item">
+        <div class="feature-icon-circle">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            <path d="M8 10h.01"></path>
+            <path d="M12 10h.01"></path>
+            <path d="M16 10h.01"></path>
+          </svg>
+        </div>
+        <div class="feature-text">
+          <h4>Customer Service Support</h4>
+          <p>8am to 10pm</p>
+        </div>
+      </div>
+
+      <!-- Card 4: Flexible Payments -->
+      <div class="feature-item">
+        <div class="feature-icon-circle">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="20" height="14" x="2" y="5" rx="2"></rect>
+            <line x1="2" x2="22" y1="10" y2="10"></line>
+            <path d="m14 15 2 2 4-4"></path>
+          </svg>
+        </div>
+        <div class="feature-text">
+          <h4>Flexible Payments</h4>
+          <p>pay with multiple credit cards</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Main Storefront / Drops Catalog -->
+  <main class="catalog-section" id="catalog">
+    <div class="container">
+      
+      <!-- Section Header -->
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">Curated Drops & Inventory</h2>
+          <p class="section-subtitle" id="itemCount">Loading drops...</p>
+        </div>
+
+        <!-- Admin Quick Add Button (Visible when admin mode is on) -->
+        <div id="adminControlsFloat" style="display: none;">
+          <button class="btn-primary" onclick="openModal('adminAddModal')">
+            + Add New Clothing Piece
+          </button>
+          <button class="btn-secondary" onclick="resetToDefaultDrops()" style="margin-left: 0.5rem;">
+            Reset Inventory
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter & Search Toolbar -->
+      <div class="filter-bar">
+        <!-- Categories -->
+        <div class="filter-categories">
+          <button class="filter-pill active" data-category="All">All Drops</button>
+          <button class="filter-pill" data-category="T-Shirts">T-Shirts</button>
+          <button class="filter-pill" data-category="Shirts">Shirts & Polos</button>
+          <button class="filter-pill" data-category="Jackets">Jackets</button>
+          <button class="filter-pill" data-category="Pants">Pants</button>
+        </div>
+
+        <!-- Secondary Filters & Search -->
+        <div class="filter-secondary">
+          <!-- Availability Select -->
+          <select id="statusFilter" class="filter-select">
+            <option value="all">All Status</option>
+            <option value="available">In Stock (Available)</option>
+            <option value="sold">Sold Out Drops</option>
+          </select>
+
+          <!-- Size Select -->
+          <select id="sizeFilter" class="filter-select">
+            <option value="all">All Sizes</option>
+            <option value="S">Size S</option>
+            <option value="M">Size M</option>
+            <option value="L">Size L</option>
+            <option value="XL">Size XL</option>
+          </select>
+
+          <!-- Search Input -->
+          <div style="position: relative;">
+            <input 
+              type="text" 
+              id="searchInput" 
+              class="form-input" 
+              placeholder="Search by name, size..." 
+              style="padding: 0.45rem 0.85rem; font-size: 0.85rem; width: 180px;"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Dynamic Product Grid -->
+      <div id="productsGrid" class="products-grid">
+        <!-- Injected via JavaScript -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Dedicated Instagram Showcase Section -->
+  <section class="instagram-section" id="instagram">
+    <div class="container">
+      
+      <!-- Instagram Profile Card -->
+      <div class="ig-profile-card">
+        <div class="ig-profile-left">
+          <img src="assets/images/logo.jpg" alt="AUVARE Profile" class="ig-avatar">
+          <div class="ig-names">
+            <h3>AUVARE <span>✨</span></h3>
+            <a href="https://www.instagram.com/auvare_official/" target="_blank" class="ig-handle">
+              @auvare_official
+            </a>
+            <div class="ig-stats-row">
+              <span><strong>959</strong> posts</span>
+              <span><strong>1,616</strong> followers</span>
+              <span><strong>Curated Vintage</strong> • Bangladesh 🇧🇩</span>
+            </div>
+          </div>
+        </div>
+
+        <a href="https://www.instagram.com/auvare_official/" target="_blank" class="btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+          </svg>
+          Follow on Instagram ↗
+        </a>
+      </div>
+
+      <!-- Instagram Posts Grid Preview -->
+      <div class="ig-grid">
+        <a href="https://www.instagram.com/auvare_official/p/De4NPJkDzIY/" target="_blank" class="ig-post-item">
+          <img src="assets/images/item1.jpg" alt="AUVARE Instagram Drop" class="ig-post-img">
+          <div class="ig-overlay">
+            <span>📷 View Post</span>
+            <span>Chest 38" • ৳999</span>
+          </div>
+        </a>
+
+        <a href="https://www.instagram.com/auvare_official/p/De4M6Qpj0yl/" target="_blank" class="ig-post-item">
+          <img src="assets/images/item2.jpg" alt="AUVARE Instagram Drop" class="ig-post-img">
+          <div class="ig-overlay">
+            <span>📷 View Post</span>
+            <span>Chest 42" • ৳799</span>
+          </div>
+        </a>
+
+        <a href="https://www.instagram.com/auvare_official/p/De4Mk8rD-zQ/" target="_blank" class="ig-post-item">
+          <img src="assets/images/item3.jpg" alt="AUVARE Instagram Drop" class="ig-post-img">
+          <div class="ig-overlay">
+            <span>📷 View Post</span>
+            <span>Sold Drop • ৳799</span>
+          </div>
+        </a>
+
+        <a href="https://www.instagram.com/auvare_official/p/De4MEWvD-4r/" target="_blank" class="ig-post-item">
+          <img src="assets/images/item4.jpg" alt="AUVARE Instagram Drop" class="ig-post-img">
+          <div class="ig-overlay">
+            <span>📷 View Post</span>
+            <span>Chest 42" • ৳799</span>
+          </div>
+        </a>
+
+        <a href="https://www.instagram.com/auvare_official/" target="_blank" class="ig-post-item">
+          <img src="https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=600&q=80" alt="AUVARE Instagram Drop" class="ig-post-img">
+          <div class="ig-overlay">
+            <span>📷 View Post</span>
+            <span>Corduroy • ৳1250</span>
+          </div>
+        </a>
+
+        <a href="https://www.instagram.com/auvare_official/" target="_blank" class="ig-post-item">
+          <img src="https://images.unsplash.com/photo-1548883354-7622d03aca27?auto=format&fit=crop&w=600&q=80" alt="AUVARE Instagram Drop" class="ig-post-img">
+          <div class="ig-overlay">
+            <span>📷 View Post</span>
+            <span>Harrington • ৳1850</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cart Drawer -->
+  <div id="cartOverlay" class="cart-drawer-overlay" onclick="closeCart()"></div>
+  <aside id="cartDrawer" class="cart-drawer">
+    <div class="cart-head">
+      <h3>Your Bag</h3>
+      <button class="btn-close" onclick="closeCart()">✕</button>
+    </div>
+
+    <div class="cart-body">
+      <!-- 1-of-1 Notice -->
+      <div class="cart-notice-1of1">
+        <span>⚠️</span>
+        <span>Every piece is a unique 1-of-1 drop. We reserve items for 15 minutes during checkout.</span>
+      </div>
+
+      <!-- Items Container -->
+      <div id="cartItems">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+
+    <div class="cart-foot">
+      <div class="cart-summary-line">
+        <span>Subtotal</span>
+        <span id="cartSubtotal">৳ 0</span>
+      </div>
+      <div class="cart-summary-line">
+        <span>Estimated Delivery</span>
+        <span id="cartShipping">৳ 70</span>
+      </div>
+      <div class="cart-total-line">
+        <span>Total Payable</span>
+        <span id="cartTotal">৳ 0</span>
+      </div>
+
+      <button class="btn-checkout-proceed" onclick="openCheckoutModal()">
+        Proceed to Checkout →
+      </button>
+    </div>
+  </aside>
+
+  <!-- Checkout Modal (Customer Details & Payment Method) -->
+  <div id="checkoutModal" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-head">
+        <h3>Complete Your Order</h3>
+        <button class="btn-close" onclick="closeModal('checkoutModal')">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <p id="checkoutSummaryText" style="font-weight: 700; color: var(--color-primary); margin-bottom: 1.25rem;">
+          Calculating total...
+        </p>
+
+        <form onsubmit="handleCheckoutSubmit(event)">
+          <!-- Customer Information -->
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input type="text" id="custName" class="form-input" placeholder="e.g. Tanvir Ahmed" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Phone Number (Active Mobile) *</label>
+            <input type="tel" id="custPhone" class="form-input" placeholder="017xxxxxxxx" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Delivery Address (House, Road, Area, City) *</label>
+            <textarea id="custAddress" class="form-textarea" rows="2" placeholder="e.g. House 14, Road 5, Block B, Mirpur, Dhaka" required></textarea>
+          </div>
+
+          <!-- Delivery Zone -->
+          <div class="form-group">
+            <label class="form-label">Delivery Zone *</label>
+            <div style="display:flex; gap:1.5rem; margin-top:0.35rem;">
+              <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.9rem; cursor:pointer;">
+                <input type="radio" name="deliveryZone" value="inside" checked /> Inside Dhaka (৳70)
+              </label>
+              <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.9rem; cursor:pointer;">
+                <input type="radio" name="deliveryZone" value="outside" /> Outside Dhaka (৳130)
+              </label>
+            </div>
+          </div>
+
+          <!-- Payment Method Selection -->
+          <div class="form-group" style="margin-top: 1.5rem;">
+            <label class="form-label">Select Payment Method *</label>
+            <div class="payment-methods-grid">
+              <!-- COD -->
+              <div id="payCard_cod" class="payment-method-card selected" onclick="selectPaymentMethod('cod')">
+                <input type="radio" name="payMethod" class="pay-radio" value="cod" checked />
+                <div class="pay-card-info">
+                  <h5>Cash on Delivery</h5>
+                  <p>হাতে পেয়ে ক্যাশ পরিশোধ</p>
+                </div>
+              </div>
+
+              <!-- bKash -->
+              <div id="payCard_bkash" class="payment-method-card" onclick="selectPaymentMethod('bkash')">
+                <input type="radio" name="payMethod" class="pay-radio" value="bkash" />
+                <div class="pay-card-info">
+                  <h5 style="color:#e2136e;">bKash (বিকাশ)</h5>
+                  <p>Personal / Send Money</p>
+                </div>
+              </div>
+
+              <!-- Nagad -->
+              <div id="payCard_nagad" class="payment-method-card" onclick="selectPaymentMethod('nagad')">
+                <input type="radio" name="payMethod" class="pay-radio" value="nagad" />
+                <div class="pay-card-info">
+                  <h5 style="color:#f7941d;">Nagad (নগদ)</h5>
+                  <p>Send Money / Instant</p>
+                </div>
+              </div>
+
+              <!-- Rocket -->
+              <div id="payCard_rocket" class="payment-method-card" onclick="selectPaymentMethod('rocket')">
+                <input type="radio" name="payMethod" class="pay-radio" value="rocket" />
+                <div class="pay-card-info">
+                  <h5 style="color:#8c3494;">Rocket (রকেট)</h5>
+                  <p>Dutch-Bangla Rocket</p>
+                </div>
+              </div>
+
+              <!-- Bank Account -->
+              <div id="payCard_bank" class="payment-method-card" onclick="selectPaymentMethod('bank')" style="grid-column: 1 / -1;">
+                <input type="radio" name="payMethod" class="pay-radio" value="bank" />
+                <div class="pay-card-info">
+                  <h5>Bank Account Transfer (City / BRAC Bank)</h5>
+                  <p>সরাসরি ব্যাংক ডিপোজিট বা ফান্ড ট্রান্সফার</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dynamic Payment Instructions -->
+            <div id="paymentInstructions" class="payment-instructions-box">
+              <h5 style="font-weight:700; color:var(--color-primary); margin-bottom:0.35rem;">💵 Cash on Delivery (ক্যাশ অন ডেলিভারি)</h5>
+              <p style="font-size:0.85rem; color:var(--color-text-muted);">
+                পণ্য ডেলিভারিম্যানের কাছ থেকে বুঝে পেয়ে সম্পূর্ণ টাকা নগদ পরিশোধ করুন। ডেলিভারির সময় পার্সেল চেক করার সুযোগ থাকবে।
+              </p>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Special Delivery Note (Optional)</label>
+            <input type="text" id="custNotes" class="form-input" placeholder="e.g. Call before delivery, deliver after 3 PM" />
+          </div>
+
+          <button type="submit" class="btn-checkout-proceed">
+            Confirm & Place Order →
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Success Modal -->
+  <div id="orderSuccessModal" class="modal-overlay">
+    <div class="modal-container">
+      <div id="orderSuccessBody" class="modal-body">
+        <!-- Rendered dynamically via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Modal: Add New Drop Piece -->
+  <div id="adminAddModal" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-head">
+        <h3>+ Add New Clothing Drop to AUVARE</h3>
+        <button class="btn-close" onclick="closeModal('adminAddModal')">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 1.25rem;">
+          বড় ভাই মোবাইল বা পিসি থেকে খুব সহজে এখানে কাপড়ের বিস্তারিত লিখে সরাসরি ওয়েবসাইটে লাইভ পাবলিশ করতে পারবেন।
+        </p>
+
+        <form onsubmit="handleAddNewProduct(event)">
+          <div class="form-group">
+            <label class="form-label">Garment Title / Name *</label>
+            <input type="text" id="newTitle" class="form-input" placeholder="e.g. Vintage 90s Embroidered Crewneck" required />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Category *</label>
+              <select id="newCategory" class="form-select" required>
+                <option value="T-Shirts">T-Shirts</option>
+                <option value="Shirts">Shirts & Polos</option>
+                <option value="Jackets">Jackets</option>
+                <option value="Pants">Pants</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Size Label *</label>
+              <select id="newSize" class="form-select" required>
+                <option value="S">S</option>
+                <option value="M" selected>M</option>
+                <option value="L">L</option>
+                <option value="XL">XL</option>
+                <option value="Free">Free Size</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Chest Measurement (Inches) *</label>
+              <input type="text" id="newChest" class="form-input" placeholder="e.g. 42" required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Length Measurement (Inches) *</label>
+              <input type="text" id="newLength" class="form-input" placeholder="e.g. 27" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Condition Rating *</label>
+              <input type="text" id="newCondition" class="form-input" placeholder="e.g. 9.5/10 (Mint Condition)" required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Price (৳ BDT) *</label>
+              <input type="number" id="newPrice" class="form-input" placeholder="e.g. 850" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Image URL / Local Photo Path</label>
+            <input type="text" id="newImageUrl" class="form-input" placeholder="assets/images/item1.jpg or web image URL" />
+            <span style="font-size:0.75rem; color:var(--color-text-muted);">Leave empty to use sample photo.</span>
+          </div>
+
+          <button type="submit" class="btn-checkout-proceed">
+            Publish Drop Live to Website 🚀
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating WhatsApp Hotline Button -->
+  <a 
+    href="https://wa.me/8801734018155?text=Hi%20AUVARE,%20I%20am%20browsing%20your%20website%20and%20want%20to%20know%20more%20about%20your%20clothes." 
+    target="_blank" 
+    class="floating-wa-btn" 
+    title="Chat with AUVARE on WhatsApp"
+  >
+    <div class="wa-pulse"></div>
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
+    </svg>
+  </a>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="#hero" class="brand-link footer-brand-link" style="margin-bottom: 1.15rem; display: inline-flex; align-items: center; gap: 0.85rem; text-decoration: none;">
+            <img src="assets/images/logo.jpg" alt="AUVARE Crest" class="brand-crest" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1.5px solid rgba(255, 255, 255, 0.2);">
+            <div class="brand-text-group">
+              <span class="brand-title" style="color: #ffffff; font-family: var(--font-serif); font-size: 1.45rem; font-weight: 700; letter-spacing: 0.12em; line-height: 1; display: block;">AUVARE</span>
+              <span class="brand-sub" style="color: #94a3b8; font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 500; display: block; margin-top: 0.25rem;">Curated • Vintage</span>
+            </div>
+          </a>
+          <p>
+            We sell curated stuff, personal taste. Worldwide shipping, proudly based in Bangladesh. Every piece is an authentic vintage & pre-loved treasure.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Explore Drops</h4>
+          <ul class="footer-links">
+            <li><a href="#catalog">T-Shirts & Polos</a></li>
+            <li><a href="#catalog">Vintage Jackets</a></li>
+            <li><a href="#catalog">Pants & Trousers</a></li>
+            <li><a href="#catalog">New Arrivals</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Customer Care</h4>
+          <ul class="footer-links">
+            <li><a href="#catalog">Size & Measurement Guide</a></li>
+            <li><a href="#catalog">Condition Grading (8/10 to 10/10)</a></li>
+            <li><a href="#catalog">Delivery Policies</a></li>
+            <li><a href="#catalog">1-of-1 Pre-loved Return Rules</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Stay Connected</h4>
+          <p style="font-size:0.875rem; color:#9ca3af; margin-bottom:1rem;">
+            Follow our Instagram for flash stories and drop notifications before they hit the site.
+          </p>
+          <a href="https://www.instagram.com/auvare_official/" target="_blank" class="btn-primary" style="padding:0.6rem 1.25rem; font-size:0.85rem;">
+            @auvare_official on IG ↗
+          </a>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>© 2026 AUVARE. All rights reserved. Curated Vintage & Pre-loved Fashion.</p>
+        <p>Payment Supported: Cash on Delivery • bKash • Nagad • Rocket • Bank Transfer</p>
+        <p style="width: 100%; text-align: center; margin-top: 0.5rem; color: #6b7280; font-size: 0.8125rem;">Developed by Abir Shikdar</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Supabase JS CDN & Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/supabaseClient.js"></script>
+
+  <!-- Core App Scripts -->
+  <script src="assets/js/app.js?v=2.4"></script>
+</body>
+</html>
+

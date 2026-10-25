@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AUVARE — Owner & Admin Dashboard</title>
+  
+  <link rel="icon" type="image/jpeg" href="assets/images/logo.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="assets/css/admin.css">
+</head>
+<body>
+
+  <!-- Left Sidebar -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-header">
+      <img src="assets/images/logo.jpg" alt="AUVARE Logo" class="sidebar-logo">
+      <div class="sidebar-brand">
+        <h3>AUVARE</h3>
+        <span>Store Manager</span>
+      </div>
+    </div>
+
+    <ul class="sidebar-menu">
+      <li>
+        <button id="tabBtn_inventory" class="sidebar-btn active" onclick="switchTab('inventory')">
+          <span>📦</span>
+          <span>Products (S, M, L, XL, XXL)</span>
+          <span id="inventoryBadge" class="badge">0</span>
+        </button>
+      </li>
+      <li>
+        <button id="tabBtn_orders" class="sidebar-btn" onclick="switchTab('orders')">
+          <span>📑</span>
+          <span>Customer Orders</span>
+          <span id="ordersBadge" class="badge">0</span>
+        </button>
+      </li>
+      <li>
+        <button id="tabBtn_team" class="sidebar-btn" onclick="switchTab('team')">
+          <span>👥</span>
+          <span>Team & Admin Requests</span>
+          <span id="pendingBadge" class="badge" style="background:#f59e0b; color:white; display:none;">0</span>
+        </button>
+      </li>
+      <li>
+        <button id="tabBtn_settings" class="sidebar-btn" onclick="switchTab('settings')">
+          <span>⚙️</span>
+          <span>Supabase & Settings</span>
+        </button>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <div id="adminUserProfile" style="display: none;"></div>
+      <a href="index.html" class="btn-visit-store" target="_blank" style="margin-bottom: 0.5rem;">
+        <span>🏪 Visit Live Store ↗</span>
+      </a>
+      <button onclick="handleAdminLogout()" id="adminLogoutBtn" class="btn-admin-outline" style="width:100%; justify-content:center; color:#ef4444; border-color:rgba(239,68,68,0.3); font-size:0.8rem;">
+        🔒 Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="admin-main">
+    
+    <!-- Topbar -->
+    <header class="admin-topbar">
+      <div class="admin-topbar-title">
+        <h1 id="adminTopbarHeading">Inventory & Catalog Management</h1>
+        <p id="adminTopbarSub">Full control over clothing drops, sizes (S, M, L, XL, XXL), prices, and Supabase cloud sync.</p>
+      </div>
+
+      <div class="admin-topbar-actions" id="inventoryTopbarActions">
+        <button class="btn-admin-outline" onclick="adminResetDefaults()" title="Reset to original sample drops">
+          ↺ Reset Samples
+        </button>
+        <button class="btn-admin-primary" onclick="openAdminModal('addProductModal')">
+          <span>+ Add New Drop (All Sizes)</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Content Wrap -->
+    <div class="admin-content">
+
+      <!-- ================= TAB 1: INVENTORY ================= -->
+      <div id="inventoryTabContent">
+        <!-- Metric Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-header">
+              <span>TOTAL DROPS</span>
+              <div class="stat-icon" style="background:#f1f5f9; color:#0f172a;">🏷️</div>
+            </div>
+            <div id="statTotalItems" class="stat-value">0</div>
+            <div class="stat-sub">Active pieces with S, M, L, XL, XXL</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span>AVAILABLE (IN STOCK)</span>
+              <div class="stat-icon" style="background:#dcfce7; color:#16a34a;">✓</div>
+            </div>
+            <div id="statAvailable" class="stat-value" style="color: #16a34a;">0</div>
+            <div class="stat-sub">Ready to order in all sizes</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span>SOLD OUT</span>
+              <div class="stat-icon" style="background:#fee2e2; color:#dc2626;">✕</div>
+            </div>
+            <div id="statSold" class="stat-value" style="color: #dc2626;">0</div>
+            <div class="stat-sub">Claimed items</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span>ESTIMATED LOT VALUE</span>
+              <div class="stat-icon" style="background:#e0e7ff; color:#4338ca;">৳</div>
+            </div>
+            <div id="statTotalValue" class="stat-value" style="color: var(--admin-primary);">৳ 0</div>
+            <div class="stat-sub">Combined value of catalog</div>
+          </div>
+        </div>
+
+        <!-- Filter & Search Toolbar -->
+        <div class="admin-toolbar">
+          <div class="toolbar-search">
+            <span class="toolbar-search-icon">🔍</span>
+            <input 
+              type="text" 
+              id="adminSearchInput" 
+              class="toolbar-input" 
+              placeholder="Search by title or category..." 
+            />
+          </div>
+
+          <div class="toolbar-filters">
+            <!-- Category Filter -->
+            <select id="adminCategoryFilter" class="toolbar-select">
+              <option value="all">All Categories</option>
+              <option value="T-Shirts">T-Shirts</option>
+              <option value="Shirts">Shirts & Polos</option>
+              <option value="Jackets">Jackets</option>
+              <option value="Pants">Pants</option>
+            </select>
+
+            <!-- Status Filter -->
+            <select id="adminStatusFilter" class="toolbar-select">
+              <option value="all">All Status</option>
+              <option value="available">Available Only</option>
+              <option value="sold">Sold Out Only</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Inventory Table Card -->
+        <div class="table-card">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Garment / Product</th>
+                <th>Category</th>
+                <th>Available Sizes</th>
+                <th>Chest / Length</th>
+                <th>Price</th>
+                <th>Status</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inventoryTableBody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ================= TAB 2: ORDERS ================= -->
+      <div id="ordersTabContent" style="display: none;">
+        <div class="table-card">
+          <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--admin-border); display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <h3 style="font-size: 1.15rem; font-weight: 700;">Customer Orders</h3>
+              <p style="font-size: 0.8rem; color: var(--admin-text-muted);">Real-time customer checkout requests with chosen size (S/M/L/XL/XXL) & payment info.</p>
+            </div>
+          </div>
+
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Delivery Address</th>
+                <th>Ordered Items & Size</th>
+                <th>Payment</th>
+                <th>Total</th>
+                <th>Contact</th>
+              </tr>
+            </thead>
+            <tbody id="ordersTableBody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ================= TAB 3: SETTINGS & SUPABASE ================= -->
+      <div id="settingsTabContent" style="display: none;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+          
+          <!-- Supabase Cloud Connection Card -->
+          <div class="table-card" style="padding: 2rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+              <h3 style="font-size: 1.2rem; font-weight: 700;">⚡ Supabase Cloud Database</h3>
+              <div id="supabaseStatusBadge">
+                <span style="color:#d97706; font-size:0.8rem; font-weight:700;">🟡 Local Resilient Mode</span>
+              </div>
+            </div>
+
+            <p style="font-size: 0.85rem; color: var(--admin-text-muted); margin-bottom: 1.25rem;">
+              Supabase এর সাথে কানেক্ট করলে সব ডাটা ক্লাউডে সুরক্ষিত থাকবে। Supabase Dashboard থেকে Project URL ও anon key টি নিচে দিয়ে Connect বাটনে চাপুন।
+            </p>
+
+            <form onsubmit="handleSaveSupabaseConfig(event)">
+              <div style="margin-bottom: 1rem;">
+                <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.35rem;">Supabase Project URL</label>
+                <input 
+                  type="url" 
+                  id="supabaseUrlInput" 
+                  class="toolbar-input" 
+                  placeholder="https://your-project.supabase.co" 
+                  style="padding-left:1rem;" 
+                  required 
+                />
+              </div>
+
+              <div style="margin-bottom: 1.25rem;">
+                <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.35rem;">Supabase Anon Public API Key</label>
+                <input 
+                  type="text" 
+                  id="supabaseKeyInput" 
+                  class="toolbar-input" 
+                  placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI..." 
+                  style="padding-left:1rem;" 
+                  required 
+                />
+              </div>
+
+              <button type="submit" class="btn-admin-primary" style="width: 100%; justify-content: center;">
+                Save & Connect Supabase Cloud Database ⚡
+              </button>
+            </form>
+
+            <div style="margin-top: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 8px; border: 1px dashed var(--admin-border); font-size: 0.8rem;">
+              <strong>💡 Supabase Table Setup (১ ক্লিকে):</strong>
+              <p style="margin-top: 0.25rem; color: var(--admin-text-muted);">
+                Supabase এ লগইন করে <strong>SQL Editor</strong>-এ গিয়ে আমাদের প্রজেক্টে থাকা <code>supabase-schema.sql</code> ফাইলের কোডগুলো পেস্ট করে Run দিন। সব টেবিল স্বয়ংক্রিয়ভাবে তৈরি হয়ে যাবে!
+              </p>
+            </div>
+          </div>
+
+          <!-- General Store Settings Card -->
+          <div class="table-card" style="padding: 2rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+              <h3 style="font-size: 1.2rem; font-weight: 700; margin:0;">Store & Contact Information</h3>
+              <span style="font-size:0.75rem; background:var(--admin-primary-soft); color:var(--admin-primary); padding:0.2rem 0.6rem; border-radius:999px; font-weight:700;">
+                Cloud Sync (store_contact_info)
+              </span>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--admin-text-muted); margin-bottom: 1.25rem;">
+              কাস্টমারদের চেকআউট, হোয়াটসঅ্যাপ বাটন ও ইন্সটাগ্রাম লিঙ্কের জন্য নম্বরগুলো কনফিগার করুন। এখানে সেভ করলে সরাসরি পুরো ওয়েবসাইটে আপডেট হয়ে যাবে।
+            </p>
+
+            <form id="storeSettingsForm" onsubmit="handleSaveStoreSettings(event)">
+              <div style="margin-bottom: 1rem;">
+                <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.35rem;">WhatsApp Hotline Number *</label>
+                <input type="text" id="settingWhatsapp" class="toolbar-input" placeholder="e.g. 01700-000000" style="padding-left:1rem;" required />
+              </div>
+
+              <div style="margin-bottom: 1rem;">
+                <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.35rem;">bKash Number</label>
+                <input type="text" id="settingBkash" class="toolbar-input" placeholder="e.g. 01700-000000" style="padding-left:1rem;" />
+              </div>
+
+              <div style="margin-bottom: 1rem;">
+                <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.35rem;">Nagad Number</label>
+                <input type="text" id="settingNagad" class="toolbar-input" placeholder="e.g. 01700-000000" style="padding-left:1rem;" />
+              </div>
+
+              <div style="margin-bottom: 1.25rem;">
+                <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.35rem;">Instagram Official Handle</label>
+                <input type="text" id="settingInstagram" class="toolbar-input" placeholder="e.g. @auvare_official" style="padding-left:1rem;" />
+              </div>
+
+              <button type="submit" class="btn-admin-primary" style="width: 100%; justify-content: center;">
+                Save Store Information & Update Cloud ⚡
+              </button>
+            </form>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ================= TAB: ADMIN USERS & REQUESTS ================= -->
+      <div id="view_team" class="tab-pane" style="display: none;">
+        
+        <!-- Summary Stats for Users -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-label">Total Registered Users</span>
+              <span>👥</span>
+            </div>
+            <div class="stat-value" id="statTotalUsers">0</div>
+            <div class="stat-sub">Customers, applicants & staff</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-label">Approved Admins</span>
+              <span>🛡️</span>
+            </div>
+            <div class="stat-value" id="statApprovedAdmins" style="color:var(--admin-primary);">1</div>
+            <div class="stat-sub">Active dashboard & inventory access</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-label">Pending Approval</span>
+              <span>⏳</span>
+            </div>
+            <div class="stat-value" id="statPendingRequests" style="color:#d97706;">0</div>
+            <div class="stat-sub">Awaiting Super Admin review</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-label">Permanent Super Admin</span>
+              <span>👑</span>
+            </div>
+            <div class="stat-value" style="font-size:1.1rem; font-weight:700; color:var(--admin-primary);">Abir Shikdar</div>
+            <div class="stat-sub">Master authority (Unrestricted)</div>
+          </div>
+        </div>
+
+        <!-- Regular Admin Restriction Notice (Visible only if current user is not Super Admin) -->
+        <div id="regularAdminNotice" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 0.85rem 1.15rem; border-radius: var(--radius-sm); margin-bottom: 1.25rem; font-size: 0.875rem; align-items: center; gap: 0.6rem;">
+          <span style="font-size: 1.1rem;">🔒</span>
+          <div>
+            <strong>View-Only Directory:</strong> You are logged in as a Regular Admin. Only Super Admin (Md Abir Shikdar) has authority to approve, reject, or modify access permissions.
+          </div>
+        </div>
+
+        <!-- Users & Approval Table Card -->
+        <div class="table-card" style="border-top: 3.5px solid var(--admin-primary); box-shadow: 0 4px 16px rgba(0,0,0,0.06);">
+          <div class="table-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1.35rem 1.75rem; border-bottom: 1px solid var(--admin-border); background: #ffffff;">
+            <div>
+              <div style="display:flex; align-items:center; gap:0.65rem; margin-bottom: 0.25rem;">
+                <h3 style="font-size:1.2rem; font-weight:800; color:var(--admin-text-main); margin:0;">
+                  Admin Access Requests & User Directory
+                </h3>
+                <span style="background:var(--admin-primary-soft); color:var(--admin-primary); border:1px solid rgba(16,80,54,0.25); font-size:0.72rem; font-weight:700; padding:0.2rem 0.6rem; border-radius:999px;">
+                  ⚡ Cloud Live Sync
+                </span>
+              </div>
+              <p style="font-size:0.85rem; color:var(--admin-text-muted); margin:0;">
+                All users who sign in with Google are logged here. Super Admin approval is strictly required before non-admins can access this dashboard.
+              </p>
+            </div>
+            <button class="btn-admin-outline" onclick="loadAuthUsersTable()" style="font-size:0.82rem; display:inline-flex; align-items:center; gap:0.45rem; padding:0.5rem 1rem; font-weight:600;">
+              <span>↻</span> <span>Refresh Directory</span>
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-table compact-table">
+              <thead>
+                <tr>
+                  <th>User / Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Joined Date</th>
+                  <th>Actions & Approval</th>
+                </tr>
+              </thead>
+              <tbody id="authUsersTableBody">
+                <!-- Dynamically populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ================= AUTH GATE MODAL ================= -->
+  <div id="adminAuthGate" class="admin-modal-overlay open">
+    <div class="admin-modal-box" style="max-width: 440px; padding: 2.25rem 2rem; text-align: center;">
+      <img src="assets/images/logo.jpg" alt="AUVARE Logo" style="width: 68px; height: 68px; border-radius: 50%; margin: 0 auto 1.25rem; border: 3px solid var(--admin-primary); box-shadow: var(--shadow-sm);" />
+      <h3 style="font-family:'Playfair Display', serif; font-size: 1.6rem; margin-bottom: 0.35rem; color: var(--admin-text-main);">AUVARE STORE</h3>
+      <p style="font-size: 0.85rem; color: var(--admin-text-muted); margin-bottom: 1.5rem;">
+        Owner & Admin Management Portal
+      </p>
+
+      <!-- Standard Sign-in View -->
+      <div id="authGateDefaultView">
+        <div style="background: #f8fafc; border: 1px solid var(--admin-border); border-radius: var(--radius-md); padding: 1.15rem; margin-bottom: 1.5rem; text-align: left;">
+          <p style="font-size: 0.85rem; font-weight: 700; color: #1e293b; margin-bottom: 0.25rem;">
+            🔐 Secure Cloud Authentication
+          </p>
+          <p style="font-size: 0.78rem; color: #64748b; line-height: 1.45; margin: 0;">
+            Sign in with your Google account. Permanent access is reserved for Super Admin (Abir Shikdar). All other applicants will be placed in pending approval.
+          </p>
+        </div>
+
+        <!-- Continue with Google Button -->
+        <button type="button" class="btn-google-signin" id="btnGoogleSignIn" onclick="handleGoogleSignIn()">
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17Z"/>
+            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.36 24 12 24Z"/>
+            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15Z"/>
+            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.36 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z"/>
+          </svg>
+          <span>Continue with Google</span>
+        </button>
+
+        <p style="font-size: 0.72rem; color: var(--admin-text-muted); margin-top: 1.25rem; margin-bottom: 0;">
+          Powered by Supabase Auth (Singapore Server)
+        </p>
+      </div>
+
+      <!-- Pending Approval View -->
+      <div id="authGatePendingView" style="display: none;">
+        <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem; text-align: center;">
+          <div style="font-size: 2rem; margin-bottom: 0.5rem;">⏳</div>
+          <h4 style="font-size: 1rem; font-weight: 700; color: #92400e; margin-bottom: 0.35rem;">
+            Access Request Pending Approval
+          </h4>
+          <p id="pendingUserEmailNotice" style="font-size: 0.82rem; color: #78350f; line-height: 1.4; margin-bottom: 0.75rem;">
+            আপনার অ্যাডমিন অ্যাক্সেস রিকোয়েস্টটি Super Admin (Md Abir Shikdar)-এর কাছে জমা হয়েছে।
+          </p>
+          <div id="pendingUserCard" style="display: inline-flex; align-items: center; gap: 0.5rem; background: white; padding: 0.4rem 0.8rem; border-radius: 999px; border: 1px solid #fcd34d; font-size: 0.78rem; color: #78350f;">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+        <p style="font-size: 0.78rem; color: var(--admin-text-muted); margin-bottom: 1.25rem;">
+          সুপার অ্যাডমিন আপনার আবেদন অনুমোদন (Approve) করলে আপনি ড্যাশবোর্ডে ঢুকতে পারবেন।
+        </p>
+
+        <div style="display: flex; gap: 0.75rem; justify-content: center;">
+          <button type="button" class="btn-admin-primary" onclick="recheckApprovalStatus()" style="font-size: 0.85rem; padding: 0.65rem 1rem;">
+            ↻ Check Status
+          </button>
+          <button type="button" class="btn-admin-outline" onclick="handleAdminLogout()" style="font-size: 0.85rem; padding: 0.65rem 1rem;">
+            Sign Out
+          </button>
+        </div>
+      </div>
+
+      <!-- Rejected View (Allows Applicant to Re-apply anytime) -->
+      <div id="authGateRejectedView" style="display: none;">
+        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-md); padding: 1.5rem 1.25rem; margin-bottom: 1.25rem; text-align: center;">
+          <div style="font-size: 2.25rem; margin-bottom: 0.5rem;">⛔</div>
+          <h4 style="font-size: 1.1rem; font-weight: 700; color: #991b1b; margin-bottom: 0.35rem;">
+            Super Admin Rejected Your Request
+          </h4>
+          <p id="rejectedUserNotice" style="font-size: 0.82rem; color: #7f1d1d; line-height: 1.45; margin-bottom: 0.5rem;">
+            সুপার অ্যাডমিন (Md Abir Shikdar) আপনার অ্যাডমিন অ্যাক্সেস রিকোয়েস্টটি বাতিল করেছেন।
+          </p>
+          <p style="font-size: 0.78rem; color: #991b1b; opacity: 0.9; margin: 0;">
+            আপনি চাইলে যেকোনো সময় পুনরায় আবেদন (Re-apply) করতে পারেন।
+          </p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+          <button type="button" id="btnReapplyAccess" class="btn-admin-primary" onclick="handleReapplyAccess()" style="width: 100%; justify-content: center; padding: 0.75rem 1rem; font-size: 0.88rem; background: linear-gradient(135deg, #105036 0%, #15803d 100%);">
+            <span>🔄 Re-apply for Admin Access (পুনরায় রিকোয়েস্ট পাঠান)</span>
+          </button>
+          
+          <button type="button" class="btn-admin-outline" onclick="handleAdminLogout()" style="width: 100%; justify-content: center; font-size: 0.82rem; padding: 0.6rem 1rem;">
+            Sign Out / Use Another Account
+          </button>
+        </div>
+      </div>
+
+      <!-- Blocked / Banned View (Permanently blocks spam re-applicants) -->
+      <div id="authGateBlockedView" style="display: none;">
+        <div style="background: #450a0a; border: 1px solid #7f1d1d; border-radius: var(--radius-md); padding: 1.65rem 1.25rem; margin-bottom: 1.25rem; text-align: center; color: white;">
+          <div style="font-size: 2.75rem; margin-bottom: 0.5rem; filter: drop-shadow(0 2px 8px rgba(239, 68, 68, 0.4));">🚫</div>
+          <h4 style="font-size: 1.2rem; font-weight: 800; color: #fecaca; margin-bottom: 0.4rem; letter-spacing: -0.01em;">
+            Access Permanently Blocked
+          </h4>
+          <p id="blockedUserNotice" style="font-size: 0.85rem; color: #fca5a5; line-height: 1.5; margin-bottom: 0.65rem;">
+            আপনার অ্যাকাউন্টটি সুপার অ্যাডমিন কর্তৃক ব্লক করা হয়েছে।
+          </p>
+          <div style="background: rgba(0, 0, 0, 0.3); border: 1px dashed rgba(254, 202, 202, 0.3); border-radius: 8px; padding: 0.65rem 0.85rem; font-size: 0.78rem; color: #fecaca; line-height: 1.45;">
+            ⚠️ আপনি এই প্যানেলে আর কোনো অ্যাক্সেস রিকোয়েস্ট পাঠাতে পারবেন না। সুপার অ্যাডমিন (Md Abir Shikdar) আনব্লক না করা পর্যন্ত আবেদন বন্ধ থাকবে।
+          </div>
+        </div>
+
+        <!-- Note: Strictly Sign Out only. NO RE-APPLY BUTTON FOR BLOCKED USERS! -->
+        <button type="button" class="btn-admin-outline" onclick="handleAdminLogout()" style="width: 100%; justify-content: center; font-size: 0.85rem; padding: 0.7rem 1rem; color: #f87171; border-color: rgba(248, 113, 113, 0.4);">
+          🔒 Sign Out / বন্ধ করুন
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= MODAL: REJECT OR BLOCK CONFIRMATION ================= -->
+  <div id="rejectConfirmModal" class="admin-modal-overlay">
+    <div class="admin-modal-box" style="max-width: 480px; padding: 0; overflow: hidden; border-radius: var(--radius-lg); border: 1px solid var(--admin-border); box-shadow: var(--shadow-lg);">
+      
+      <!-- Brand & Super Admin Authority Header -->
+      <div style="padding: 1.25rem 1.5rem; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08);">
+        <div style="display: flex; align-items: center; gap: 0.85rem;">
+          <img src="assets/images/logo.jpg" alt="AUVARE Logo" style="width: 46px; height: 46px; border-radius: 50%; border: 2.5px solid #105036; box-shadow: 0 2px 8px rgba(0,0,0,0.4); object-fit: cover;" />
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.45rem;">
+              <span style="font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.05em; color: white;">AUVARE</span>
+              <span style="font-size: 0.65rem; background: rgba(16, 80, 54, 0.7); color: #86efac; border: 1px solid rgba(134, 239, 172, 0.4); padding: 0.12rem 0.45rem; border-radius: 999px; font-weight: 700;">STORE</span>
+            </div>
+            <div style="font-size: 0.82rem; font-weight: 700; color: #fbbf24; display: flex; align-items: center; gap: 0.35rem; margin-top: 0.1rem;">
+              <span>👑</span> <span>Md Abir Shikdar</span> <span style="font-size: 0.7rem; color: #94a3b8; font-weight: 500;">(Super Admin)</span>
+            </div>
+          </div>
+        </div>
+        <button type="button" onclick="closeAdminModal('rejectConfirmModal')" style="color: #94a3b8; background: rgba(255,255,255,0.06); border-radius: 6px; border: none; font-size: 1rem; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer;">✕</button>
+      </div>
+
+      <div style="padding: 1.5rem;">
+        <input type="hidden" id="rejectTargetUserId" />
+        <input type="hidden" id="rejectTargetUserName" />
+        <input type="hidden" id="selectedRejectAction" value="reject" />
+
+        <!-- Target User Account Context Card -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.85rem 1.1rem; margin-bottom: 1.25rem;">
+          <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">
+            Target Account (যাকে Reject বা Block করা হচ্ছে):
+          </div>
+          <div style="font-size: 0.92rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 0.4rem;">
+            <span>👤</span> <span id="rejectTargetDisplayName">User Name</span>
+          </div>
+          <div style="font-size: 0.78rem; color: #475569; font-family: monospace; margin-top: 0.2rem;" id="rejectTargetDisplayEmail">
+            user@example.com
+          </div>
+        </div>
+
+        <p style="font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.75rem;">
+          যেকোনো একটি অ্যাকশন সিলেক্ট করুন:
+        </p>
+
+        <!-- Selectable Action Cards -->
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
+          
+          <!-- Card 1: Reject (Default Selected) -->
+          <div id="cardSelectReject" onclick="selectRejectOption('reject')" style="text-align: left; background: #fff; border: 2px solid #ef4444; border-radius: 8px; padding: 0.9rem 1rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: flex-start; gap: 0.85rem; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.08);">
+            <div id="radioCircleReject" style="width: 20px; height: 20px; border-radius: 50%; border: 2px solid #dc2626; background: #dc2626; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.65rem; font-weight: 900; margin-top: 0.1rem; flex-shrink: 0;">
+              ✓
+            </div>
+            <div>
+              <div style="font-size: 0.88rem; font-weight: 700; color: #991b1b; margin-bottom: 0.2rem;">
+                ✕ Reject (সাধারণ বাতিল)
+              </div>
+              <div style="font-size: 0.75rem; color: #64748b; line-height: 1.4;">
+                আবেদনটি সাময়িকভাবে বাতিল হবে ও তালিকা থেকে মুছে যাবে। ইউজার চাইলে পরবর্তীতে আবার রিকোয়েস্ট করতে পারবে।
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Permanent Block against Spammers -->
+          <div id="cardSelectBlock" onclick="selectRejectOption('block')" style="text-align: left; background: #fff; border: 2px solid #e2e8f0; border-radius: 8px; padding: 0.9rem 1rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: flex-start; gap: 0.85rem;">
+            <div id="radioCircleBlock" style="width: 20px; height: 20px; border-radius: 50%; border: 2px solid #cbd5e1; background: transparent; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.65rem; font-weight: 900; margin-top: 0.1rem; flex-shrink: 0;">
+            </div>
+            <div>
+              <div style="font-size: 0.88rem; font-weight: 700; color: #334155; margin-bottom: 0.2rem;">
+                🚫 Block (স্থায়ী ব্লক - স্প্যাম রোধ)
+              </div>
+              <div style="font-size: 0.75rem; color: #64748b; line-height: 1.4;">
+                ইউজার স্থায়ীভাবে ব্লক হবে। সে আর <strong>কখনোই রিকোয়েস্ট পাঠাতে পারবে না</strong> (যতক্ষণ না আপনি নিজে আনব্লক করেন)।
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Action Footer -->
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid #e2e8f0; padding-top: 1.25rem;">
+          <button type="button" class="btn-admin-outline" onclick="closeAdminModal('rejectConfirmModal')" style="font-size: 0.83rem; padding: 0.65rem 1.15rem;">
+            Cancel / বাতিল
+          </button>
+          <button type="button" id="btnSaveRejectAction" onclick="executeSelectedRejectAction()" class="btn-admin-primary" style="font-size: 0.85rem; padding: 0.65rem 1.35rem; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);">
+            <span>Reject Request / বাতিল করুন</span> <span>✓</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: EDIT USER & PERMISSIONS ================= -->
+  <div id="editUserModal" class="admin-modal-overlay">
+    <div class="admin-modal-box" style="max-width: 520px; padding: 0; overflow: hidden; border-radius: var(--radius-lg); border: 1px solid var(--admin-border); box-shadow: var(--shadow-lg);">
+      
+      <!-- Modal Header -->
+      <div style="padding: 1.5rem 1.75rem; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; display: flex; align-items: flex-start; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 0.85rem;">
+          <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+            🛡️
+          </div>
+          <div>
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: white; margin-bottom: 0.2rem;">User Access & Role Management</h3>
+            <p style="font-size: 0.78rem; color: #94a3b8; margin: 0;">Modify permissions, role authority, or revoke admin access.</p>
+          </div>
+        </div>
+        <button type="button" class="btn-table-action" onclick="closeAdminModal('editUserModal')" style="color: #94a3b8; background: rgba(255,255,255,0.06); border-radius: 6px; border: none; font-size: 1rem; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+          ✕
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div style="padding: 1.75rem; max-height: calc(85vh - 120px); overflow-y: auto;">
+        <form id="editUserForm" onsubmit="handleSaveUserEdit(event)">
+          <input type="hidden" id="editUserId" />
+
+          <!-- Step 1: User Identity Card -->
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 1rem 1.15rem; margin-bottom: 1.35rem; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div id="editUserAvatarPreview" style="width: 40px; height: 40px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #475569; overflow: hidden;">
+                👤
+              </div>
+              <div>
+                <div id="editUserCardName" style="font-size: 0.9rem; font-weight: 700; color: #0f172a;">Loading...</div>
+                <div id="editUserCardEmail" style="font-size: 0.75rem; color: #64748b;">user@example.com</div>
+              </div>
+            </div>
+            <div id="editUserCurrentBadges" style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem;">
+              <!-- Dynamic status badges -->
+            </div>
+          </div>
+
+          <!-- Step 2: Account Details -->
+          <div style="margin-bottom: 1.15rem;">
+            <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 0.35rem;">
+              User Email <span style="font-size: 0.72rem; font-weight: 500; color: #94a3b8;">(Permanent Google ID)</span>
+            </label>
+            <div style="position: relative;">
+              <input type="text" id="editUserEmail" class="toolbar-input" style="padding-left: 2.25rem; background: #f1f5f9; cursor: not-allowed; color: #475569;" readonly />
+              <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-size: 0.85rem; color: #94a3b8;">🔒</span>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1.35rem;">
+            <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 0.35rem;">
+              Display Name *
+            </label>
+            <input type="text" id="editUserDisplayName" class="toolbar-input" style="padding-left: 1rem;" required />
+          </div>
+
+          <!-- Step 3: Permissions & Role Grid -->
+          <div class="form-grid-2" style="margin-bottom: 1.35rem;">
+            <div>
+              <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 0.35rem;">
+                System Role
+              </label>
+              <select id="editUserRole" class="toolbar-select" style="width: 100%; font-size: 0.83rem;">
+                <option value="customer">👤 Customer (কাস্টমার)</option>
+                <option value="admin">🛡️ Admin (অ্যাডমিন)</option>
+                <option value="super_admin">👑 Super Admin (সুপার অ্যাডমিন)</option>
+              </select>
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 0.35rem;">
+                Approval Status
+              </label>
+              <select id="editUserStatus" class="toolbar-select" style="width: 100%; font-size: 0.83rem;" onchange="handleModalStatusChange(this.value)">
+                <option value="approved">✓ Approved (অনুমোদিত)</option>
+                <option value="pending">⏳ Pending Review (অপেক্ষারত)</option>
+                <option value="rejected">⛔ Rejected / Removed (বাতিল)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Status Advisory Notice Box -->
+          <div id="modalStatusAlertBox" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 0.85rem 1rem; margin-bottom: 1.5rem; font-size: 0.78rem; color: #64748b; line-height: 1.45;">
+            💡 <strong>Status Info:</strong> <span id="modalStatusAlertText">ইউজারের তথ্য ও পারমিশন পরিবর্তন করতে নিচে সেভ বাটনে চাপুন।</span>
+          </div>
+
+          <!-- Modal Footer Actions -->
+          <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #e2e8f0; padding-top: 1.25rem;">
+            <button type="button" class="btn-admin-outline" onclick="closeAdminModal('editUserModal')" style="font-size: 0.83rem; padding: 0.6rem 1.15rem;">
+              Cancel
+            </button>
+            <button type="submit" class="btn-admin-primary" style="font-size: 0.85rem; padding: 0.65rem 1.35rem; display: inline-flex; align-items: center; gap: 0.4rem;">
+              <span>Save User Details</span> <span>✓</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= MODAL: ADD NEW DROP ================= -->
+  <div id="addProductModal" class="admin-modal-overlay">
+    <div class="admin-modal-box">
+      <div class="modal-header-admin">
+        <h3>+ Add New Clothing Drop (S, M, L, XL, XXL)</h3>
+        <button class="btn-table-action" onclick="closeAdminModal('addProductModal')">✕</button>
+      </div>
+
+      <div class="modal-body-admin">
+        <form onsubmit="handleAddProductSubmit(event)">
+          
+          <div style="margin-bottom: 1.25rem;">
+            <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Product / Cloth Title *</label>
+            <input type="text" id="addTitle" class="toolbar-input" placeholder="e.g. Vintage Heavyweight Graphic Drop" style="padding-left:1rem;" required />
+          </div>
+
+          <div class="form-grid-2" style="margin-bottom: 1.25rem;">
+            <div>
+              <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Category *</label>
+              <select id="addCategory" class="toolbar-select" style="width: 100%;" required>
+                <option value="T-Shirts">T-Shirts</option>
+                <option value="Shirts">Shirts & Polos</option>
+                <option value="Jackets">Jackets</option>
+                <option value="Pants">Pants</option>
+              </select>
+            </div>
+
+            <div>
+              <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Price (৳ BDT) *</label>
+              <input type="number" id="addPrice" class="toolbar-input" placeholder="e.g. 850" style="padding-left:1rem;" required />
+            </div>
+          </div>
+
+          <!-- Multi-Size Selection (S, M, L, XL, XXL) -->
+          <div style="margin-bottom: 1.25rem; background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid var(--admin-border);">
+            <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:0.5rem; color:var(--admin-primary);">
+              Available Sizes for Customers *
+            </label>
+            <div style="display: flex; gap: 1.25rem; flex-wrap: wrap;">
+              <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="add-size-checkbox" value="S" checked /> Size S
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="add-size-checkbox" value="M" checked /> Size M
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="add-size-checkbox" value="L" checked /> Size L
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="add-size-checkbox" value="XL" checked /> Size XL
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="add-size-checkbox" value="XXL" checked /> Size XXL
+              </label>
+            </div>
+          </div>
+
+          <div class="form-grid-2" style="margin-bottom: 1.25rem;">
+            <div>
+              <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Chest Range (Inches)</label>
+              <input type="text" id="addChest" class="toolbar-input" placeholder="e.g. 38-46" value="38-46" style="padding-left:1rem;" />
+            </div>
+
+            <div>
+              <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Length Range (Inches)</label>
+              <input type="text" id="addLength" class="toolbar-input" placeholder="e.g. 26-30" value="26-30" style="padding-left:1rem;" />
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1.25rem;">
+            <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Condition</label>
+            <input type="text" id="addCondition" class="toolbar-input" placeholder="e.g. 9.5/10 (Mint Condition)" value="9.5/10 (Mint Condition)" style="padding-left:1rem;" />
+          </div>
+
+          <!-- Photo Upload -->
+          <div style="margin-bottom: 1.25rem;">
+            <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">
+              Upload Photo from Phone/PC
+            </label>
+            <input type="file" id="addFileInput" accept="image/*" class="toolbar-input" style="padding:0.4rem;" />
+            
+            <div style="margin-top: 0.5rem;">
+              <span style="font-size:0.75rem; color:var(--admin-text-muted);">অথবা ছবির লিঙ্ক দিন:</span>
+              <input type="text" id="addImageUrl" class="toolbar-input" placeholder="assets/images/item1.jpg or web URL" style="padding-left:1rem; margin-top:0.25rem;" />
+            </div>
+
+            <div id="addImagePreview" class="image-preview-box">
+              <span style="color:var(--admin-text-muted); font-size:0.85rem;">No photo chosen</span>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1.5rem;">
+            <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Description / Notes</label>
+            <textarea id="addDescription" class="toolbar-input" rows="2" placeholder="Fabric, wash, styling notes..." style="padding:0.6rem 0.85rem;"></textarea>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+            <button type="button" class="btn-admin-outline" onclick="closeAdminModal('addProductModal')">Cancel</button>
+            <button type="submit" class="btn-admin-primary">Publish to Store & Cloud 🚀</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: EDIT PRODUCT ================= -->
+  <div id="editProductModal" class="admin-modal-overlay">
+    <div class="admin-modal-box">
+      <div class="modal-header-admin">
+        <h3>✏️ Edit Clothing Drop Details</h3>
+        <button class="btn-table-action" onclick="closeAdminModal('editProductModal')">✕</button>
+      </div>
+
+      <div class="modal-body-admin">
+        <form onsubmit="handleEditProductSubmit(event)">
+          <input type="hidden" id="editProductId" />
+
+          <div style="margin-bottom: 1.25rem;">
+            <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Product Title *</label>
+            <input type="text" id="editTitle" class="toolbar-input" style="padding-left:1rem;" required />
+          </div>
+
+          <div class="form-grid-3" style="margin-bottom: 1.25rem;">
+            <div>
+              <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Category *</label>
+              <select id="editCategory" class="toolbar-select" style="width: 100%;" required>
+                <option value="T-Shirts">T-Shirts</option>
+                <option value="Shirts">Shirts & Polos</option>
+                <option value="Jackets">Jackets</option>
+                <option value="Pants">Pants</option>
+              </select>
+            </div>
+
+            <div>
+              <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Price (৳ BDT) *</label>
+              <input type="number" id="editPrice" class="toolbar-input" style="padding-left:1rem;" required />
+            </div>
+
+            <div>
+              <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Status *</label>
+              <select id="editSoldStatus" class="toolbar-select" style="width: 100%;" required>
+                <option value="false">Available (In Stock)</option>
+                <option value="true">Sold Out (বিক্রি হয়ে গেছে)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Multi-Size Selection for Edit -->
+          <div style="margin-bottom: 1.25rem; background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid var(--admin-border);">
+            <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:0.5rem; color:var(--admin-primary);">
+              Available Sizes (S, M, L, XL, XXL)
+            </label>
+            <div style="display: flex; gap: 1.25rem; flex-wrap: wrap;">
+              <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="edit-size-checkbox" value="S" /> S
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="edit-size-checkbox" value="M" /> M
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="edit-size-checkbox" value="L" /> L
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="edit-size-checkbox" value="XL" /> XL
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="edit-size-checkbox" value="XXL" /> XXL
+              </label>
+            </div>
+          </div>
+
+          <div class="form-grid-2" style="margin-bottom: 1.25rem;">
+            <div>
+              <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Chest Range (Inches)</label>
+              <input type="text" id="editChest" class="toolbar-input" style="padding-left:1rem;" required />
+            </div>
+
+            <div>
+              <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Length Range (Inches)</label>
+              <input type="text" id="editLength" class="toolbar-input" style="padding-left:1rem;" required />
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1.25rem;">
+            <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Condition</label>
+            <input type="text" id="editCondition" class="toolbar-input" style="padding-left:1rem;" />
+          </div>
+
+          <!-- Change Photo -->
+          <div style="margin-bottom: 1.25rem;">
+            <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">
+              Change Photo
+            </label>
+            <input type="file" id="editFileInput" accept="image/*" class="toolbar-input" style="padding:0.4rem;" />
+            <input type="text" id="editImageUrl" class="toolbar-input" placeholder="Or enter image URL" style="padding-left:1rem; margin-top:0.35rem;" />
+
+            <div id="editImagePreview" class="image-preview-box">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1.5rem;">
+            <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.4rem;">Description / Notes</label>
+            <textarea id="editDescription" class="toolbar-input" rows="2" style="padding:0.6rem 0.85rem;"></textarea>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+            <button type="button" class="btn-admin-outline" onclick="closeAdminModal('editProductModal')">Cancel</button>
+            <button type="submit" class="btn-admin-primary">Save Changes & Update Cloud ✓</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supabase CDN & Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/supabaseClient.js"></script>
+  <script src="assets/js/admin.js"></script>
+</body>
+</html>
