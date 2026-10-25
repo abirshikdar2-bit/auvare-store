@@ -12,12 +12,12 @@ const SupabaseService = (function() {
   };
 
   let client = null;
+  let columnPaymentNumberSupported = true;
 
   function getConfig() {
-    const saved = localStorage.getItem('auvare_supabase_config');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
+    try {
+      localStorage.removeItem('auvare_supabase_config');
+    } catch (e) {}
     return DEFAULT_CONFIG;
   }
 
@@ -172,7 +172,27 @@ const SupabaseService = (function() {
       order_status: order.orderStatus || 'pending'
     };
 
-    // 1. Try with payment_number column first
+    // If payment_number is known not to exist yet in remote table, use notes fallback directly
+    if (!columnPaymentNumberSupported) {
+      const fallbackNotes = paymentNumber
+        ? `${basePayload.notes ? basePayload.notes + ' | ' : ''}Payment Number: ${paymentNumber}`
+        : basePayload.notes;
+      const fallbackPayload = {
+        ...basePayload,
+        notes: fallbackNotes
+      };
+      try {
+        const { data, error } = await client.from('orders').insert([fallbackPayload]).select();
+        if (!error) {
+          console.log('✓ Order saved to Supabase cloud database!');
+          return data;
+        }
+      } catch (e) {
+        console.warn('Direct fallback insert warning:', e);
+      }
+    }
+
+    // Try with payment_number column first
     try {
       const payloadWithPaymentNumber = {
         ...basePayload,
@@ -180,12 +200,14 @@ const SupabaseService = (function() {
       };
       const { data, error } = await client.from('orders').insert([payloadWithPaymentNumber]).select();
       if (!error) {
+        columnPaymentNumberSupported = true;
         console.log('✓ Order saved to Supabase cloud database with payment_number!');
         return data;
       }
       
       // If error is about missing column in schema cache, fallback to base insert
       if (error.code === 'PGRST204' || error.message?.includes('payment_number') || error.message?.includes('column')) {
+        columnPaymentNumberSupported = false;
         console.warn('payment_number column not found in schema cache, storing in notes fallback...');
         const fallbackNotes = paymentNumber
           ? `${basePayload.notes ? basePayload.notes + ' | ' : ''}Payment Number: ${paymentNumber}`

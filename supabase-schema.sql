@@ -43,6 +43,10 @@ CREATE TABLE IF NOT EXISTS public.orders (
 -- Ensure payment_number exists if table already created
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_number TEXT;
 
+-- Enable Realtime publication for orders and products
+ALTER PUBLICATION supabase_realtime ADD TABLE public.orders;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.products;
+
 -- 3. Create Store Contact Information Table
 CREATE TABLE IF NOT EXISTS public.store_contact_info (
     id TEXT PRIMARY KEY DEFAULT 'main',

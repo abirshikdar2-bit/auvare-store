@@ -165,7 +165,7 @@ async function initAdmin() {
     loadAuthUsersTable();
   }
 
-  // Real-time listener for incoming orders from public storefront
+  // 1. Real-time listener for incoming orders from public storefront
   if (window.SupabaseService) {
     const client = window.SupabaseService.getClient();
     if (client) {
@@ -175,7 +175,8 @@ async function initAdmin() {
           const fresh = await window.SupabaseService.getOrders();
           if (fresh) {
             adminState.orders = fresh;
-            renderOrdersTable();
+            if (adminState.activeTab === 'orders') renderOrdersTable();
+            if (adminState.activeTab === 'home') renderHomeDashboard();
             updateSidebarBadges();
             showAdminToast('New order received from storefront!', 'success');
           }
@@ -185,6 +186,31 @@ async function initAdmin() {
       }
     }
   }
+
+  // 2. High-reliability polling fallback (checks every 5 seconds)
+  // Ensures new orders always appear automatically even if WebSockets are blocked by tracking prevention or network policies
+  setInterval(async () => {
+    if (!window.SupabaseService) return;
+    try {
+      const fresh = await window.SupabaseService.getOrders();
+      if (fresh && Array.isArray(fresh)) {
+        const currentIds = (adminState.orders || []).map(o => o.orderId + ':' + (o.status || o.orderStatus)).join('|');
+        const freshIds = fresh.map(o => o.orderId + ':' + (o.status || o.orderStatus)).join('|');
+        if (currentIds !== freshIds) {
+          const wasNewOrder = fresh.length > (adminState.orders ? adminState.orders.length : 0);
+          adminState.orders = fresh;
+          if (adminState.activeTab === 'orders') renderOrdersTable();
+          if (adminState.activeTab === 'home') renderHomeDashboard();
+          updateSidebarBadges();
+          if (wasNewOrder && adminState.orders.length > 1) {
+            showAdminToast('New customer order received!', 'success');
+          }
+        }
+      }
+    } catch (e) {
+      // Polling fail silent
+    }
+  }, 5000);
 }
 
 // Authentication Check with Google OAuth & Supabase RBAC
