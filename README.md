@@ -21,3 +21,4 @@ A luxury editorial vintage clothing storefront and owner/admin management dashbo
 - Frontend: Vanilla HTML5, CSS3, Modern JavaScript
 - Backend & Database: Supabase Cloud (PostgreSQL, Supabase Auth, Storage)
 - Deployment: Vercel Production
+

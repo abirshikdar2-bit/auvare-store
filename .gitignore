@@ -6,6 +6,7 @@
 env.local
 
 # Logs & temp
+deploy-vercel.ps1
 *.log
 *.tmp
 .DS_Store
