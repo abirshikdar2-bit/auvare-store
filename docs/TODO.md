@@ -16,6 +16,12 @@ _(none)_
 
 ## Done
 
+- `#13` **2026-10-26** Explicit `payment_number` and `size` Dedicated Columns in Supabase Orders Schema:
+  - **Identified User Requirement**: User requested that in Supabase cloud Table Editor, the customer's payment sender phone number be recorded as a dedicated column `payment_number` positioned right before `trx_id`, and the ordered clothing size be recorded as a dedicated column `size` right after `trx_id`.
+  - **Schema Layout & Auto-Backfill Migration**: Placed `payment_number TEXT` immediately before `trx_id TEXT` and `size TEXT` immediately after `trx_id TEXT` in `CREATE TABLE IF NOT EXISTS public.orders` in `supabase-schema.sql`. Added `ALTER TABLE` statements and backfill queries extracting payment numbers from `notes` and sizes from `items JSONB` for existing orders.
+  - **Dual-Mode Self-Healing Sync**: Updated `app.js` to construct `size` from cart items and `supabaseClient.js` to transmit `payment_number` and `size` with automatic fallback to prevent order drops.
+  - **Asset Versioning**: Bumped asset versions to `?v=3.4`.
+
 - `#12` **2026-10-26** Fix Order Status Update Persistence & Overwrite Glitch:
   - **Identified Root Cause**: In Supabase PostgreSQL, `orders` table lacked an RLS policy for `UPDATE` (`CREATE POLICY "Public and Admin can manage orders" ON public.orders FOR ALL USING (true);`). As a result, PostgREST silently updated 0 rows. When the admin clicked "Save Status" and then "Refresh Orders" or background polling ran, fresh untouched `pending` data from the database overwrote the admin's change back to `pending`.
   - **Persistent Local Overrides & Self-Healing Sync**: Added `auvare_order_statuses` persistent state map in `supabaseClient.js`. `updateOrderStatus` stores the admin's chosen status locally and attempts cloud update with `.select()`. `getOrders` merges the admin's latest status overrides over any laggy cloud responses, permanently preserving `confirmed`, `delivered`, or `cancelled` across refreshes and polling.

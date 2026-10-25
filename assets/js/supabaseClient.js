@@ -156,6 +156,8 @@ const SupabaseService = (function() {
     if (!client) return false;
 
     const paymentNumber = order.paymentNumber || order.paymentSenderNumber || order.senderPhone || null;
+    const size = order.size || (order.items && order.items.length ? order.items.map(i => i.size).filter(Boolean).join(', ') : 'M');
+
     const basePayload = {
       order_id: order.orderId,
       customer_name: order.name,
@@ -172,11 +174,17 @@ const SupabaseService = (function() {
       order_status: order.orderStatus || 'pending'
     };
 
-    // If payment_number is known not to exist yet in remote table, use notes fallback directly
+    // If payment_number or size are known not to exist yet in remote table, use notes fallback directly
     if (!columnPaymentNumberSupported) {
-      const fallbackNotes = paymentNumber
-        ? `${basePayload.notes ? basePayload.notes + ' | ' : ''}Payment Number: ${paymentNumber}`
+      const extraNotes = [
+        paymentNumber ? `Payment Number: ${paymentNumber}` : '',
+        size ? `Size: ${size}` : ''
+      ].filter(Boolean).join(' | ');
+
+      const fallbackNotes = extraNotes
+        ? `${basePayload.notes ? basePayload.notes + ' | ' : ''}${extraNotes}`
         : basePayload.notes;
+
       const fallbackPayload = {
         ...basePayload,
         notes: fallbackNotes
@@ -192,25 +200,31 @@ const SupabaseService = (function() {
       }
     }
 
-    // Try with payment_number column first
+    // Try with payment_number and size columns
     try {
-      const payloadWithPaymentNumber = {
+      const payloadWithColumns = {
         ...basePayload,
-        payment_number: paymentNumber
+        payment_number: paymentNumber,
+        size: size
       };
-      const { data, error } = await client.from('orders').insert([payloadWithPaymentNumber]).select();
+      const { data, error } = await client.from('orders').insert([payloadWithColumns]).select();
       if (!error) {
         columnPaymentNumberSupported = true;
-        console.log('✓ Order saved to Supabase cloud database with payment_number!');
+        console.log('✓ Order saved to Supabase cloud database with payment_number & size!');
         return data;
       }
       
       // If error is about missing column in schema cache, fallback to base insert
-      if (error.code === 'PGRST204' || error.message?.includes('payment_number') || error.message?.includes('column')) {
+      if (error.code === 'PGRST204' || error.message?.includes('payment_number') || error.message?.includes('size') || error.message?.includes('column')) {
         columnPaymentNumberSupported = false;
-        console.warn('payment_number column not found in schema cache, storing in notes fallback...');
-        const fallbackNotes = paymentNumber
-          ? `${basePayload.notes ? basePayload.notes + ' | ' : ''}Payment Number: ${paymentNumber}`
+        console.warn('payment_number or size column not found in schema cache, storing in notes fallback...');
+        const extraNotes = [
+          paymentNumber ? `Payment Number: ${paymentNumber}` : '',
+          size ? `Size: ${size}` : ''
+        ].filter(Boolean).join(' | ');
+
+        const fallbackNotes = extraNotes
+          ? `${basePayload.notes ? basePayload.notes + ' | ' : ''}${extraNotes}`
           : basePayload.notes;
         
         const fallbackPayload = {
@@ -250,6 +264,16 @@ const SupabaseService = (function() {
               if (match) pNum = match[1];
             }
 
+            let size = o.size || null;
+            if (!size && o.notes && o.notes.includes('Size:')) {
+              const match = o.notes.match(/Size:\s*([^\s|]+)/);
+              if (match) size = match[1];
+            }
+            if (!size && o.items && o.items[0]) {
+              size = o.items.map(i => i.size).filter(Boolean).join(', ') || o.items[0].size || 'M';
+            }
+            if (!size) size = 'M';
+
             // Resolve status: prefer cloud status if updated; otherwise use local admin override if present
             const cloudStatus = (o.order_status || 'pending').toLowerCase();
             const overriddenStatus = statusOverrides[o.order_id];
@@ -265,6 +289,7 @@ const SupabaseService = (function() {
               paymentNumber: pNum,
               paymentSenderNumber: pNum,
               trxId: o.trx_id || null,
+              size: size,
               items: o.items,
               subtotal: o.subtotal,
               shipping: o.shipping_cost,

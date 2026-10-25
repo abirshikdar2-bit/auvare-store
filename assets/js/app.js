@@ -866,6 +866,8 @@ async function handleCheckoutSubmit(e) {
   const total = subtotal + shipping;
   const orderId = 'AUV-' + Math.floor(100000 + Math.random() * 900000);
 
+  const orderedSizes = state.cart.map(c => c.selectedSize || c.size || 'M').join(', ') || 'M';
+
   const orderData = {
     orderId,
     name,
@@ -878,6 +880,7 @@ async function handleCheckoutSubmit(e) {
     paymentNumber: senderPhone,
     paymentSenderNumber: senderPhone,
     trxId,
+    size: orderedSizes,
     subtotal,
     shipping,
     total,

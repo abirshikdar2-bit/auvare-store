@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
     payment_method TEXT NOT NULL,
     payment_number TEXT,
     trx_id TEXT,
+    size TEXT,
     items JSONB NOT NULL,
     subtotal NUMERIC NOT NULL,
     shipping_cost NUMERIC NOT NULL,
@@ -40,8 +41,18 @@ CREATE TABLE IF NOT EXISTS public.orders (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Ensure payment_number exists if table already created
+-- Ensure payment_number and size exist if table already created
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_number TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS size TEXT;
+
+-- Backfill payment_number and size for existing records if empty
+UPDATE public.orders 
+SET payment_number = substring(notes from 'Payment Number:\s*([^\s|]+)')
+WHERE payment_number IS NULL AND notes LIKE '%Payment Number:%';
+
+UPDATE public.orders
+SET size = COALESCE(items->0->>'size', 'M')
+WHERE size IS NULL AND items IS NOT NULL AND jsonb_array_length(items) > 0;
 
 -- Enable Realtime publication for orders and products
 ALTER PUBLICATION supabase_realtime ADD TABLE public.orders;
