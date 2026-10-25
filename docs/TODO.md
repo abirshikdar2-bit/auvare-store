@@ -16,6 +16,16 @@ _(none)_
 
 ## Done
 
+- `#22` **2026-10-26** Minimalist & Clean Auth Modal Messaging for Pending and Rejected States:
+  - **Identified User Requirement**: Remove verbose Bengali paragraphs, duplicate applicant email tags, and explanatory clutter from the Pending and Rejected views. Simplify to direct, concise English titles:
+    - *Pending view*: Display solely `"Request Pending Approval"` alongside check status and sign out actions.
+    - *Rejected view*: Display solely `"Your request is rejected by the super admin."` alongside re-apply and sign out actions.
+  - **Implemented Minimalist Messaging Layout**:
+    - Purged `#pendingUserEmailNotice`, `#pendingUserCard`, and `#rejectedUserNotice` from `admin.html` and `assets/js/admin.js`.
+    - Centered clean typography and status badges in `authGatePendingView` and `authGateRejectedView`.
+    - Simplified button labels (`Re-apply for Admin Access`) and notification toasts to English.
+  - **Asset Versioning**: Bumped `admin.css?v=2.8` and `admin.js?v=4.0`.
+
 - `#21` **2026-10-26** Elimination of Preview Bypass & Permanent Locked-Down Auth Gate on Reload:
   - **Identified Root Causes**:
     1. *Preview Parameter Loophole on Refresh*: Secondary test browsers retained `?preview=1` in the address bar from earlier links (as visible in user screenshot `admin.html?preview=1`). When a rejected applicant was signed out or refreshed before Supabase asynchronous session resolution, `checkAuth()` evaluated `window.location.search.includes('preview=1')`, falsely impersonating `abirshikdar2@gmail.com` Super Admin and closing the gate.

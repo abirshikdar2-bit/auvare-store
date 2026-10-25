@@ -495,29 +495,6 @@ function showAuthModalView(viewType, user = null, profile = null) {
   if (rejectedView) rejectedView.style.display = viewType === 'rejected' ? 'block' : 'none';
   if (blockedView) blockedView.style.display = viewType === 'blocked' ? 'block' : 'none';
 
-  if (viewType === 'pending' && user) {
-    const card = document.getElementById('pendingUserCard');
-    const emailNotice = document.getElementById('pendingUserEmailNotice');
-    if (card) {
-      const avatar = user.user_metadata?.avatar_url;
-      const name = user.user_metadata?.full_name || user.email?.split('@')[0];
-      card.innerHTML = `
-        ${avatar ? `<img src="${avatar}" style="width:22px; height:22px; border-radius:50%;" referrerpolicy="no-referrer" />` : '<span style="font-weight:700;">U</span>'}
-        <span><strong>${name}</strong> (${user.email})</span>
-      `;
-    }
-    if (emailNotice) {
-      emailNotice.textContent = `আবেদনকারী: ${user.email}। আপনার রিকোয়েস্টটি Super Admin-এর কাছে জমা হয়েছে।`;
-    }
-  }
-
-  if (viewType === 'rejected' && user) {
-    const notice = document.getElementById('rejectedUserNotice');
-    if (notice) {
-      notice.textContent = `আবেদনকারী: ${user.email}। সুপার অ্যাডমিন আপনার আগের রিকোয়েস্টটি বাতিল করেছেন।`;
-    }
-  }
-
   if (viewType === 'blocked') {
     const notice = document.getElementById('blockedUserNotice');
     if (notice) {
