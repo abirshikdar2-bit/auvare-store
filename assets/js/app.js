@@ -672,6 +672,7 @@ function openCheckoutModal() {
   document.getElementById('checkoutSummaryText').textContent = 
     `${state.cart.length} item(s) • Total: ৳${total.toLocaleString()}`;
   
+  selectPaymentMethod(state.selectedPayment || 'cod');
   openModal('checkoutModal');
 }
 
@@ -690,6 +691,12 @@ function handleDeliveryZoneChange(zone) {
 function selectPaymentMethod(method) {
   state.selectedPayment = method;
   
+  // 1. Explicitly check the selected radio and uncheck all others
+  document.querySelectorAll('input[name="payMethod"]').forEach(r => {
+    r.checked = (r.value === method);
+  });
+
+  // 2. Clear .selected on all cards and highlight ONLY the active card
   document.querySelectorAll('.payment-method-card').forEach(c => c.classList.remove('selected'));
   document.getElementById(`payCard_${method}`)?.classList.add('selected');
 

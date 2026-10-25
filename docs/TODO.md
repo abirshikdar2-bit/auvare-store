@@ -16,6 +16,15 @@ _(none)_
 
 ## Done
 
+- `#14` **2026-10-26** Synchronize Storefront Payment Method Radios and Cards:
+  - **Identified Root Cause**: In the customer checkout modal (`index.html`), clicking payment method cards only toggled the `.selected` CSS class via `selectPaymentMethod(method)` without updating the nested `<input type="radio" name="payMethod">` `checked` attribute. In addition, clicking directly on radio buttons bypassed `selectPaymentMethod()`. This caused radio dots and card highlights to drift out of sync (e.g. bKash radio checked while COD and Rocket cards were styled as selected).
+  - **Synchronized State & Event Handlers**:
+    - Updated `selectPaymentMethod(method)` in `assets/js/app.js` to iterate over all `input[name="payMethod"]` elements and explicitly set `r.checked = (r.value === method)`, while cleanly removing `.selected` from all cards and applying it exclusively to the active card.
+    - Added `selectPaymentMethod(state.selectedPayment || 'cod')` to `openCheckoutModal()` so the modal consistently opens in an aligned state.
+    - Added `pointer-events: none;` on `.pay-radio` in `assets/css/style.css` to prevent event bubbling mismatches, along with `user-select: none;` and focus box shadows on `.payment-method-card.selected`.
+    - Added explicit `onchange="selectPaymentMethod(this.value)"` attributes on each radio input in `index.html`.
+  - **Asset Versioning**: Bumped `style.css?v=2.5` and `app.js?v=3.5`.
+
 - `#13` **2026-10-26** Explicit `payment_number` and `size` Dedicated Columns in Supabase Orders Schema:
   - **Identified User Requirement**: User requested that in Supabase cloud Table Editor, the customer's payment sender phone number be recorded as a dedicated column `payment_number` positioned right before `trx_id`, and the ordered clothing size be recorded as a dedicated column `size` right after `trx_id`.
   - **Schema Layout & Auto-Backfill Migration**: Placed `payment_number TEXT` immediately before `trx_id TEXT` and `size TEXT` immediately after `trx_id TEXT` in `CREATE TABLE IF NOT EXISTS public.orders` in `supabase-schema.sql`. Added `ALTER TABLE` statements and backfill queries extracting payment numbers from `notes` and sizes from `items JSONB` for existing orders.
