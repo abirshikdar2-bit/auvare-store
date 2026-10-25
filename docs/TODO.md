@@ -16,6 +16,15 @@ _(none)_
 
 ## Done
 
+- `#16` **2026-10-26** Simplify and Professionalize Admin Auth Blocked View:
+  - **Identified User Requirement**: Remove verbose Bengali explanatory paragraphs, personal admin names, and emojis from the blocked view (`#authGateBlockedView`). Present a concise, authoritative English restriction notice and clean Sign Out button.
+  - **Refactored Blocked Modal Layout & Messaging**:
+    - Retained clear SVG prohibition badge and title `Access Permanently Blocked`.
+    - Replaced multi-paragraph Bengali text and sub-boxes with a single concise English restriction statement: *"Your access has been permanently restricted by the administrator. Applications from this account are permanently closed."*
+    - Simplified action button to pure text: `Sign Out`.
+    - Updated `admin.js` dynamic notice and toast handling to match.
+  - **Asset Versioning**: Bumped `admin.js?v=3.5`.
+
 - `#15` **2026-10-26** Personalized Customer Gratitude & Welcome Banner in Order Success Modal:
   - **Identified User Requirement**: In the storefront order completion modal (`orderSuccessModal`), replace generic layout with an impressive, personalized appreciation message addressing the customer by their full name (`${name}`) to warmly welcome them to AUVARE and celebrate their 1-of-1 archival purchase.
   - **Designed Premium Editorial Note**:

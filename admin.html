@@ -774,26 +774,23 @@
         </div>
       </div>
 
-      <!-- Blocked / Banned View (Permanently blocks spam re-applicants) -->
+      <!-- Blocked / Banned View (Permanently blocks access) -->
       <div id="authGateBlockedView" style="display: none;">
-        <div style="background: #450a0a; border: 1px solid #7f1d1d; border-radius: var(--radius-md); padding: 1.65rem 1.25rem; margin-bottom: 1.25rem; text-align: center; color: white;">
-          <div style="width: 52px; height: 52px; border-radius: 50%; background: rgba(220, 38, 38, 0.2); color: #f87171; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0.75rem; border: 1px solid rgba(248, 113, 113, 0.4);">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+        <div style="background: #450a0a; border: 1px solid #7f1d1d; border-radius: var(--radius-md); padding: 1.75rem 1.35rem; margin-bottom: 1.25rem; text-align: center; color: white;">
+          <div style="width: 52px; height: 52px; border-radius: 50%; background: rgba(220, 38, 38, 0.2); color: #f87171; display: inline-flex; align-items: center; justify-content: center; margin: 0 auto 0.85rem auto; border: 1px solid rgba(248, 113, 113, 0.4);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
           </div>
-          <h4 style="font-size: 1.2rem; font-weight: 800; color: #fecaca; margin-bottom: 0.4rem; letter-spacing: -0.01em;">
+          <h4 style="font-size: 1.25rem; font-weight: 800; color: #fecaca; margin-bottom: 0.5rem; letter-spacing: -0.01em;">
             Access Permanently Blocked
           </h4>
-          <p id="blockedUserNotice" style="font-size: 0.85rem; color: #fca5a5; line-height: 1.5; margin-bottom: 0.65rem;">
-            আপনার অ্যাকাউন্টটি সুপার অ্যাডমিন কর্তৃক ব্লক করা হয়েছে।
+          <p id="blockedUserNotice" style="font-size: 0.88rem; color: #fca5a5; line-height: 1.55; margin: 0;">
+            Your access has been permanently restricted by the administrator. Applications from this account are permanently closed.
           </p>
-          <div style="background: rgba(0, 0, 0, 0.3); border: 1px dashed rgba(254, 202, 202, 0.3); border-radius: 8px; padding: 0.65rem 0.85rem; font-size: 0.78rem; color: #fecaca; line-height: 1.45;">
-            আপনি এই প্যানেলে আর কোনো অ্যাক্সেস রিকোয়েস্ট পাঠাতে পারবেন না। সুপার অ্যাডমিন আনব্লক না করা পর্যন্ত আবেদন বন্ধ থাকবে।
-          </div>
         </div>
 
         <!-- Note: Strictly Sign Out only. NO RE-APPLY BUTTON FOR BLOCKED USERS! -->
-        <button type="button" class="btn-admin-outline" onclick="handleAdminLogout()" style="width: 100%; justify-content: center; font-size: 0.85rem; padding: 0.7rem 1rem; color: #f87171; border-color: rgba(248, 113, 113, 0.4);">
-          Sign Out / বন্ধ করুন
+        <button type="button" class="btn-admin-outline" onclick="handleAdminLogout()" style="width: 100%; justify-content: center; font-size: 0.88rem; padding: 0.75rem 1rem; color: #f87171; border-color: rgba(248, 113, 113, 0.4);">
+          Sign Out
         </button>
       </div>
 
@@ -1128,6 +1125,6 @@
   <!-- Supabase CDN & Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabaseClient.js?v=3.4"></script>
-  <script src="assets/js/admin.js?v=3.4"></script>
+  <script src="assets/js/admin.js?v=3.5"></script>
 </body>
 </html>

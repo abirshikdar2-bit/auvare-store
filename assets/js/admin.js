@@ -352,10 +352,10 @@ function showAuthModalView(viewType, user = null, profile = null) {
     }
   }
 
-  if (viewType === 'blocked' && user) {
+  if (viewType === 'blocked') {
     const notice = document.getElementById('blockedUserNotice');
     if (notice) {
-      notice.textContent = `আবেদনকারী: ${user.email}। সুপার অ্যাডমিন কর্তৃক আপনার অ্যাকাউন্টটি ব্লক করা হয়েছে।`;
+      notice.textContent = 'Your access has been permanently restricted by the administrator. Applications from this account are permanently closed.';
     }
   }
 }
@@ -388,7 +388,7 @@ async function handleReapplyAccess() {
         }
       } catch (err) {
         if (err.message === 'BLOCKED_USER') {
-          showAdminToast('⛔ আপনার অ্যাকাউন্টটি সুপার অ্যাডমিন ব্লক করেছেন। আবেদন পাঠানো যাবে না।', 'error');
+          showAdminToast('Your account is permanently restricted by the administrator.', 'error');
           showAuthModalView('blocked', user);
           return;
         }
