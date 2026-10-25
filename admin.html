@@ -527,8 +527,10 @@
                 <th>Order ID</th>
                 <th>Customer</th>
                 <th>Delivery Address</th>
-                <th>Ordered Items & Size</th>
-                <th>Payment Number & Trx</th>
+                <th>Items</th>
+                <th>Payment Number</th>
+                <th>Transaction ID</th>
+                <th>Size</th>
                 <th>Total</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -1070,6 +1072,12 @@
               <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.2rem;">
                 <span id="modalTrxId" style="font-size: 0.95rem; font-weight: 800; color: #0f172a; font-family: monospace; background: #e2e8f0; padding: 0.2rem 0.55rem; border-radius: 4px;">N/A</span>
                 <button type="button" class="btn-copy-number" onclick="copyModalField('modalTrxId', this)" style="padding: 0.2rem 0.45rem; font-size: 0.7rem; background: var(--admin-primary); color: white; border: none; border-radius: 4px; cursor: pointer;">Copy</button>
+              </div>
+            </div>
+            <div style="margin-bottom: 0.65rem;">
+              <div style="font-size: 0.75rem; color: #64748b;">Ordered Size (অর্ডার করা সাইজ)</div>
+              <div style="margin-top: 0.2rem;">
+                <span id="modalOrderSize" style="font-size: 0.95rem; font-weight: 800; color: #ffffff; background: #0b1a13; padding: 0.2rem 0.65rem; border-radius: 4px; display: inline-block;">M</span>
               </div>
             </div>
             <div style="border-top: 1px dashed var(--admin-border); padding-top: 0.5rem; margin-top: 0.5rem;">
