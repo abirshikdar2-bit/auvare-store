@@ -936,22 +936,44 @@ async function handleCheckoutSubmit(e) {
   const successModalBody = document.getElementById('orderSuccessBody');
   if (successModalBody) {
     successModalBody.innerHTML = `
-      <div style="text-align: center; margin-bottom: 1.5rem;">
-        <div style="width:60px; height:60px; background:#eaf3ee; color:var(--color-primary); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.75rem; margin:0 auto 1rem;">
+      <div style="text-align: center; margin-bottom: 1.25rem;">
+        <div style="width:54px; height:54px; background:#eaf3ee; color:var(--color-primary); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.5rem; margin:0 auto 0.75rem;">
           ✓
         </div>
-        <h3 style="font-family:var(--font-serif); font-size:1.6rem; color:var(--color-primary); margin-bottom:0.25rem;">Order Placed Successfully!</h3>
-        <p style="font-size:0.9rem; color:var(--color-text-muted);">Order ID: <strong>#${orderId}</strong></p>
+        <h3 style="font-family:var(--font-serif); font-size:1.55rem; color:var(--color-primary); margin-bottom:0.25rem; font-weight:700;">Order Placed Successfully!</h3>
+        <p style="font-size:0.875rem; color:var(--color-text-muted); margin:0;">Order Reference: <strong style="color:var(--color-primary); letter-spacing:0.04em;">#${orderId}</strong></p>
       </div>
 
-      <div style="background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-md); padding:1.25rem; margin-bottom:1.5rem;">
-        <h4 style="font-size:0.95rem; font-weight:700; margin-bottom:0.75rem; border-bottom:1px solid var(--color-border); padding-bottom:0.5rem;">Delivery Summary</h4>
-        <p style="font-size:0.875rem;"><strong>Recipient:</strong> ${name} (${phone})</p>
-        <p style="font-size:0.875rem;"><strong>Address:</strong> ${address}</p>
-        <p style="font-size:0.875rem;"><strong>Payment Method:</strong> ${state.selectedPayment.toUpperCase()}</p>
-        ${senderPhone ? `<p style="font-size:0.875rem;"><strong>Payment From (Sender No):</strong> ${senderPhone}</p>` : ''}
-        ${trxId ? `<p style="font-size:0.875rem;"><strong>Transaction ID (TrxID):</strong> ${trxId}</p>` : ''}
-        <p style="font-size:0.875rem; margin-top:0.5rem; color:var(--color-primary); font-weight:700;"><strong>Total Payable:</strong> ৳${total.toLocaleString()}</p>
+      <!-- Personalized Appreciation & Warm Welcome Note -->
+      <div style="background: linear-gradient(135deg, rgba(234, 243, 238, 0.75) 0%, rgba(250, 248, 245, 0.95) 100%); border: 1px solid rgba(16, 80, 54, 0.16); border-radius: var(--radius-md); padding: 1.2rem 1.35rem; margin-bottom: 1.25rem; text-align: center;">
+        <span style="display:inline-block; font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; font-weight:700; color:var(--color-primary); opacity:0.85; margin-bottom:0.35rem;">
+          A Personal Note of Appreciation
+        </span>
+        <h4 style="font-family:var(--font-serif); font-size:1.3rem; color:var(--color-primary); margin:0 0 0.45rem 0; font-weight:600; line-height:1.3;">
+          Thank You, ${name}!
+        </h4>
+        <p style="font-size:0.875rem; line-height:1.6; color:var(--color-text-muted); margin:0;">
+          We are genuinely delighted to welcome you to the <strong>AUVARE</strong> collective. Your selected piece is an authentic <strong>1-of-1 curated drop</strong>, and our team is already preparing it with utmost care to ensure it reaches your doorstep in pristine archival condition. Thank you for championing timeless, conscious fashion with us!
+        </p>
+      </div>
+
+      <!-- Delivery Summary Card -->
+      <div style="background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-md); padding:1.25rem; margin-bottom:1.25rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; border-bottom:1px solid var(--color-border); padding-bottom:0.5rem;">
+          <h4 style="font-size:0.9rem; font-weight:700; margin:0; text-transform:uppercase; letter-spacing:0.06em; color:var(--color-text-main);">Delivery Summary</h4>
+          <span style="font-size:0.75rem; font-weight:600; color:var(--color-primary); background:#eaf3ee; padding:0.2rem 0.55rem; border-radius:999px;">Verified & Reserved</span>
+        </div>
+        <div style="display:grid; gap:0.4rem; font-size:0.875rem;">
+          <div><strong style="color:var(--color-text-muted);">Recipient:</strong> <span style="font-weight:600; color:var(--color-text-main);">${name}</span> <span style="color:var(--color-text-muted);">(${phone})</span></div>
+          <div><strong style="color:var(--color-text-muted);">Address:</strong> <span style="color:var(--color-text-main);">${address}</span></div>
+          <div><strong style="color:var(--color-text-muted);">Payment Method:</strong> <span style="font-weight:600; color:var(--color-primary);">${state.selectedPayment.toUpperCase()}</span></div>
+          ${senderPhone ? `<div><strong style="color:var(--color-text-muted);">Payment From (Sender No):</strong> <span style="font-weight:600; color:var(--color-text-main);">${senderPhone}</span></div>` : ''}
+          ${trxId ? `<div><strong style="color:var(--color-text-muted);">Transaction ID (TrxID):</strong> <span style="font-weight:600; font-family:monospace; color:var(--color-text-main);">${trxId}</span></div>` : ''}
+          <div style="margin-top:0.4rem; padding-top:0.5rem; border-top:1px dashed var(--color-border); display:flex; justify-content:space-between; align-items:center;">
+            <strong style="font-size:0.92rem; color:var(--color-text-main);">Total Payable:</strong>
+            <span style="font-size:1.15rem; font-weight:800; color:var(--color-primary);">৳${total.toLocaleString()}</span>
+          </div>
+        </div>
       </div>
 
       <div style="display:flex; flex-direction:column; gap:0.75rem;">
@@ -959,9 +981,10 @@ async function handleCheckoutSubmit(e) {
           href="https://wa.me/${getCleanWaNumber(storeContactInfo.whatsapp_number)}?text=${waReceipt}" 
           target="_blank" 
           class="btn-wa-cta" 
-          style="justify-content:center; width:100%; text-decoration:none;"
+          style="justify-content:center; width:100%; text-decoration:none; display:flex; align-items:center; gap:0.5rem;"
         >
-          💬 Send Order Copy to AUVARE WhatsApp
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          <span>Send Order Copy to AUVARE WhatsApp</span>
         </a>
         <button class="btn-secondary" onclick="closeModal('orderSuccessModal')" style="width:100%; justify-content:center;">
           Close & Continue Shopping

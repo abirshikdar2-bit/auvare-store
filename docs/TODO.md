@@ -16,6 +16,15 @@ _(none)_
 
 ## Done
 
+- `#15` **2026-10-26** Personalized Customer Gratitude & Welcome Banner in Order Success Modal:
+  - **Identified User Requirement**: In the storefront order completion modal (`orderSuccessModal`), replace generic layout with an impressive, personalized appreciation message addressing the customer by their full name (`${name}`) to warmly welcome them to AUVARE and celebrate their 1-of-1 archival purchase.
+  - **Designed Premium Editorial Note**:
+    - Embedded a dedicated appreciation card styled with soft gradient background (`rgba(234, 243, 238, 0.75)` to `rgba(250, 248, 245, 0.95)`), subtle forest green border, and typography pairing (`Playfair Display` serif heading: "Thank You, ${name}!").
+    - Included warm, brand-tailored copy acknowledging the customer's choice of rare 1-of-1 curated drops and mindful sustainable fashion.
+    - Upgraded delivery summary with clean grid key-value styling and "Verified & Reserved" badge.
+    - Replaced raw emoji with clean inline SVG WhatsApp icon on the dispatch CTA button.
+  - **Asset Versioning**: Bumped `app.js?v=3.6`.
+
 - `#14` **2026-10-26** Synchronize Storefront Payment Method Radios and Cards:
   - **Identified Root Cause**: In the customer checkout modal (`index.html`), clicking payment method cards only toggled the `.selected` CSS class via `selectPaymentMethod(method)` without updating the nested `<input type="radio" name="payMethod">` `checked` attribute. In addition, clicking directly on radio buttons bypassed `selectPaymentMethod()`. This caused radio dots and card highlights to drift out of sync (e.g. bKash radio checked while COD and Rocket cards were styled as selected).
   - **Synchronized State & Event Handlers**:
