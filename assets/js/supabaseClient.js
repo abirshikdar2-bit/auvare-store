@@ -94,26 +94,29 @@ const SupabaseService = (function() {
     if (client) {
       try {
         const payload = {
-          id: product.id,
+          id: product.id || ('drop_' + Date.now()),
           title: product.title,
           category: product.category,
           sizes: product.sizes || ['S', 'M', 'L', 'XL', 'XXL'],
           chest: product.chest || '40"',
           length: product.length || '27"',
           condition: product.condition || '9.5/10 (Mint Condition)',
-          price: product.price,
-          image: product.image,
+          price: parseInt(product.price, 10) || 0,
+          image: product.image || 'assets/images/item1.jpg',
           sold: !!product.sold,
           instagram_url: product.instagramUrl || product.instagram_url || 'https://www.instagram.com/auvare_official/',
           description: product.description || ''
         };
         const { data, error } = await client.from('products').insert([payload]).select();
         if (error) throw error;
-        console.log('✓ Product saved to Supabase cloud:', product.id);
+        console.log('✓ Product saved to Supabase cloud:', payload.id);
+        return data?.[0] || payload;
       } catch (err) {
         console.warn('Supabase product insert error, saved locally:', err);
+        throw err;
       }
     }
+    return null;
   }
 
   // Update Product
@@ -589,6 +592,7 @@ const SupabaseService = (function() {
     initClient,
     getProducts,
     insertProduct,
+    saveProduct: insertProduct,
     updateProduct,
     deleteProduct,
     insertOrder,

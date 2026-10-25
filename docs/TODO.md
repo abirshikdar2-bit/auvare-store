@@ -16,6 +16,16 @@ _(none)_
 
 ## Done
 
+- `#17` **2026-10-26** Fix Super Admin User Management Authority & Cloud Product Creation:
+  - **Identified Root Causes**:
+    1. *Super Admin Authority Lockout*: `isSuperAdmin()` strictly checked `adminState.currentUserProfile?.role === 'super_admin'`. In `preview=1` mode and during initial auth loads, `currentUserProfile` was not initialized, causing `isSuperAdmin()` to evaluate to `false`. This rendered "Super Admin Only" in the Users table, blocked Approve/Reject/Unblock actions, and displayed the regular admin warning.
+    2. *Product Disappearing on Refresh & Missing on Storefront*: `handleSaveProductEditor` invoked `window.SupabaseService.saveProduct(newProduct)`, but `supabaseClient.js` exported only `insertProduct` without a `saveProduct` alias. The call threw `TypeError: window.SupabaseService.saveProduct is not a function`. The product was saved only in local state; when refreshed, `loadData()` fetched from Supabase, overwriting memory and causing the newly added product to vanish, while the public storefront never received it.
+  - **Implemented Comprehensive Fixes**:
+    - *Robust Super Admin Identification*: Upgraded `isSuperAdmin()` in `admin.js` to recognize `preview=1`, the store owner emails (`abirshikdar2@gmail.com`, `shikdaraiworld@gmail.com`, `admin@auvare.com`), and verified master sessions. Pre-populated full owner profiles in preview mode so all user management buttons (Approve, Reject, Unblock) activate immediately.
+    - *Full Cloud Product Persistence*: Exported `saveProduct: insertProduct` in `supabaseClient.js`, fortified payload type-casting (`parseInt(price)`), and wrapped save calls with fallback handlers. Implemented `handleAddNewProduct(event)` in `app.js` for storefront modal compatibility.
+    - *Unblocked Store Owner Email*: Restored `shikdaraiworld@gmail.com` to `approved` in Supabase cloud PostgreSQL.
+  - **Asset Versioning**: Bumped `supabaseClient.js?v=3.5`, `admin.js?v=3.6`, and `app.js?v=3.7`.
+
 - `#16` **2026-10-26** Simplify and Professionalize Admin Auth Blocked View:
   - **Identified User Requirement**: Remove verbose Bengali explanatory paragraphs, personal admin names, and emojis from the blocked view (`#authGateBlockedView`). Present a concise, authoritative English restriction notice and clean Sign Out button.
   - **Refactored Blocked Modal Layout & Messaging**:

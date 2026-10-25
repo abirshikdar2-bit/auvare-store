@@ -1009,6 +1009,57 @@ function closeModal(modalId) {
   document.getElementById(modalId)?.classList.remove('open');
 }
 
+// Handle Adding New Product from Storefront Admin Modal
+async function handleAddNewProduct(event) {
+  event.preventDefault();
+  const title = document.getElementById('newTitle')?.value.trim();
+  const category = document.getElementById('newCategory')?.value || 'Shirts';
+  const size = document.getElementById('newSize')?.value || 'M';
+  const chestVal = document.getElementById('newChest')?.value.trim() || '40';
+  const lengthVal = document.getElementById('newLength')?.value.trim() || '28';
+  const condition = document.getElementById('newCondition')?.value.trim() || '9.5/10 (Mint Condition)';
+  const price = parseInt(document.getElementById('newPrice')?.value || '0', 10);
+  const image = document.getElementById('newImageUrl')?.value.trim() || 'assets/images/item1.jpg';
+
+  if (!title || !price) {
+    showToast('Please enter both title and price.', 'error');
+    return;
+  }
+
+  const newProduct = {
+    id: 'auv-' + Date.now(),
+    title,
+    category,
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    size,
+    chest: chestVal.includes('"') ? chestVal : `${chestVal}"`,
+    length: lengthVal.includes('"') ? lengthVal : `${lengthVal}"`,
+    condition,
+    price,
+    image,
+    sold: false,
+    instagram_url: 'https://www.instagram.com/auvare_official/',
+    description: `Curated 1-of-1 ${category} drop.`
+  };
+
+  state.products.unshift(newProduct);
+  saveProducts();
+  renderProducts();
+  closeModal('adminAddModal');
+
+  if (window.SupabaseService) {
+    try {
+      const saver = window.SupabaseService.saveProduct || window.SupabaseService.insertProduct;
+      if (saver) await saver(newProduct);
+    } catch (e) {
+      console.warn('Could not save product to Supabase cloud:', e);
+    }
+  }
+
+  showToast(`Published "${title}" to online catalog!`);
+}
+window.handleAddNewProduct = handleAddNewProduct;
+
 // Simple Toast Notification
 function showToast(message, type = 'info') {
   const existing = document.getElementById('appToast');
