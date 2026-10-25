@@ -16,6 +16,18 @@ _(none)_
 
 ## Done
 
+- `#21` **2026-10-26** Elimination of Preview Bypass & Permanent Locked-Down Auth Gate on Reload:
+  - **Identified Root Causes**:
+    1. *Preview Parameter Loophole on Refresh*: Secondary test browsers retained `?preview=1` in the address bar from earlier links (as visible in user screenshot `admin.html?preview=1`). When a rejected applicant was signed out or refreshed before Supabase asynchronous session resolution, `checkAuth()` evaluated `window.location.search.includes('preview=1')`, falsely impersonating `abirshikdar2@gmail.com` Super Admin and closing the gate.
+    2. *Non-Secure Fallback in `isSuperAdmin()`*: `isSuperAdmin()` checked `localStorage.getItem('auvare_admin_user_email')` and query parameter `preview=1`, falsely returning `true` even when no verified authenticated session existed.
+    3. *Initial DOM Rendering Race Condition*: `#adminAuthGate` lacked class `open` in static HTML, causing the dashboard and tables to be briefly exposed before JS executed.
+  - **Implemented Comprehensive Hardening**:
+    - *Eliminated Production Preview Bypass*: Disabled mock `preview=1` entirely in production (`auvare-store.vercel.app`), strictly reserving it for offline `localhost`. Added automatic URL sanitation (`window.history.replaceState`) to immediately purge `?preview` from the address bar on production.
+    - *Default-Deny HTML Gate*: Configured `<div id="adminAuthGate" class="admin-modal-overlay open">` and `<div id="authGateLoadingView">` by default in static HTML with solid `#0b1a13` brand green backdrop, preventing any flash of unauthenticated content.
+    - *Data Guard in `initAdmin()`*: Restricted `loadData()`, `renderStats()`, and table rendering to run strictly when `adminState.isAuthenticated === true`. On status revocation, tables are wiped clean immediately.
+    - *Strict `isSuperAdmin()`*: Confined Super Admin verification strictly to active in-memory authenticated state and master owner email (`abirshikdar2@gmail.com`), removing all `localStorage` and query parameter backdoors.
+  - **Asset Versioning**: Bumped `admin.css?v=2.7` and `admin.js?v=3.9`.
+
 - `#20` **2026-10-26** Solid Brand Forest Green Security Backdrop for Admin Auth Gate:
   - **Identified User Requirement**: Replace transparent blurred overlay on the Admin Auth Gate (`#adminAuthGate`) with a 100% solid, opaque background matching the AUVARE brand logo deep forest green (`#0b1a13`). Prevent unauthorized applicants, visitors, or attackers from previewing or guessing any internal dashboard metrics, charts, sidebar items, or orders behind the modal.
   - **Implemented Solid Brand Security Layer**:

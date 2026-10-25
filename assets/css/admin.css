@@ -1017,6 +1017,11 @@ body {
 }
 
 /* Security: Complete blackout of dashboard behind auth gate */
+body.auth-gate-active {
+  overflow: hidden !important;
+}
+
+body.auth-gate-active .admin-wrapper,
 body.auth-gate-active .admin-sidebar,
 body.auth-gate-active .admin-header,
 body.auth-gate-active .admin-main,
@@ -1030,6 +1035,10 @@ body.auth-gate-active #analyticsTabContent,
 body.auth-gate-active #settingsTabContent {
   visibility: hidden !important;
   pointer-events: none !important;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .admin-modal-box {

@@ -146,21 +146,15 @@ const adminState = {
 
 // Role Check: Check if current logged-in user is Super Admin
 function isSuperAdmin() {
-  // If user profile explicitly has status 'rejected' or 'blocked', they have zero authority
+  if (!adminState.isAuthenticated) return false;
+  if (!adminState.currentUser) return false;
   if (adminState.currentUserProfile?.status === 'rejected' || adminState.currentUserProfile?.status === 'blocked') {
     return false;
   }
 
-  // 1. Profile role check (Must be approved super_admin)
-  if (adminState.currentUserProfile?.role === 'super_admin' && adminState.currentUserProfile?.status === 'approved') {
-    return true;
-  }
-
-  // 2. Known Super Admin master owner email
   const activeEmail = (
     adminState.currentUser?.email ||
     adminState.currentUserProfile?.email ||
-    localStorage.getItem('auvare_admin_user_email') ||
     ''
   ).toLowerCase().trim();
 
@@ -168,8 +162,7 @@ function isSuperAdmin() {
     return true;
   }
 
-  // 3. Preview mode (Only when not signed in as a rejected or blocked user)
-  if (window.location.search.includes('preview=1') && adminState.currentUserProfile?.status !== 'rejected' && adminState.currentUserProfile?.status !== 'blocked') {
+  if (adminState.currentUserProfile?.role === 'super_admin' && adminState.currentUserProfile?.status === 'approved') {
     return true;
   }
 
@@ -179,15 +172,17 @@ function isSuperAdmin() {
 // Initialize Admin
 async function initAdmin() {
   await checkAuth();
-  await loadData();
-  renderStats();
-  renderInventoryTable();
-  renderHomeDashboard();
-  renderCategoriesView();
-  updateSidebarBadges();
-  setupAdminListeners();
-  switchTab('home');
+
+  // STRICT SECURITY: Only load and render dashboard data if authenticated and approved!
   if (adminState.isAuthenticated) {
+    await loadData();
+    renderStats();
+    renderInventoryTable();
+    renderHomeDashboard();
+    renderCategoriesView();
+    updateSidebarBadges();
+    setupAdminListeners();
+    switchTab('home');
     loadAuthUsersTable();
   }
 
@@ -197,6 +192,7 @@ async function initAdmin() {
     if (client) {
       try {
         client.channel('admin_live_orders').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, async () => {
+          if (!adminState.isAuthenticated) return;
           console.log('Realtime change in orders table detected! Fetching latest orders...');
           const fresh = await window.SupabaseService.getOrders();
           if (fresh) {
@@ -213,9 +209,9 @@ async function initAdmin() {
     }
   }
 
-  // 2. High-reliability polling fallback (checks every 5 seconds)
-  // Ensures new orders always appear automatically even if WebSockets are blocked by tracking prevention or network policies
+  // 2. High-reliability polling fallback for orders (checks every 5 seconds)
   setInterval(async () => {
+    if (!adminState.isAuthenticated) return;
     if (!window.SupabaseService) return;
     try {
       const fresh = await window.SupabaseService.getOrders();
@@ -238,7 +234,7 @@ async function initAdmin() {
     }
   }, 5000);
 
-  // 3. Live Active User Session & Status Enforcement (Checks every 4 seconds)
+  // 3. Live Active User Session & Status Enforcement (Checks every 3 seconds)
   // If Super Admin approves, rejects, or blocks any active user in real-time,
   // immediately update their access or kick them out to the appropriate modal!
   setInterval(async () => {
@@ -254,6 +250,11 @@ async function initAdmin() {
             if (adminState.isAuthenticated) {
               adminState.isAuthenticated = false;
               adminState.currentUserProfile = freshProfile;
+              // Instantly clear table content to protect customer privacy
+              const invTable = document.getElementById('adminInventoryTable');
+              if (invTable) invTable.innerHTML = '';
+              const ordTable = document.getElementById('adminOrdersTable');
+              if (ordTable) ordTable.innerHTML = '';
               renderUserProfile(null);
               showAuthModalView(freshProfile.status, adminState.currentUser, freshProfile);
               openAdminModal('adminAuthGate');
@@ -266,6 +267,14 @@ async function initAdmin() {
               closeAdminModal('adminAuthGate');
               renderUserProfile(adminState.currentUser, freshProfile);
               showAdminToast('Your admin request has been approved by Super Admin!', 'success');
+              await loadData();
+              renderStats();
+              renderInventoryTable();
+              renderHomeDashboard();
+              renderCategoriesView();
+              updateSidebarBadges();
+              setupAdminListeners();
+              switchTab('home');
               loadAuthUsersTable();
             }
           }
@@ -274,7 +283,7 @@ async function initAdmin() {
         // silent
       }
     }
-  }, 4000);
+  }, 3000);
 
   // 4. Real-time Supabase Auth Users table listener
   if (window.SupabaseService) {
@@ -282,7 +291,7 @@ async function initAdmin() {
     if (client) {
       try {
         client.channel('admin_auth_users_live').on('postgres_changes', { event: '*', schema: 'public', table: 'auth_users' }, async (payload) => {
-          if (adminState.isAuthenticated) {
+          if (adminState.isAuthenticated && isSuperAdmin()) {
             loadAuthUsersTable();
           }
           const activeEmail = adminState.currentUser?.email?.toLowerCase().trim();
@@ -291,9 +300,27 @@ async function initAdmin() {
             if (newStatus === 'rejected' || newStatus === 'blocked') {
               adminState.isAuthenticated = false;
               adminState.currentUserProfile = payload.new;
+              const invTable = document.getElementById('adminInventoryTable');
+              if (invTable) invTable.innerHTML = '';
+              const ordTable = document.getElementById('adminOrdersTable');
+              if (ordTable) ordTable.innerHTML = '';
               renderUserProfile(null);
               showAuthModalView(newStatus, adminState.currentUser, payload.new);
               openAdminModal('adminAuthGate');
+            } else if (newStatus === 'approved' && !adminState.isAuthenticated) {
+              adminState.isAuthenticated = true;
+              adminState.currentUserProfile = payload.new;
+              closeAdminModal('adminAuthGate');
+              renderUserProfile(adminState.currentUser, payload.new);
+              await loadData();
+              renderStats();
+              renderInventoryTable();
+              renderHomeDashboard();
+              renderCategoriesView();
+              updateSidebarBadges();
+              setupAdminListeners();
+              switchTab('home');
+              loadAuthUsersTable();
             }
           }
         }).subscribe();
@@ -306,14 +333,41 @@ async function initAdmin() {
 
 // Authentication Check with Google OAuth & Supabase RBAC
 async function checkAuth() {
+  const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
+  // In production, strictly strip ?preview from URL so it can NEVER linger or bypass security
+  if (!isLocal && window.location.search.includes('preview')) {
+    const cleanUrl = window.location.origin + window.location.pathname;
+    window.history.replaceState({}, document.title, cleanUrl);
+  }
+
+  // Ensure solid green auth gate is open with verifying state
+  showAuthModalView('loading');
+  openAdminModal('adminAuthGate');
+
   const client = window.SupabaseService?.getClient();
+
+  // Register real-time auth state listener immediately so no auth events are missed
+  if (client) {
+    client.auth.onAuthStateChange(async (event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+        await verifyUserAccess(session.user);
+      } else if (event === 'SIGNED_OUT') {
+        adminState.isAuthenticated = false;
+        adminState.currentUser = null;
+        adminState.currentUserProfile = null;
+        renderUserProfile(null);
+        showAuthModalView('default');
+        openAdminModal('adminAuthGate');
+      }
+    });
+  }
 
   // 1. Check if an active Google/Supabase OAuth session exists
   if (client) {
     try {
       const { data: { session }, error } = await client.auth.getSession();
       if (session && session.user) {
-        // Real user signed in: Strictly verify their actual database status and role
         await verifyUserAccess(session.user);
         return;
       }
@@ -322,8 +376,8 @@ async function checkAuth() {
     }
   }
 
-  // 2. Only if NO active session is signed in, check if Owner Preview Mode is active:
-  if (window.location.search.includes('preview=1')) {
+  // 2. Only allow mock preview mode on localhost for offline local development (NEVER in production!)
+  if (isLocal && window.location.search.includes('preview=1')) {
     adminState.isAuthenticated = true;
     adminState.currentUser = { email: 'abirshikdar2@gmail.com', user_metadata: { full_name: 'Md Abir Shikdar' } };
     adminState.currentUserProfile = {
@@ -339,45 +393,30 @@ async function checkAuth() {
     return;
   }
 
-  // 3. No session & no preview: present standard Google sign-in gate
+  // 3. No active session: lock gate and show Google sign-in
   adminState.isAuthenticated = false;
   showAuthModalView('default');
   openAdminModal('adminAuthGate');
-
-  // 4. Real-time auth state listener
-  client?.auth.onAuthStateChange(async (event, session) => {
-    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
-      await verifyUserAccess(session.user);
-    } else if (event === 'SIGNED_OUT') {
-      adminState.isAuthenticated = false;
-      adminState.currentUser = null;
-      adminState.currentUserProfile = null;
-      renderUserProfile(null);
-      showAuthModalView('default');
-      openAdminModal('adminAuthGate');
-    }
-  });
 }
 
 // Verify User Role & Approval Status
 async function verifyUserAccess(user) {
+  if (!user || !user.email) {
+    adminState.isAuthenticated = false;
+    showAuthModalView('default');
+    openAdminModal('adminAuthGate');
+    return;
+  }
+
   adminState.currentUser = user;
-  if (user?.email) {
-    localStorage.setItem('auvare_admin_user_email', user.email);
-  }
+  const normalizedEmail = (user.email || '').toLowerCase().trim();
 
-  // Sync user record into Supabase auth_users
-  let profile = null;
-  if (window.SupabaseService) {
-    profile = await window.SupabaseService.registerOrRequestAdmin(user);
-    if (!profile && user?.email) {
-      profile = await window.SupabaseService.getUserProfile(user.email);
-    }
-  }
-
-  const normalizedEmail = (user?.email || '').toLowerCase().trim();
-  // Strictly only the master owner email is guaranteed super_admin
+  // 1. Master Owner Email: strictly guaranteed Super Admin
   if (normalizedEmail === 'abirshikdar2@gmail.com') {
+    let profile = null;
+    if (window.SupabaseService) {
+      profile = await window.SupabaseService.getUserProfile(normalizedEmail);
+    }
     if (!profile) {
       profile = {
         id: '81c10ad2-3813-4b91-b515-626a5f223588',
@@ -390,22 +429,27 @@ async function verifyUserAccess(user) {
       profile.role = 'super_admin';
       profile.status = 'approved';
     }
+
+    adminState.currentUserProfile = profile;
+    adminState.isAuthenticated = true;
+    closeAdminModal('adminAuthGate');
+    renderUserProfile(user, profile);
+    showAdminToast(`Welcome, ${profile.display_name || user.email}! Super Admin dashboard active.`, 'success');
+    return;
+  }
+
+  // 2. All secondary accounts: register or query actual profile from Supabase database
+  let profile = null;
+  if (window.SupabaseService) {
+    profile = await window.SupabaseService.registerOrRequestAdmin(user);
+    if (!profile) {
+      profile = await window.SupabaseService.getUserProfile(normalizedEmail);
+    }
   }
 
   adminState.currentUserProfile = profile;
 
-  // 1. Approved Admin / Super Admin Check
-  if (profile && profile.status === 'approved' && (profile.role === 'admin' || profile.role === 'super_admin')) {
-    adminState.isAuthenticated = true;
-    closeAdminModal('adminAuthGate');
-    renderUserProfile(user, profile);
-    const roleTitle = profile.role === 'super_admin' ? 'Super Admin' : 'Admin';
-    showAdminToast(`Welcome, ${profile.display_name || user.email}! ${roleTitle} dashboard active.`, 'success');
-    loadAuthUsersTable();
-    return;
-  }
-
-  // 2. Blocked Access Check (Spam Prevention)
+  // Blocked Access Check (Spam Prevention)
   if (profile && profile.status === 'blocked') {
     adminState.isAuthenticated = false;
     showAuthModalView('blocked', user, profile);
@@ -413,7 +457,7 @@ async function verifyUserAccess(user) {
     return;
   }
 
-  // 4. Rejected Access Check
+  // Rejected Access Check
   if (profile && profile.status === 'rejected') {
     adminState.isAuthenticated = false;
     showAuthModalView('rejected', user, profile);
@@ -421,19 +465,31 @@ async function verifyUserAccess(user) {
     return;
   }
 
-  // 5. Default: Pending Approval (Awaiting Abir Shikdar's review)
+  // Approved Admin Check
+  if (profile && profile.status === 'approved' && (profile.role === 'admin' || profile.role === 'super_admin')) {
+    adminState.isAuthenticated = true;
+    closeAdminModal('adminAuthGate');
+    renderUserProfile(user, profile);
+    const roleTitle = profile.role === 'super_admin' ? 'Super Admin' : 'Admin';
+    showAdminToast(`Welcome, ${profile.display_name || user.email}! ${roleTitle} dashboard active.`, 'success');
+    return;
+  }
+
+  // Default: Pending Approval (Awaiting Super Admin review)
   adminState.isAuthenticated = false;
   showAuthModalView('pending', user, profile);
   openAdminModal('adminAuthGate');
 }
 
-// Switch between Default, Pending, Rejected, and Blocked Modal Views
+// Switch between Loading, Default, Pending, Rejected, and Blocked Modal Views
 function showAuthModalView(viewType, user = null, profile = null) {
+  const loadingView = document.getElementById('authGateLoadingView');
   const defaultView = document.getElementById('authGateDefaultView');
   const pendingView = document.getElementById('authGatePendingView');
   const rejectedView = document.getElementById('authGateRejectedView');
   const blockedView = document.getElementById('authGateBlockedView');
 
+  if (loadingView) loadingView.style.display = viewType === 'loading' ? 'block' : 'none';
   if (defaultView) defaultView.style.display = viewType === 'default' ? 'block' : 'none';
   if (pendingView) pendingView.style.display = viewType === 'pending' ? 'block' : 'none';
   if (rejectedView) rejectedView.style.display = viewType === 'rejected' ? 'block' : 'none';
@@ -625,11 +681,24 @@ async function handleAdminLogout() {
       console.warn('SignOut error:', err);
     }
   }
-  sessionStorage.removeItem('auvare_admin_user');
-  sessionStorage.removeItem('auvare_admin_logged_in');
+  sessionStorage.clear();
+  localStorage.removeItem('auvare_admin_user_email');
   adminState.currentUser = null;
   adminState.currentUserProfile = null;
   adminState.isAuthenticated = false;
+
+  // Clean URL if preview parameter was present
+  if (window.location.search.includes('preview')) {
+    const cleanUrl = window.location.origin + window.location.pathname;
+    window.history.replaceState({}, document.title, cleanUrl);
+  }
+
+  // Clear tables from DOM to protect sensitive customer records
+  const invTable = document.getElementById('adminInventoryTable');
+  if (invTable) invTable.innerHTML = '';
+  const ordTable = document.getElementById('adminOrdersTable');
+  if (ordTable) ordTable.innerHTML = '';
+
   renderUserProfile(null);
   showAuthModalView('default');
   openAdminModal('adminAuthGate');

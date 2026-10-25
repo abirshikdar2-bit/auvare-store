@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="assets/css/admin.css?v=2.6">
+  <link rel="stylesheet" href="assets/css/admin.css?v=2.7">
 </head>
 <body class="auth-gate-active">
 
@@ -682,7 +682,7 @@
   </main>
 
   <!-- ================= AUTH GATE MODAL ================= -->
-  <div id="adminAuthGate" class="admin-modal-overlay">
+  <div id="adminAuthGate" class="admin-modal-overlay open">
     <div class="admin-modal-box" style="max-width: 440px; padding: 2.25rem 2rem; text-align: center;">
       <img src="assets/images/logo.jpg" alt="AUVARE Logo" style="width: 68px; height: 68px; border-radius: 50%; margin: 0 auto 1.25rem; border: 3px solid var(--admin-primary); box-shadow: var(--shadow-sm);" />
       <h3 style="font-family:'Playfair Display', serif; font-size: 1.6rem; margin-bottom: 0.35rem; color: var(--admin-text-main);">AUVARE STORE</h3>
@@ -690,8 +690,21 @@
         Owner & Admin Management Portal
       </p>
 
+      <!-- Loading / Verifying View (Default on initial load) -->
+      <div id="authGateLoadingView" style="display: block;">
+        <div style="padding: 1.5rem 1rem 1rem; text-align: center;">
+          <div style="width: 44px; height: 44px; border: 3px solid rgba(16, 80, 54, 0.2); border-top-color: #105036; border-radius: 50%; margin: 0 auto 1.25rem; animation: spin 0.8s linear infinite;"></div>
+          <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--admin-text-main); margin-bottom: 0.35rem;">
+            Verifying Credentials
+          </h4>
+          <p style="font-size: 0.82rem; color: var(--admin-text-muted); margin: 0;">
+            Checking secure authentication status with AUVARE cloud...
+          </p>
+        </div>
+      </div>
+
       <!-- Standard Sign-in View -->
-      <div id="authGateDefaultView">
+      <div id="authGateDefaultView" style="display: none;">
         <div style="background: #f8fafc; border: 1px solid var(--admin-border); border-radius: var(--radius-md); padding: 1.15rem; margin-bottom: 1.5rem; text-align: left;">
           <p style="font-size: 0.85rem; font-weight: 700; color: #1e293b; margin-bottom: 0.25rem;">
             Secure Cloud Authentication
@@ -1125,6 +1138,6 @@
   <!-- Supabase CDN & Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabaseClient.js?v=3.5"></script>
-  <script src="assets/js/admin.js?v=3.8"></script>
+  <script src="assets/js/admin.js?v=3.9"></script>
 </body>
 </html>
