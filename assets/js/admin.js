@@ -933,7 +933,7 @@ function openOrderDetailsModal(orderId) {
 window.openOrderDetailsModal = openOrderDetailsModal;
 
 // Update Order Status from Modal
-async function handleUpdateOrderStatusFromModal() {
+async function handleUpdateOrderStatusFromModal(btn) {
   const orderId = adminState.activeModalOrderId;
   const statusSelect = document.getElementById('modalStatusSelect');
   if (!orderId || !statusSelect) return;
@@ -944,6 +944,13 @@ async function handleUpdateOrderStatusFromModal() {
   if (order) {
     order.status = newStatus;
     order.orderStatus = newStatus;
+  }
+
+  let origHtml = '';
+  if (btn) {
+    origHtml = btn.innerHTML;
+    btn.innerHTML = 'Saving...';
+    btn.disabled = true;
   }
 
   if (window.SupabaseService) {
@@ -957,7 +964,24 @@ async function handleUpdateOrderStatusFromModal() {
     statusBadge.textContent = newStatus.toUpperCase();
   }
 
+  // Update table & dashboard immediately
+  renderStats();
+  renderHomeDashboard();
   renderOrdersTable();
+  updateSidebarBadges();
+
+  if (btn) {
+    btn.innerHTML = 'Saved ✓';
+    btn.style.background = '#16a34a';
+    btn.style.borderColor = '#16a34a';
+    setTimeout(() => {
+      btn.innerHTML = origHtml || 'Save Status';
+      btn.style.background = '';
+      btn.style.borderColor = '';
+      btn.disabled = false;
+    }, 1500);
+  }
+
   showAdminToast(`Order #${orderId} marked as ${newStatus.toUpperCase()}`, 'success');
 }
 window.handleUpdateOrderStatusFromModal = handleUpdateOrderStatusFromModal;

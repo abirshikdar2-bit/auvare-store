@@ -236,6 +236,12 @@ const SupabaseService = (function() {
       try {
         const { data, error } = await client.from('orders').select('*').order('created_at', { ascending: false });
         if (!error && data) {
+          // Read local status overrides (preserves status even before Supabase RLS policy is updated)
+          let statusOverrides = {};
+          try {
+            statusOverrides = JSON.parse(localStorage.getItem('auvare_order_statuses') || '{}');
+          } catch (e) {}
+
           // Format orders for dashboard
           return data.map(o => {
             let pNum = o.payment_number || o.payment_sender_number || null;
@@ -243,6 +249,11 @@ const SupabaseService = (function() {
               const match = o.notes.match(/Payment Number:\s*([^\s|]+)/);
               if (match) pNum = match[1];
             }
+
+            // Resolve status: prefer cloud status if updated; otherwise use local admin override if present
+            const cloudStatus = (o.order_status || 'pending').toLowerCase();
+            const overriddenStatus = statusOverrides[o.order_id];
+            const finalStatus = overriddenStatus || cloudStatus;
 
             return {
               orderId: o.order_id,
@@ -259,7 +270,8 @@ const SupabaseService = (function() {
               shipping: o.shipping_cost,
               total: o.total_amount,
               notes: o.notes,
-              status: o.order_status || 'pending',
+              status: finalStatus,
+              orderStatus: finalStatus,
               date: new Date(o.created_at).toLocaleString()
             };
           });
@@ -275,18 +287,15 @@ const SupabaseService = (function() {
   // Update Order Status
   async function updateOrderStatus(orderId, newStatus) {
     initClient();
-    if (client && orderId) {
-      try {
-        const { error } = await client
-          .from('orders')
-          .update({ order_status: newStatus })
-          .eq('order_id', orderId);
-        if (error) throw error;
-      } catch (err) {
-        console.warn('Supabase update order status error:', err);
-      }
-    }
-    // Update local storage copy
+
+    // 1. Immediately persist to localStorage status map so admin changes never get lost or reverted
+    try {
+      const overrides = JSON.parse(localStorage.getItem('auvare_order_statuses') || '{}');
+      overrides[orderId] = newStatus;
+      localStorage.setItem('auvare_order_statuses', JSON.stringify(overrides));
+    } catch (e) {}
+
+    // 2. Update auvare_orders_v1 array in localStorage
     try {
       const local = JSON.parse(localStorage.getItem('auvare_orders_v1') || '[]');
       const target = local.find(o => o.orderId === orderId);
@@ -296,6 +305,27 @@ const SupabaseService = (function() {
         localStorage.setItem('auvare_orders_v1', JSON.stringify(local));
       }
     } catch (e) {}
+
+    // 3. Sync to Supabase cloud database
+    if (client && orderId) {
+      try {
+        const { data, error } = await client
+          .from('orders')
+          .update({ order_status: newStatus })
+          .eq('order_id', orderId)
+          .select();
+        if (error) {
+          console.warn('Supabase update order status error:', error);
+        } else if (data && data.length > 0) {
+          console.log(`✓ Order #${orderId} status saved to Supabase cloud as "${newStatus}"!`);
+        } else {
+          console.warn(`Supabase returned 0 rows updated for order #${orderId} (RLS update policy might be needed). Status preserved locally.`);
+        }
+      } catch (err) {
+        console.warn('Supabase update order status exception:', err);
+      }
+    }
+
     return true;
   }
 

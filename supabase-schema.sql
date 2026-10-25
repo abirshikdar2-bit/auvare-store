@@ -80,6 +80,10 @@ DROP POLICY IF EXISTS "Public can view orders" ON public.orders;
 CREATE POLICY "Public can view orders" ON public.orders
     FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Public and Admin can manage orders" ON public.orders;
+CREATE POLICY "Public and Admin can manage orders" ON public.orders
+    FOR ALL USING (true);
+
 DROP POLICY IF EXISTS "Public can view store_contact_info" ON public.store_contact_info;
 CREATE POLICY "Public can view store_contact_info" ON public.store_contact_info
     FOR SELECT USING (true);
