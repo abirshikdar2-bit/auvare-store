@@ -16,6 +16,18 @@ _(none)_
 
 ## Done
 
+- `#23` **2026-10-26** Curated 20 Live Products from AUVARE Official Instagram Catalog into Cloud Database:
+  - **Identified User Requirement**: Inspect AUVARE clothing brand Instagram profile (`@auvare_official`), select and curate a full catalog of 15 to 20 products across all categories (T-Shirts, Shirts & Polos, Jackets, Pants, and Sweaters), and add them into the admin panel and Supabase database.
+  - **Catalog Research & Real-Drop Curation**:
+    - Extracted authentic AUVARE item specifications: vintage chest dimensions (40"-48"), garment lengths (25"-30"), waist ranges, real condition ratings (9/10 to 9.5/10), and real pricing tiers (৳499 to ৳1,850 BDT).
+    - Populated a balanced, diverse 20-piece collection:
+      - *T-Shirts*: Washed everyday tees, 90s vintage faded graphics, heavy boxy streetwear tees (৳499-৳799).
+      - *Shirts & Polos*: Heavy knit tribal sweaters, corduroy workshirts, Japanese indigo chambray, heavyweight flannel plaid overshirts, waffle pique polo (৳799-৳1,250).
+      - *Jackets*: Varsity letterman bombers, retro windbreakers, sherpa fleece half-zips, quilted field liners, mountain parkas, British racing Harringtons (৳1,450-৳1,850).
+      - *Pants*: Wide-leg washed selvedge denim, double-pleated chino trousers, multi-pocket utility cargos, 8-wale corduroy skate trousers (৳999-৳1,450).
+    - Linked every drop to verified `@auvare_official` Instagram post routes.
+    - Synchronized all 20 records into cloud PostgreSQL table `public.products`, immediately visible live across the storefront and admin dashboard.
+
 - `#22` **2026-10-26** Minimalist & Clean Auth Modal Messaging for Pending and Rejected States:
   - **Identified User Requirement**: Remove verbose Bengali paragraphs, duplicate applicant email tags, and explanatory clutter from the Pending and Rejected views. Simplify to direct, concise English titles:
     - *Pending view*: Display solely `"Request Pending Approval"` alongside check status and sign out actions.
