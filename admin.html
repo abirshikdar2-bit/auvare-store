@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="assets/css/admin.css?v=3.2">
+  <link rel="stylesheet" href="assets/css/admin.css?v=3.3">
 </head>
 <body class="auth-gate-active">
 
@@ -389,27 +389,38 @@
                   <div id="editorDescriptionRich" class="rich-editor-textarea" contenteditable="true" placeholder="Enter product details, fabric, and curation notes..."></div>
                 </div>
 
-                <!-- Media Gallery Card -->
+                <!-- Media Gallery Card (Multi-Photo Drop Uploader) -->
                 <div class="editor-card">
-                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
-                    <label class="editor-card-title" style="margin:0;">Media</label>
-                    <span style="font-size:0.75rem; color:var(--admin-text-muted);">High resolution drop photo</span>
-                  </div>
-
-                  <div class="media-gallery-grid" id="editorMediaGrid">
-                    <div class="media-thumbnail-card" id="editorMainThumbnail">
-                      <img src="assets/images/item1.jpg" id="editorPreviewImg" alt="Product Drop" />
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                    <div style="display:flex; align-items:center; gap:0.6rem;">
+                      <label class="editor-card-title" style="margin:0;">Media Gallery</label>
+                      <span id="editorImageCountBadge" class="image-count-badge">0 photos</span>
                     </div>
-                    <label class="media-add-tile" for="editorFileInput">
-                      <span style="font-size: 1.3rem;">+</span>
-                      <span>Add image</span>
-                    </label>
+                    <span style="font-size:0.75rem; color:var(--admin-text-muted);">Multiple high-resolution drop photos (front, back, details)</span>
                   </div>
 
-                  <input type="file" id="editorFileInput" accept="image/*" style="display:none;" onchange="handleEditorFileSelect(event)" />
+                  <!-- Dynamic Multi-Image Grid -->
+                  <div class="media-gallery-grid" id="editorMediaGrid">
+                    <!-- Dynamic thumbnails, empty placeholder & add tile rendered via JS -->
+                  </div>
+
+                  <!-- Multi-File File Input (Select multiple photos at once) -->
+                  <input type="file" id="editorFileInput" accept="image/*" multiple style="display:none;" onchange="handleEditorFilesSelect(event)" />
+
+                  <!-- Image URL / Path Input with Add Button -->
                   <div style="margin-top: 1rem;">
-                    <label style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:0.35rem; color:var(--admin-text-muted);">Or enter Image URL / Path:</label>
-                    <input type="text" id="editorImageUrl" class="toolbar-input" placeholder="assets/images/item1.jpg or https://..." style="padding-left:1rem; font-size:0.85rem;" oninput="handleEditorUrlChange(this.value)" />
+                    <label style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:0.4rem; color:var(--admin-text-muted);">
+                      Or enter Image URL / Path (Unsplash, Supabase, Cloudinary or local paths):
+                    </label>
+                    <div style="display:flex; gap:0.5rem;">
+                      <input type="text" id="editorImageUrl" class="toolbar-input" placeholder="https://images.unsplash.com/... or assets/images/item1.jpg" style="padding-left:1rem; font-size:0.85rem; flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault(); addEditorImageUrl();}" />
+                      <button type="button" class="btn-admin-primary" onclick="addEditorImageUrl()" style="padding:0.55rem 1rem; font-size:0.82rem; white-space:nowrap;">
+                        + Add Image
+                      </button>
+                    </div>
+                    <p style="font-size:0.74rem; color:#64748b; margin:0.45rem 0 0 0; line-height: 1.4;">
+                      💡 <em>Tip: You can add 2, 3, 4, 5+ photos. The photo marked with the green <strong>COVER</strong> badge is the main photo shown on the storefront. Click "★ Make Cover" on any photo to set it as main.</em>
+                    </p>
                   </div>
                 </div>
 
@@ -1184,7 +1195,7 @@
 
   <!-- Supabase CDN & Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="assets/js/supabaseClient.js?v=3.5"></script>
-  <script src="assets/js/admin.js?v=4.4"></script>
+  <script src="assets/js/supabaseClient.js?v=3.6"></script>
+  <script src="assets/js/admin.js?v=4.5"></script>
 </body>
 </html>

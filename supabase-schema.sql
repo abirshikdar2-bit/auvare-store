@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS public.products (
     condition TEXT DEFAULT '9.5/10 (Mint Condition)',
     price NUMERIC NOT NULL,
     image TEXT NOT NULL,
+    images JSONB DEFAULT '[]'::jsonb,
     sold BOOLEAN DEFAULT false,
     instagram_url TEXT DEFAULT 'https://www.instagram.com/auvare_official/',
     description TEXT,
@@ -44,6 +45,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
 -- Ensure payment_number and size exist if table already created
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_number TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS size TEXT;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS images JSONB DEFAULT '[]'::jsonb;
 
 -- Backfill payment_number and size for existing records if empty
 UPDATE public.orders 

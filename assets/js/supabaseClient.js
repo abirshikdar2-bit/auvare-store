@@ -71,10 +71,21 @@ const SupabaseService = (function() {
           .order('created_at', { ascending: false })
           .order('id', { ascending: true });
         if (!error && data && data.length > 0) {
-          const mapped = data.map(item => ({
-            ...item,
-            instagramUrl: item.instagram_url || item.instagramUrl || 'https://www.instagram.com/auvare_official/'
-          }));
+          const mapped = data.map(item => {
+            let images = [];
+            if (Array.isArray(item.images)) {
+              images = item.images;
+            } else if (typeof item.images === 'string') {
+              try { images = JSON.parse(item.images); } catch(e) { images = [item.images]; }
+            } else if (item.image) {
+              images = [item.image];
+            }
+            return {
+              ...item,
+              images,
+              instagramUrl: item.instagram_url || item.instagramUrl || 'https://www.instagram.com/auvare_official/'
+            };
+          });
           // Sync with local storage
           localStorage.setItem('auvare_inventory_v1', JSON.stringify(mapped));
           return mapped;
@@ -102,15 +113,21 @@ const SupabaseService = (function() {
           length: product.length || '27"',
           condition: product.condition || '9.5/10 (Mint Condition)',
           price: parseInt(product.price, 10) || 0,
-          image: product.image || 'assets/images/item1.jpg',
+          image: product.image || (product.images && product.images[0]) || 'assets/images/item1.jpg',
+          images: product.images || (product.image ? [product.image] : []),
           sold: !!product.sold,
           instagram_url: product.instagramUrl || product.instagram_url || 'https://www.instagram.com/auvare_official/',
           description: product.description || ''
         };
-        const { data, error } = await client.from('products').insert([payload]).select();
-        if (error) throw error;
+        let res = await client.from('products').insert([payload]).select();
+        if (res.error && res.error.message && res.error.message.includes('images')) {
+          const fallbackPayload = { ...payload };
+          delete fallbackPayload.images;
+          res = await client.from('products').insert([fallbackPayload]).select();
+        }
+        if (res.error) throw res.error;
         console.log('✓ Product saved to Supabase cloud:', payload.id);
-        return data?.[0] || payload;
+        return res.data?.[0] || payload;
       } catch (err) {
         console.warn('Supabase product insert error, saved locally:', err);
         throw err;
@@ -130,8 +147,12 @@ const SupabaseService = (function() {
           delete payload.instagramUrl;
         }
         delete payload.size;
-        const { error } = await client.from('products').update(payload).eq('id', productId);
-        if (error) throw error;
+        let res = await client.from('products').update(payload).eq('id', productId);
+        if (res.error && res.error.message && res.error.message.includes('images')) {
+          delete payload.images;
+          res = await client.from('products').update(payload).eq('id', productId);
+        }
+        if (res.error) throw res.error;
         console.log('✓ Product updated on Supabase cloud:', productId);
       } catch (err) {
         console.warn('Supabase product update error:', err);

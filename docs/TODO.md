@@ -16,6 +16,27 @@ _(none)_
 
 ## Done
 
+- `#27` **2026-10-28** Multi-Image Gallery in Product Editor with Default Box-Box Checkerboard Pattern & Storefront Multi-Photo Support:
+  - **Identified User Problems & Requirements**:
+    1. *Single-Image Restriction in Product Editor*: Previously, the product editor only allowed attaching a single image URL or single file upload. The user required the ability to attach multiple images (2, 3, 4, 5+ photos) per product drop to showcase front, back, detail, and fit shots.
+    2. *Unwanted Default Boots Image on New Product Creation*: Opening "New Product Drop" previously defaulted to showing a boots photo (`assets/images/item1.jpg`). The user explicitly instructed to remove any default product photo and instead display an elegant "box-box type" background theme (the classic transparency / checkerboard canvas grid pattern) as the default canvas.
+  - **Implemented Architecture & Enhancements**:
+    - *Multi-Image Gallery System (`admin.html`, `admin.css`, `admin.js`)*:
+      - Media Gallery now supports multi-file selection (`<input type="file" multiple>`) and URL inputs with enter-key and "+ Add Image" trigger.
+      - Dynamic `.media-gallery-grid` renders thumbnail cards for every attached photo with order badges (`#1`, `#2`, `#3`), individual delete buttons (`✕`), and a "★ Make Cover" button to reorder any photo into the primary cover position.
+      - Primary image automatically gets a prominent green `COVER` badge, ensuring clear visibility into which photo acts as the storefront catalog cover.
+      - Displays a live photo count pill badge (`#editorImageCountBadge`) showing "0 photos", "1 photo", "3 photos", etc.
+    - *Box-Box Pattern Empty Canvas Theme*:
+      - When no photos are selected (e.g. creating a new product drop), the editor displays a checkered transparent canvas pattern (`.media-empty-placeholder-box`) with frosted white inner card, vector camera icon, and clear upload instructions.
+      - Implemented `DEFAULT_BOX_PLACEHOLDER` SVG data URL featuring a crisp vector checkerboard pattern (`#f8fafc` & `#e2e8f0` grid), frosted AUVARE crest card, and luxury branding so products saved without photos never display broken image icons.
+    - *Storefront Multi-Photo Support (`index.html`, `app.js`, `style.css`)*:
+      - Product cards automatically detect multiple photos (`item.images.length > 1`) and display a `📸 count` badge.
+      - Added interactive `.product-card-gallery-dots` enabling shoppers to tap/click dots to smoothly cycle through product images with soft opacity transitions.
+    - *Cloud Database & State Synchronization (`supabaseClient.js`, `supabase-schema.sql`)*:
+      - Products table schema updated with `images JSONB DEFAULT '[]'::jsonb`.
+      - Supabase insert/update methods persist `images` array alongside `image` cover, with auto-fallback if column is not yet present in client DB.
+  - **Asset Versioning**: Bumped `admin.css?v=3.3`, `admin.js?v=4.5`, `style.css?v=3.0`, `app.js?v=4.0`, `supabaseClient.js?v=3.6`.
+
 - `#26` **2026-10-28** Native Mobile Card Views for Orders, Products, and Users & Full-Width Order Details Bottom Sheet:
   - **Identified User Problems & Root Causes**:
     1. *Clipped 8-Column Orders Spreadsheet on Mobile Viewports*: The user reported (via live screenshots) that viewing Orders on a phone presented a clipped table showing only "ORDER ID" and truncated "CUST" / "Md A..." while 6 critical columns (Address, Items/Sizes, Payment/TrxID, Total, Status, Action buttons) remained hidden off-screen to the right. A scroll hint banner instructed users to "Swipe table horizontally", resulting in an awkward 2D scrolling experience typical of raw desktop tables forced onto mobile screens.

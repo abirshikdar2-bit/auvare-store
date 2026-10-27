@@ -4,6 +4,10 @@
  * and Supabase Cloud Database Integration.
  */
 
+// Default Box-Box Checkerboard Pattern SVG Placeholder (No Photo Fallback)
+const DEFAULT_BOX_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='750' viewBox='0 0 600 750'><defs><pattern id='boxgrid' width='24' height='24' patternUnits='userSpaceOnUse'><rect width='24' height='24' fill='%23f8fafc'/><rect width='12' height='12' fill='%23e2e8f0'/><rect x='12' y='12' width='12' height='12' fill='%23e2e8f0'/></pattern></defs><rect width='600' height='750' fill='url(%23boxgrid)'/><rect x='120' y='260' width='360' height='230' rx='16' fill='%23ffffff' fill-opacity='0.95' stroke='%23cbd5e1' stroke-width='1.5'/><g transform='translate(265, 290)' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='3' width='64' height='50' rx='8'/><circle cx='23' cy='20' r='6'/><path d='M67 43l-18-18-30 30'/><path d='M40 37l6-6 10 10'/></g><text x='300' y='395' font-family='Playfair Display, serif, -apple-system' font-size='20' font-weight='700' letter-spacing='0.08em' fill='%230f172a' text-anchor='middle'>AUVARE</text><text x='300' y='425' font-family='Plus Jakarta Sans, sans-serif' font-size='12' font-weight='600' letter-spacing='0.05em' fill='%2364748b' text-anchor='middle'>VINTAGE &amp; PRELOVED</text><text x='300' y='452' font-family='Plus Jakarta Sans, sans-serif' font-size='11' font-weight='500' fill='%2394a3b8' text-anchor='middle'>No Photo Uploaded</text></svg>";
+window.DEFAULT_BOX_PLACEHOLDER = DEFAULT_BOX_PLACEHOLDER;
+
 // Default Seed with S, M, L, XL, XXL
 const DEFAULT_SEED = [
   {
@@ -139,6 +143,7 @@ const adminState = {
   statusFilter: 'all',
   editingProductId: null,
   uploadedImageBase64: null,
+  editorImages: [],
   isAuthenticated: false,
   currentUser: null,
   currentUserProfile: null
@@ -799,7 +804,10 @@ function renderInventoryTable() {
       <tr>
         <td>
           <div class="table-product-cell">
-            <img src="${item.image}" alt="${item.title}" class="table-product-thumb" />
+            <div style="position: relative; display: inline-block;">
+              <img src="${item.image || DEFAULT_BOX_PLACEHOLDER}" alt="${item.title}" class="table-product-thumb" />
+              ${(item.images && item.images.length > 1) ? `<span class="photo-count-pill" style="position: absolute; bottom: 2px; right: 2px; font-size: 0.6rem; padding: 0.08rem 0.3rem; background: rgba(15,23,42,0.85); color: #fff; border: none;">📸 ${item.images.length}</span>` : ''}
+            </div>
             <div>
               <div class="table-product-title">${item.title}</div>
               <div class="table-product-cat">${item.condition || 'Pre-loved'}</div>
@@ -877,7 +885,10 @@ function renderInventoryTable() {
         return `
           <div class="mobile-product-card">
             <div class="mobile-product-card-top">
-              <img src="${item.image}" alt="${item.title}" class="mobile-product-thumb" />
+              <div style="position: relative; display: inline-block; flex-shrink: 0;">
+                <img src="${item.image || DEFAULT_BOX_PLACEHOLDER}" alt="${item.title}" class="mobile-product-thumb" />
+                ${(item.images && item.images.length > 1) ? `<span class="photo-count-pill" style="position: absolute; bottom: 3px; right: 3px; font-size: 0.62rem; padding: 0.1rem 0.35rem; background: rgba(15,23,42,0.85); color: #fff; border: none;">📸 ${item.images.length}</span>` : ''}
+              </div>
               <div class="mobile-product-info">
                 <div class="mobile-product-title">${item.title}</div>
                 <div class="mobile-product-meta">${item.category} • ${item.condition || 'Pre-loved'}</div>
@@ -1564,18 +1575,30 @@ function openProductEditor(mode = 'add', productId = null) {
     const descRich = document.getElementById('editorDescriptionRich');
     if (descRich) descRich.innerHTML = item.description || '';
 
-    const imgPreview = document.getElementById('editorPreviewImg');
-    if (imgPreview) imgPreview.src = item.image;
-    document.getElementById('editorImageUrl').value = item.image.startsWith('data:') ? '' : item.image;
+    // Multiple Images populate
+    if (Array.isArray(item.images) && item.images.length > 0) {
+      adminState.editorImages = item.images.filter(img => img && img !== DEFAULT_BOX_PLACEHOLDER);
+    } else if (item.image && item.image !== DEFAULT_BOX_PLACEHOLDER) {
+      adminState.editorImages = [item.image];
+    } else {
+      adminState.editorImages = [];
+    }
+
+    const urlInput = document.getElementById('editorImageUrl');
+    if (urlInput) urlInput.value = '';
 
     const itemSizes = item.sizes || ['S', 'M', 'L', 'XL', 'XXL'];
     document.querySelectorAll('.editor-size-checkbox').forEach(cb => {
       cb.checked = itemSizes.includes(cb.value);
     });
 
+    renderEditorMediaGrid();
+
   } else {
-    // Add mode
+    // Add mode - DEFAULT STATE: NO PRODUCT PHOTO! Shows Box-Box Theme Canvas
     adminState.editingProductId = null;
+    adminState.editorImages = []; // Absolutely NO images by default as requested!
+    
     document.getElementById('editorPageHeading').textContent = 'New Product Drop';
     document.getElementById('editorProductId').value = '';
     document.getElementById('editorTitle').value = '';
@@ -1590,13 +1613,14 @@ function openProductEditor(mode = 'add', productId = null) {
     const descRich = document.getElementById('editorDescriptionRich');
     if (descRich) descRich.innerHTML = '';
 
-    const imgPreview = document.getElementById('editorPreviewImg');
-    if (imgPreview) imgPreview.src = 'assets/images/item1.jpg';
-    document.getElementById('editorImageUrl').value = '';
+    const urlInput = document.getElementById('editorImageUrl');
+    if (urlInput) urlInput.value = '';
 
     document.querySelectorAll('.editor-size-checkbox').forEach(cb => {
       cb.checked = true;
     });
+
+    renderEditorMediaGrid();
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1629,30 +1653,133 @@ function formatRichDoc(cmd, val = null) {
 }
 window.formatRichDoc = formatRichDoc;
 
-// Editor Image Handlers
-function handleEditorFileSelect(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+// ==========================================
+// Multi-Image Gallery Handlers for Product Editor
+// ==========================================
 
-  const reader = new FileReader();
-  reader.onload = (evt) => {
-    adminState.uploadedImageBase64 = evt.target.result;
-    const img = document.getElementById('editorPreviewImg');
-    if (img) img.src = evt.target.result;
-    document.getElementById('editorImageUrl').value = '';
-  };
-  reader.readAsDataURL(file);
+function renderEditorMediaGrid() {
+  const grid = document.getElementById('editorMediaGrid');
+  const badge = document.getElementById('editorImageCountBadge');
+  if (!grid) return;
+
+  const images = adminState.editorImages || [];
+  const count = images.length;
+
+  if (badge) {
+    badge.textContent = `${count} ${count === 1 ? 'photo' : 'photos'}`;
+    badge.style.background = count > 0 ? '#ecfdf5' : '#f1f5f9';
+    badge.style.color = count > 0 ? '#15803d' : '#475569';
+    badge.style.borderColor = count > 0 ? '#86efac' : '#cbd5e1';
+  }
+
+  if (count === 0) {
+    // Default: Box-box pattern theme empty canvas + Add Tile
+    grid.innerHTML = `
+      <div class="media-empty-placeholder-box">
+        <div class="empty-box-inner">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="3" ry="3"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>
+          <strong>No Product Photo (Default Theme Canvas)</strong>
+          <span>Add 2, 3, 4+ photos using "+ Add Photos" or the Image URL box below</span>
+        </div>
+      </div>
+      <label class="media-add-tile" for="editorFileInput" title="Select multiple photos">
+        <span style="font-size: 1.5rem; font-weight: 300;">+</span>
+        <span>Add photos</span>
+      </label>
+    `;
+    return;
+  }
+
+  // Render thumbnails
+  let html = images.map((imgUrl, idx) => {
+    const isPrimary = idx === 0;
+    return `
+      <div class="media-thumbnail-card ${isPrimary ? 'is-primary' : ''}">
+        <img src="${imgUrl}" alt="Product Photo #${idx + 1}" />
+        ${isPrimary ? '<span class="media-primary-badge">COVER</span>' : ''}
+        <span class="media-order-badge">#${idx + 1}</span>
+        <button type="button" class="media-delete-btn" onclick="removeEditorImage(${idx})" title="Remove photo">✕</button>
+        ${!isPrimary ? `<button type="button" class="media-cover-btn" onclick="setEditorPrimaryImage(${idx})" title="Set as primary cover photo">★ Make Cover</button>` : ''}
+      </div>
+    `;
+  }).join('');
+
+  // Add more button at end
+  html += `
+    <label class="media-add-tile" for="editorFileInput" title="Add more photos">
+      <span style="font-size: 1.5rem; font-weight: 300;">+</span>
+      <span>Add more</span>
+    </label>
+  `;
+
+  grid.innerHTML = html;
 }
-window.handleEditorFileSelect = handleEditorFileSelect;
+window.renderEditorMediaGrid = renderEditorMediaGrid;
 
-function handleEditorUrlChange(url) {
-  if (url && url.trim()) {
-    adminState.uploadedImageBase64 = null;
-    const img = document.getElementById('editorPreviewImg');
-    if (img) img.src = url.trim();
+function removeEditorImage(idx) {
+  if (!adminState.editorImages) return;
+  if (idx >= 0 && idx < adminState.editorImages.length) {
+    adminState.editorImages.splice(idx, 1);
+    renderEditorMediaGrid();
   }
 }
-window.handleEditorUrlChange = handleEditorUrlChange;
+window.removeEditorImage = removeEditorImage;
+
+function setEditorPrimaryImage(idx) {
+  if (!adminState.editorImages) return;
+  if (idx > 0 && idx < adminState.editorImages.length) {
+    const [chosen] = adminState.editorImages.splice(idx, 1);
+    adminState.editorImages.unshift(chosen);
+    renderEditorMediaGrid();
+    showAdminToast('Set as main cover photo!', 'success');
+  }
+}
+window.setEditorPrimaryImage = setEditorPrimaryImage;
+
+function addEditorImageUrl() {
+  const input = document.getElementById('editorImageUrl');
+  if (!input) return;
+  const url = input.value.trim();
+  if (!url) {
+    alert('Please enter an image URL or file path.');
+    input.focus();
+    return;
+  }
+  if (!adminState.editorImages) adminState.editorImages = [];
+  adminState.editorImages.push(url);
+  input.value = '';
+  renderEditorMediaGrid();
+  showAdminToast(`Added photo #${adminState.editorImages.length}!`, 'success');
+}
+window.addEditorImageUrl = addEditorImageUrl;
+
+function handleEditorFilesSelect(e) {
+  const files = Array.from(e.target.files || []);
+  if (files.length === 0) return;
+
+  if (!adminState.editorImages) adminState.editorImages = [];
+
+  let loaded = 0;
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      adminState.editorImages.push(evt.target.result);
+      loaded++;
+      if (loaded === files.length) {
+        renderEditorMediaGrid();
+        showAdminToast(`Added ${files.length} photo(s) to gallery!`, 'success');
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+  // Clear input so user can choose same files again if needed
+  e.target.value = '';
+}
+window.handleEditorFilesSelect = handleEditorFilesSelect;
 
 function handleEditorStatusChange(val) {
   const badge = document.getElementById('editorStatusBadge');
@@ -1669,7 +1796,7 @@ function handleEditorStatusChange(val) {
 }
 window.handleEditorStatusChange = handleEditorStatusChange;
 
-// Save / Publish from Shopify Editor
+// Save / Publish from Shopify Editor with Multi-Image Support
 async function handleSaveProductEditor() {
   const title = document.getElementById('editorTitle').value.trim();
   const priceVal = document.getElementById('editorPrice').value;
@@ -1698,16 +1825,16 @@ async function handleSaveProductEditor() {
   document.querySelectorAll('.editor-size-checkbox:checked').forEach(cb => selectedSizes.push(cb.value));
   if (selectedSizes.length === 0) selectedSizes.push('M');
 
-  let image = 'assets/images/item1.jpg';
-  if (adminState.uploadedImageBase64) {
-    image = adminState.uploadedImageBase64;
-  } else {
-    const urlInput = document.getElementById('editorImageUrl').value.trim();
-    if (urlInput) image = urlInput;
-    else if (document.getElementById('editorPreviewImg')?.src) {
-      image = document.getElementById('editorPreviewImg').src;
-    }
+  // Resolve multiple images
+  const images = [...(adminState.editorImages || [])];
+  const pendingUrl = document.getElementById('editorImageUrl')?.value.trim();
+  if (pendingUrl && !images.includes(pendingUrl)) {
+    images.push(pendingUrl);
   }
+
+  // Cover image: 1st image from array or default box-box pattern SVG
+  const primaryImage = images.length > 0 ? images[0] : DEFAULT_BOX_PLACEHOLDER;
+  const finalImages = images.length > 0 ? images : [primaryImage];
 
   const editId = adminState.editingProductId;
 
@@ -1723,7 +1850,8 @@ async function handleSaveProductEditor() {
       item.condition = condition;
       item.sold = sold;
       item.sizes = selectedSizes;
-      item.image = image;
+      item.image = primaryImage;
+      item.images = finalImages;
       item.description = description;
 
       saveProducts();
@@ -1735,10 +1863,10 @@ async function handleSaveProductEditor() {
 
       if (window.SupabaseService) {
         await window.SupabaseService.updateProduct(editId, {
-          title, category, price, chest, length, condition, sold, sizes: selectedSizes, image, description
+          title, category, price, chest, length, condition, sold, sizes: selectedSizes, image: primaryImage, images: finalImages, description
         });
       }
-      showAdminToast(`Updated "${title}" successfully!`, 'success');
+      showAdminToast(`Updated "${title}" successfully! (${finalImages.length} photos)`, 'success');
     }
   } else {
     // Add new product
@@ -1752,7 +1880,8 @@ async function handleSaveProductEditor() {
       chest,
       length,
       condition,
-      image,
+      image: primaryImage,
+      images: finalImages,
       sold,
       description: description || `Curated 1-of-1 ${category} drop.`
     };
@@ -1776,9 +1905,10 @@ async function handleSaveProductEditor() {
         console.warn('Supabase product cloud insert error:', err);
       }
     }
-    showAdminToast(`Published "${title}" to online catalog!`, 'success');
+    showAdminToast(`Published "${title}" to online catalog! (${finalImages.length} photos)`, 'success');
   }
 }
+window.handleSaveProductEditor = handleSaveProductEditor;
 window.handleSaveProductEditor = handleSaveProductEditor;
 
 // ==========================================

@@ -4,6 +4,10 @@
  * Supports Multi-Size Selection (S, M, L, XL, XXL) & Supabase Cloud Sync
  */
 
+// Default Box-Box Checkerboard Pattern SVG Placeholder (No Photo Fallback)
+const DEFAULT_BOX_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='750' viewBox='0 0 600 750'><defs><pattern id='boxgrid' width='24' height='24' patternUnits='userSpaceOnUse'><rect width='24' height='24' fill='%23f8fafc'/><rect width='12' height='12' fill='%23e2e8f0'/><rect x='12' y='12' width='12' height='12' fill='%23e2e8f0'/></pattern></defs><rect width='600' height='750' fill='url(%23boxgrid)'/><rect x='120' y='260' width='360' height='230' rx='16' fill='%23ffffff' fill-opacity='0.95' stroke='%23cbd5e1' stroke-width='1.5'/><g transform='translate(265, 290)' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='3' width='64' height='50' rx='8'/><circle cx='23' cy='20' r='6'/><path d='M67 43l-18-18-30 30'/><path d='M40 37l6-6 10 10'/></g><text x='300' y='395' font-family='Playfair Display, serif, -apple-system' font-size='20' font-weight='700' letter-spacing='0.08em' fill='%230f172a' text-anchor='middle'>AUVARE</text><text x='300' y='425' font-family='Plus Jakarta Sans, sans-serif' font-size='12' font-weight='600' letter-spacing='0.05em' fill='%2364748b' text-anchor='middle'>VINTAGE &amp; PRELOVED</text><text x='300' y='452' font-family='Plus Jakarta Sans, sans-serif' font-size='11' font-weight='500' fill='%2394a3b8' text-anchor='middle'>No Photo Uploaded</text></svg>";
+window.DEFAULT_BOX_PLACEHOLDER = DEFAULT_BOX_PLACEHOLDER;
+
 // Default Seed Products with S, M, L, XL, XXL Sizes
 const DEFAULT_PRODUCTS = [
   {
@@ -414,16 +418,30 @@ function renderProducts() {
   grid.innerHTML = filtered.map(item => {
     const itemSizes = item.sizes || allSizes;
     const currentSelectedSize = state.selectedSizes[item.id] || itemSizes[0] || 'M';
+    const images = (Array.isArray(item.images) && item.images.length > 0)
+      ? item.images
+      : [item.image || DEFAULT_BOX_PLACEHOLDER];
+    const primaryImg = images[0] || DEFAULT_BOX_PLACEHOLDER;
+    const hasMultiple = images.length > 1;
 
     return `
       <article class="product-card ${item.sold ? 'sold-out' : ''}" data-id="${item.id}">
         <div class="product-image-box">
-          <img class="product-card-img" src="${item.image}" alt="${item.title}" loading="lazy" />
+          <img class="product-card-img" id="cardImg_${item.id}" src="${primaryImg}" alt="${item.title}" loading="lazy" />
           
           <div class="product-badge-group">
             <span class="badge-tag unique">Curated Drop</span>
             ${item.sold ? '<span class="badge-tag sold">SOLD OUT</span>' : '<span class="badge-tag condition">' + (item.condition ? item.condition.split('(')[0].trim() : 'Mint') + '</span>'}
           </div>
+
+          ${hasMultiple ? `
+            <span class="multi-photo-badge">📸 ${images.length}</span>
+            <div class="product-card-gallery-dots" onclick="event.stopPropagation();">
+              ${images.map((img, idx) => `
+                <button type="button" class="gallery-dot ${idx === 0 ? 'active' : ''}" onclick="switchCardImage('${item.id}', ${idx}, this)" title="Photo ${idx + 1}"></button>
+              `).join('')}
+            </div>
+          ` : ''}
 
           ${state.isAdmin ? `
             <div class="admin-card-bar">
@@ -490,6 +508,36 @@ function renderProducts() {
     `;
   }).join('');
 }
+
+// Multi-Image Gallery Card Swapper
+function switchCardImage(productId, index, btn) {
+  const item = state.products.find(p => p.id === productId);
+  if (!item) return;
+  const images = (Array.isArray(item.images) && item.images.length > 0)
+    ? item.images
+    : [item.image || DEFAULT_BOX_PLACEHOLDER];
+  const targetImg = images[index];
+  if (!targetImg) return;
+
+  const imgEl = document.getElementById(`cardImg_${productId}`);
+  if (imgEl) {
+    imgEl.style.transition = 'opacity 0.15s ease';
+    imgEl.style.opacity = '0.4';
+    setTimeout(() => {
+      imgEl.src = targetImg;
+      imgEl.style.opacity = '1';
+    }, 120);
+  }
+
+  // Update dots
+  const parent = btn.parentElement;
+  if (parent) {
+    parent.querySelectorAll('.gallery-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === index);
+    });
+  }
+}
+window.switchCardImage = switchCardImage;
 
 // ==========================================================================
 // STOREFRONT HEADER NAVIGATION INDICATOR & CATEGORY FILTERING
