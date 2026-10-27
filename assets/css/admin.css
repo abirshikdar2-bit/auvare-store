@@ -394,8 +394,14 @@ body {
   background-color: var(--admin-surface);
   border: 1px solid var(--admin-border);
   border-radius: var(--radius-md);
-  overflow: hidden;
   box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .admin-table {
@@ -1205,24 +1211,6 @@ body.auth-gate-active #settingsTabContent {
   text-overflow: ellipsis;
 }
 
-/* Responsive */
-@media (max-width: 1024px) {
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .home-insights-grid { grid-template-columns: 1fr; }
-  .editor-layout-grid { grid-template-columns: 1fr; }
-  .categories-display-grid { grid-template-columns: repeat(2, 1fr); }
-}
-
-@media (max-width: 768px) {
-  body { flex-direction: column; }
-  .admin-sidebar { width: 100%; }
-  .stats-grid { grid-template-columns: 1fr; }
-  .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; }
-  .categories-display-grid { grid-template-columns: 1fr; }
-  .metrics-strip { flex-direction: column; align-items: flex-start; }
-  .metric-live-status { border-left: none; padding-left: 0; border-top: 1px solid var(--admin-border); padding-top: 0.5rem; width: 100%; }
-}
-
 /* ==========================================================================
    AUVARE - Home Dashboard & Shopify Polaris Layout Styles
    ========================================================================== */
@@ -1854,4 +1842,361 @@ body.auth-gate-active #settingsTabContent {
 .order-item-card:hover {
   border-color: #cbd5e1;
   background: #ffffff;
+}
+
+/* ==========================================================================
+   AUVARE Admin - Mobile Topbar, Responsive Tables & Drawer Components
+   ========================================================================== */
+
+/* Elements hidden on desktop by default */
+.admin-mobile-header {
+  display: none;
+}
+
+.admin-sidebar-backdrop {
+  display: none;
+}
+
+.sidebar-close-btn {
+  display: none;
+}
+
+.table-scroll-hint {
+  display: none;
+}
+
+/* ==========================================================================
+   Responsive Media Queries (Authoritative Position at End of File)
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .home-insights-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .editor-layout-grid {
+    grid-template-columns: 1fr;
+  }
+  .categories-display-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  /* Fix Nested Scroll Trap: HTML & Body become the single primary scroll root */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body {
+    display: block !important;
+    position: relative !important;
+  }
+
+  /* Admin Main Container: Natural height without scroll trap */
+  .admin-main {
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow: visible !important;
+    padding: 0.75rem 0.85rem 3.5rem !important;
+  }
+
+  /* Mobile Top App Bar (Shopify / App-like Header) */
+  .admin-mobile-header {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    background: #0b1a13;
+    color: #ffffff;
+    padding: 0.75rem 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  }
+
+  .mobile-hamburger-btn {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+  }
+
+  .mobile-hamburger-btn:active {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .mobile-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .mobile-header-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid #22c55e;
+    object-fit: cover;
+  }
+
+  .mobile-header-title {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    font-size: 1.05rem;
+    color: #ffffff;
+  }
+
+  .mobile-header-active-tab {
+    font-size: 0.72rem;
+    background: rgba(34, 197, 94, 0.15);
+    color: #86efac;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Admin Sidebar as Modern Off-Canvas Drawer */
+  .admin-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 280px !important;
+    max-width: 85vw !important;
+    height: 100vh !important;
+    z-index: 1000 !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    box-shadow: 4px 0 25px rgba(0, 0, 0, 0.5) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .admin-sidebar.mobile-open {
+    transform: translateX(0) !important;
+  }
+
+  .admin-sidebar-backdrop {
+    display: block !important;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+  }
+
+  .admin-sidebar-backdrop.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .sidebar-close-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 0.95rem;
+    cursor: pointer;
+    margin-left: auto;
+    transition: background 0.2s ease;
+  }
+
+  .sidebar-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  /* Admin Sub-Topbar on Mobile */
+  .admin-topbar {
+    padding: 0.85rem 0.85rem !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+    position: static !important;
+  }
+
+  .admin-topbar-title h1 {
+    font-size: 1.2rem !important;
+  }
+
+  .admin-topbar-actions {
+    width: 100% !important;
+    display: flex !important;
+    gap: 0.5rem !important;
+  }
+
+  .admin-topbar-actions button {
+    flex: 1 !important;
+    justify-content: center !important;
+    font-size: 0.82rem !important;
+    padding: 0.6rem 0.75rem !important;
+  }
+
+  /* Home Dashboard Polaris Cards: Clean 1-Column Stacking (Cards 1, 2, and 3 fully visible) */
+  .home-metrics-ribbon {
+    padding: 1rem !important;
+    margin-bottom: 1.25rem !important;
+  }
+
+  .metrics-strip {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.85rem !important;
+  }
+
+  .metric-live-status {
+    border-left: none !important;
+    padding-left: 0 !important;
+    border-top: 1px solid var(--admin-border) !important;
+    padding-top: 0.65rem !important;
+    width: 100% !important;
+  }
+
+  .home-insights-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.15rem !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  .insight-card {
+    padding: 1.15rem !important;
+  }
+
+  .quick-actions-strip {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+
+  .quick-action-pill {
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+
+  /* Tables: Smooth Horizontal Scroll & Touch Accessibility */
+  .table-card {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 1.5rem !important;
+    border-radius: var(--radius-md) !important;
+  }
+
+  .admin-table {
+    min-width: 740px !important;
+    width: 100% !important;
+  }
+
+  .admin-table th, .admin-table td {
+    padding: 0.75rem 0.85rem !important;
+    white-space: nowrap !important;
+  }
+
+  .table-scroll-hint {
+    display: flex !important;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.72rem;
+    color: #475569;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-sm);
+    margin-bottom: 0.65rem;
+    font-weight: 600;
+  }
+
+  .action-buttons-group {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.4rem !important;
+    white-space: nowrap !important;
+  }
+
+  .btn-table-action {
+    padding: 0.45rem 0.75rem !important;
+    font-size: 0.78rem !important;
+    border-radius: 4px !important;
+  }
+
+  /* Product Editor on Mobile */
+  .editor-header-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+  }
+
+  .editor-actions-top {
+    width: 100% !important;
+    display: flex !important;
+    gap: 0.5rem !important;
+  }
+
+  .editor-actions-top button {
+    flex: 1 !important;
+    justify-content: center !important;
+  }
+
+  .editor-layout-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.25rem !important;
+  }
+
+  .categories-display-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  /* Filter toolbar in Products & Orders */
+  .filter-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.65rem !important;
+  }
+
+  .filter-left, .filter-right {
+    width: 100% !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+  }
+
+  .filter-left select, .filter-right input, .filter-right select {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-main {
+    padding: 0.5rem 0.65rem 3rem !important;
+  }
+  .card-metric-num {
+    font-size: 1.4rem !important;
+  }
 }

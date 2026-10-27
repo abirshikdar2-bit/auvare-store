@@ -1218,6 +1218,27 @@ async function refreshAdminOrders(btn) {
 window.refreshAdminOrders = refreshAdminOrders;
 
 // ==========================================
+// Mobile Sidebar Drawer Controls
+// ==========================================
+function toggleAdminMobileSidebar() {
+  const sidebar = document.getElementById('adminSidebar') || document.querySelector('.admin-sidebar');
+  const backdrop = document.getElementById('adminSidebarBackdrop');
+  if (sidebar && backdrop) {
+    const isOpen = sidebar.classList.toggle('mobile-open');
+    backdrop.classList.toggle('active', isOpen);
+  }
+}
+
+function closeAdminMobileSidebar() {
+  const sidebar = document.getElementById('adminSidebar') || document.querySelector('.admin-sidebar');
+  const backdrop = document.getElementById('adminSidebarBackdrop');
+  if (sidebar && backdrop) {
+    sidebar.classList.remove('mobile-open');
+    backdrop.classList.remove('active');
+  }
+}
+
+// ==========================================
 // Tab Switching (Shopify Admin Navigation)
 // ==========================================
 function switchTab(tabName) {
@@ -1228,6 +1249,14 @@ function switchTab(tabName) {
   adminState.activeTab = tabName;
   document.querySelectorAll('.sidebar-btn').forEach(btn => btn.classList.remove('active'));
   document.getElementById(`tabBtn_${tabName}`)?.classList.add('active');
+
+  // Update mobile topbar tab label & close drawer
+  const mobileTabLabel = document.getElementById('adminMobileActiveTab');
+  if (mobileTabLabel) {
+    mobileTabLabel.textContent = tabName.charAt(0).toUpperCase() + tabName.slice(1);
+  }
+  closeAdminMobileSidebar();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 
   const homeTab = document.getElementById('homeTabContent');
   const prodTab = document.getElementById('inventoryTabContent');

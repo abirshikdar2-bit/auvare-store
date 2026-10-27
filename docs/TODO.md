@@ -16,6 +16,36 @@ _(none)_
 
 ## Done
 
+- `#24` **2026-10-27** Comprehensive Mobile Layout & Touch Experience for Storefront and Admin:
+  - **Identified User Requirements & Root Causes**:
+    1. *Storefront Mobile Overflow & Displaced Cart Drawer*: The storefront filter bar secondary row (`.filter-secondary`) had no `flex-wrap`, causing child elements (status select, size select, search input) to stretch to 519px. This forced the HTML document width to 564px on 375px mobile screens. Because the page had horizontal overflow, opening the cart drawer (`position: fixed; right: 0; max-width: 440px`) rendered it far to the right, creating a giant empty space and distorted viewport. Furthermore, navbar links were hidden (`display: none`) without any mobile hamburger menu navigation.
+    2. *Admin Portal Scroll-Trap Bug*: On mobile screens (`max-width: 768px`), both `.admin-sidebar` (height ~650px) and `.admin-main` (`height: 100vh; overflow-y: auto`) were stacked inside `body`, creating two nested vertical scroll contexts. When scrolling down inside `.admin-main`, scroll events were trapped, preventing users from scrolling back up unless the pointer was specifically placed over the top sidebar/menu title.
+    3. *Home Dashboard 3rd Card Invisibility*: Desktop CSS rule `.home-insights-grid { grid-template-columns: repeat(3, 1fr); }` was declared after the media query, overriding responsive rules and squeezing 3 columns into 375px, which pushed the 3rd card (`Category Breakdown is healthy`) off-screen.
+    4. *Unreachable Action Buttons in Products, Orders & Users Tables*: All `.admin-table` elements were fixed at ~938px width inside `.table-card` with `overflow: hidden;`. This clipped the 7th column containing action buttons (Edit, Delete, Mark Sold, View Details, Change Status, Approve/Reject/Block), rendering them completely invisible and unclickable on mobile.
+  - **Implemented Mobile Enhancements**:
+    - *Storefront Zero-Overflow & Native Cart Drawer*:
+      - Enforced `html, body { overflow-x: hidden; max-width: 100vw; width: 100%; }`.
+      - Styled `.filter-categories` with smooth horizontal touch-scrolling (`overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;`).
+      - Wrapped `.filter-secondary` into a responsive flex grid with 100% width search input.
+      - Styled `.cart-drawer` to expand to 100% full screen width on mobile (`max-width: 100%`), creating a seamless native sliding drawer.
+      - Built a slide-in luxury mobile navigation drawer (`#mobileNavDrawer` & `#mobileNavOverlay`) with AUVARE crest, categories navigation, drop count badge, direct WhatsApp concierge, and admin portal link.
+      - Added responsive typography and padding for mobile product cards and modal overlays.
+    - *Admin Single-Scroll Hierarchy & Off-Canvas Mobile Drawer*:
+      - Replaced nested scrollers with window-level scrolling: `html, body { height: auto !important; min-height: 100% !important; overflow-y: auto !important; }` and `.admin-main { height: auto !important; min-height: 100vh !important; overflow: visible !important; }`. Eliminates the scroll trap completely.
+      - Converted `.admin-sidebar` into an off-canvas slide-in drawer (`transform: translateX(-100%)`) with backdrop overlay (`#adminSidebarBackdrop`) and header close button.
+      - Added `.admin-mobile-header` top app bar with hamburger menu toggle, AUVARE crest, and dynamic active tab indicator.
+      - Auto-closes the sidebar drawer and smoothly scrolls to top on tab selection (`switchTab`).
+    - *Admin 3rd Card & Polaris Dashboard Fix*:
+      - Moved all responsive rules to the authoritative end of `admin.css`.
+      - Enforced `.home-insights-grid { grid-template-columns: 1fr !important; gap: 1.15rem !important; }` so Cards 1, 2, and 3 stack vertically and remain 100% visible and legible.
+      - Stacked `.metrics-strip` and `.quick-actions-strip` into touch-friendly mobile layouts.
+    - *Admin Tables Horizontal Touch-Scroll & Visible Action Buttons*:
+      - Wrapped all tables in `.table-responsive` with `overflow-x: auto; -webkit-overflow-scrolling: touch; min-width: 740px`.
+      - Added visual mobile scroll hints (`.table-scroll-hint`) above Products, Orders, and Users tables.
+      - Enlarged touch targets for table action buttons (Edit, Delete, Mark Sold, Status, Approve/Reject).
+      - Made `.editor-header-bar` and `.editor-layout-grid` stack into a single column for comfortable mobile product editing.
+  - **Asset Versioning**: Bumped `style.css?v=2.9`, `app.js?v=3.9`, `admin.css?v=2.9`, and `admin.js?v=4.1`.
+
 - `#23` **2026-10-26** Curated 20 Live Products from AUVARE Official Instagram Catalog into Cloud Database:
   - **Identified User Requirement**: Inspect AUVARE clothing brand Instagram profile (`@auvare_official`), select and curate a full catalog of 15 to 20 products across all categories (T-Shirts, Shirts & Polos, Jackets, Pants, and Sweaters), and add them into the admin panel and Supabase database.
   - **Catalog Research & Real-Drop Curation**:
