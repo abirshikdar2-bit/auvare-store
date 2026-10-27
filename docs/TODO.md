@@ -16,6 +16,24 @@ _(none)_
 
 ## Done
 
+- `#26` **2026-10-28** Native Mobile Card Views for Orders, Products, and Users & Full-Width Order Details Bottom Sheet:
+  - **Identified User Problems & Root Causes**:
+    1. *Clipped 8-Column Orders Spreadsheet on Mobile Viewports*: The user reported (via live screenshots) that viewing Orders on a phone presented a clipped table showing only "ORDER ID" and truncated "CUST" / "Md A..." while 6 critical columns (Address, Items/Sizes, Payment/TrxID, Total, Status, Action buttons) remained hidden off-screen to the right. A scroll hint banner instructed users to "Swipe table horizontally", resulting in an awkward 2D scrolling experience typical of raw desktop tables forced onto mobile screens.
+    2. *Squished Multi-Column Order Details Modal on Mobile*: Opening order details on mobile rendered Customer Information and Payment Verification side-by-side in cramped 140px columns, cutting off text ("STOMER FORMATION", "tomer Name", "livery Address"). Furthermore, toasts like "Welcome, Md Abir Shikdar!" overlapped the modal dialog due to conflicting z-indices and lack of modal open/close body locks.
+  - **Implemented Clean Mobile-First Architectural Solutions**:
+    - *Native Mobile Card Architecture (Shopify Polaris Touch Standard)*:
+      - **Zero desktop impact**: On screens `> 768px`, desktop continues to render the full 8-column table with full spreadsheet fidelity (`.desktop-table-wrapper { display: block; }`).
+      - On screens `<= 768px`, `.desktop-table-wrapper` and `.table-scroll-hint` are hidden (`display: none !important;`). In their place, high-end native touch cards (`.mobile-cards-container`) are rendered.
+      - **Orders Card List (`#ordersMobileCardList`)**: Each card cleanly displays Order ID, Status badge, Date, Customer Name, Phone, 1-tap WhatsApp quick link, Full delivery address with zone, Ordered items chips with bold sizing badges (S, M, L, XL, XXL) & quantities, Payment badge (COD / BKASH / NAGAD / ROCKET) with sender phone, Total amount in BDT, and a full-width `"View Details & Update Status →"` button.
+      - **Products Card List (`#inventoryMobileCardList`)**: High-performance product cards displaying thumbnail, category, vintage condition, title, sizing chips, price, and accessible touch buttons (`Edit Product`, `Mark Sold/Available`, `Delete`).
+      - **Users Card List (`#usersMobileCardList`)**: User cards displaying user email, registered date, role badge (Super Admin / Admin), verification status pill, and action buttons (`Approve`, `Reject/Block`, `Edit Access`).
+    - *Full-Width Mobile Sheet for Order Details Modal (`#orderDetailsModal`)*:
+      - Modal styled as a native 100vw bottom-sheet with top rounded corners (`border-radius: var(--radius-lg) var(--radius-lg) 0 0`), clean single-column stacked layout (`order-details-grid`), and smooth internal touch scrolling (`max-height: calc(94vh - 130px)`).
+      - Header (`#modalOrderId`, status badge, close `×` button) and footer (`modalStatusSelect`, `Save Status`, `Close`) remain firmly accessible.
+      - Monospace data fields (`#modalSenderNumber`, `#modalTrxId`, `#modalCustomerPhone`) enforce `word-break: break-all` preventing horizontal overflow.
+      - Modal state manager adds `body.modal-open` (`overflow: hidden`) and automatically dismisses/hides `#adminToast` while any modal is active.
+  - **Asset Versioning**: Bumped `admin.css?v=3.2` and `admin.js?v=4.4`.
+
 - `#25` **2026-10-28** Fix Mobile Action Button Leakage Across Tabs & Responsive Order Details Modal:
   - **Identified User Problems & Root Causes**:
     1. *Topbar Action Buttons Leaking onto Orders & Other Tabs*: In mobile view (`max-width: 768px`), the action buttons "↺ Reset Samples" and "+ Add Product" (`#inventoryTopbarActions`) were visibly rendered across all tabs (including Orders, Home, and Users). The CSS rule `.admin-topbar-actions { display: flex !important; }` had forced display, overriding inline `style="display: none;"` toggled by `switchTab()`.

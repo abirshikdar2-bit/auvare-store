@@ -861,6 +861,46 @@ function renderInventoryTable() {
       </tr>
     `;
   }).join('');
+
+  // Render Mobile Products Card List for mobile screens
+  const mobileContainer = document.getElementById('inventoryMobileCardList');
+  if (mobileContainer) {
+    if (filtered.length === 0) {
+      mobileContainer.innerHTML = `
+        <div style="text-align: center; padding: 2.5rem 1rem; background: #ffffff; border-radius: var(--radius-md); border: 1px solid var(--admin-border); color: var(--admin-text-muted);">
+          No clothing items found matching your filters.
+        </div>
+      `;
+    } else {
+      mobileContainer.innerHTML = filtered.map(item => {
+        const itemSizes = item.sizes || allSizes;
+        return `
+          <div class="mobile-product-card">
+            <div class="mobile-product-card-top">
+              <img src="${item.image}" alt="${item.title}" class="mobile-product-thumb" />
+              <div class="mobile-product-info">
+                <div class="mobile-product-title">${item.title}</div>
+                <div class="mobile-product-meta">${item.category} • ${item.condition || 'Pre-loved'}</div>
+                <div class="mobile-product-specs">Chest: <strong>${item.chest}</strong> | L: <strong>${item.length}</strong></div>
+                <div class="mobile-product-price-row">
+                  <span class="mobile-product-price">৳ ${item.price.toLocaleString()}</span>
+                  <span class="badge-status ${item.sold ? 'sold' : 'available'}">${item.sold ? '● SOLD OUT' : '● AVAILABLE'}</span>
+                </div>
+              </div>
+            </div>
+            <div class="mobile-product-sizes">
+              ${itemSizes.map(sz => `<span style="font-size: 0.72rem; font-weight: 700; background: #e2e8f0; color: #1e293b; padding: 0.15rem 0.45rem; border-radius: 3px;">${sz}</span>`).join('')}
+            </div>
+            <div class="mobile-product-actions">
+              <button type="button" class="btn-admin-primary" onclick="adminOpenEditModal('${item.id}')">✏️ Edit</button>
+              <button type="button" class="btn-admin-outline" onclick="adminToggleSold('${item.id}')">${item.sold ? '✓ Available' : '✕ Mark Sold'}</button>
+              <button type="button" class="btn-admin-outline delete-btn" onclick="adminDeleteProduct('${item.id}')" title="Delete">🗑</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
 }
 
 // Toggle Sold Out / Available
@@ -1005,6 +1045,77 @@ function renderOrdersTable() {
       </tr>
     `;
   }).join('');
+
+  // Render Mobile Orders Card List for mobile screens
+  const mobileContainer = document.getElementById('ordersMobileCardList');
+  if (mobileContainer) {
+    if (!adminState.orders || adminState.orders.length === 0) {
+      mobileContainer.innerHTML = `
+        <div style="text-align: center; padding: 2.5rem 1rem; background: #ffffff; border-radius: var(--radius-md); border: 1px solid var(--admin-border); color: var(--admin-text-muted);">
+          No customer orders recorded yet. Place an order on the storefront to test!
+        </div>
+      `;
+    } else {
+      mobileContainer.innerHTML = adminState.orders.map(order => {
+        const status = (order.status || order.orderStatus || 'pending').toLowerCase();
+        const payMethod = (order.paymentMethod || 'cod').toLowerCase();
+        const senderNumber = order.paymentNumber || order.paymentSenderNumber || order.senderPhone || null;
+        const trxId = order.trxId || null;
+
+        return `
+          <div class="mobile-order-card" onclick="openOrderDetailsModal('${order.orderId}')">
+            <div class="mobile-order-card-header">
+              <div class="mobile-order-id-group">
+                <span class="mobile-order-id">#${order.orderId || 'AUV-000'}</span>
+                <span class="mobile-order-date">${order.date ? order.date.split(',')[0] : ''}</span>
+              </div>
+              <span class="order-status-pill status-${status}">${status.toUpperCase()}</span>
+            </div>
+
+            <div class="mobile-order-card-body">
+              <div class="mobile-order-row">
+                <span class="mobile-order-label">Customer</span>
+                <span class="mobile-order-val"><strong>${order.name}</strong> • ${order.phone}</span>
+              </div>
+              <div class="mobile-order-row">
+                <span class="mobile-order-label">Delivery Address</span>
+                <span class="mobile-order-val">${order.address} (${order.deliveryZone === 'inside' ? 'Inside Dhaka' : 'Outside Dhaka'})</span>
+              </div>
+              <div class="mobile-order-row">
+                <span class="mobile-order-label">Items Ordered</span>
+                <div class="mobile-order-items">
+                  ${(order.items || []).map(i => `
+                    <div class="mobile-item-chip">
+                      <span style="font-weight: 600;">${i.title}</span>
+                      <span><span class="item-size-badge">${i.size || 'M'}</span> <span style="color: var(--admin-text-muted); font-size: 0.78rem;">x${i.quantity || 1}</span></span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+              <div class="mobile-order-row" style="flex-direction: row; justify-content: space-between; align-items: center; border-top: 1px dashed var(--admin-border); padding-top: 0.65rem; margin-top: 0.2rem;">
+                <div>
+                  <span class="pay-badge-${payMethod}">${payMethod.toUpperCase()}</span>
+                  ${senderNumber ? `<span style="font-size: 0.72rem; color: #64748b; font-family: monospace; margin-left: 0.35rem;">(${senderNumber})</span>` : ''}
+                </div>
+                <div>
+                  <strong style="color: var(--admin-primary); font-size: 1.05rem;">৳ ${(order.total || 0).toLocaleString()}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="mobile-order-card-actions" onclick="event.stopPropagation();">
+              <button type="button" class="btn-admin-primary" style="flex: 1; justify-content: center; font-size: 0.82rem; padding: 0.6rem;" onclick="openOrderDetailsModal('${order.orderId}')">
+                View Details &amp; Update Status →
+              </button>
+              <a href="https://wa.me/88${order.phone}?text=Hello%20${encodeURIComponent(order.name)},%20AUVARE%20here%20regarding%20your%20Order%20%23${order.orderId}." target="_blank" class="btn-admin-outline" style="padding: 0.6rem 0.75rem; font-size: 0.82rem; color: #16a34a; border-color: #bbf7d0; display: flex; align-items: center; gap: 0.35rem;">
+                WhatsApp
+              </a>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
 }
 
 // Open Order Details Modal
@@ -1824,6 +1935,51 @@ async function loadAuthUsersTable() {
       </tr>
     `;
   }).join('');
+
+  // Render Mobile Users Card List for mobile screens
+  const mobileContainer = document.getElementById('usersMobileCardList');
+  if (mobileContainer) {
+    if (activeUsers.length === 0) {
+      mobileContainer.innerHTML = `
+        <div style="text-align: center; padding: 2.5rem 1rem; background: #ffffff; border-radius: var(--radius-md); border: 1px solid var(--admin-border); color: var(--admin-text-muted);">
+          No users registered yet.
+        </div>
+      `;
+    } else {
+      mobileContainer.innerHTML = activeUsers.map(u => {
+        const isUserSuperAdmin = u.role === 'super_admin';
+        return `
+          <div class="mobile-user-card">
+            <div class="mobile-user-card-header">
+              <div>
+                <div class="mobile-user-email">
+                  ${u.display_name || u.email}
+                  ${isUserSuperAdmin ? '<span class="owner-pill-tag" style="margin-left:0.25rem;">Owner</span>' : ''}
+                </div>
+                <div class="mobile-user-date">${u.email} • Joined ${formatJoinedDate(u.created_at)}</div>
+              </div>
+              <div class="mobile-user-badges">
+                <span class="badge-role ${u.role}">${u.role === 'super_admin' ? 'Super Admin' : (u.role === 'admin' ? 'Admin' : 'Customer')}</span>
+                <span class="premium-status-pill ${u.status}">${u.status === 'approved' ? 'Approved' : (u.status === 'blocked' ? 'Blocked' : 'Pending Review')}</span>
+              </div>
+            </div>
+            ${userIsSuper && !isUserSuperAdmin ? `
+              <div class="mobile-user-actions">
+                ${u.status === 'blocked' ? `
+                  <button class="btn-premium-unblock" style="background:#2563eb; color:white; border:none; border-radius:4px; font-weight:700; cursor:pointer;" onclick="unblockUser('${u.id}', '${u.display_name}')">Unblock</button>
+                ` : u.status === 'pending' ? `
+                  <button class="btn-premium-approve" onclick="approveUser('${u.id}', '${u.display_name}')">Approve</button>
+                  <button class="btn-premium-reject" onclick="openRejectModal('${u.id}', '${u.display_name}', '${u.email}')">Reject</button>
+                ` : `
+                  <button class="btn-premium-reject" onclick="openRejectModal('${u.id}', '${u.display_name}', '${u.email}')">Reject</button>
+                `}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+  }
 }
 
 // Approve User Admin Request
@@ -2096,7 +2252,13 @@ async function handleSaveUserEdit(e) {
 
 // Modal Helpers
 function openAdminModal(id) {
-  document.getElementById(id)?.classList.add('open');
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.classList.add('open');
+    document.body.classList.add('modal-open');
+    const toast = document.getElementById('adminToast');
+    if (toast) toast.remove();
+  }
   if (id === 'adminAuthGate') {
     document.body.classList.add('auth-gate-active');
   }
@@ -2104,6 +2266,9 @@ function openAdminModal(id) {
 
 function closeAdminModal(id) {
   document.getElementById(id)?.classList.remove('open');
+  if (!document.querySelector('.admin-modal-overlay.open')) {
+    document.body.classList.remove('modal-open');
+  }
   if (id === 'adminAuthGate') {
     document.body.classList.remove('auth-gate-active');
   }
