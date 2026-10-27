@@ -1865,6 +1865,57 @@ body.auth-gate-active #settingsTabContent {
   display: none;
 }
 
+/* Order Details Modal Architecture */
+.order-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.order-info-card {
+  background: #f8fafc;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-md);
+  padding: 1.15rem;
+}
+
+.order-items-card {
+  background: #ffffff;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-md);
+  padding: 1.15rem;
+  margin-bottom: 1.25rem;
+}
+
+.order-modal-footer {
+  background: #f1f5f9;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-md);
+  padding: 1.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.order-modal-footer-status {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.order-modal-footer-close {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#adminToast {
+  z-index: 95 !important; /* Keep under modal dialogs (z-index 100/110) */
+}
+
 /* ==========================================================================
    Responsive Media Queries (Authoritative Position at End of File)
    ========================================================================== */
@@ -2046,8 +2097,11 @@ body.auth-gate-active #settingsTabContent {
 
   .admin-topbar-actions {
     width: 100% !important;
-    display: flex !important;
     gap: 0.5rem !important;
+  }
+
+  .admin-topbar-actions[style*="display: none"] {
+    display: none !important;
   }
 
   .admin-topbar-actions button {
@@ -2189,6 +2243,99 @@ body.auth-gate-active #settingsTabContent {
   .filter-left select, .filter-right input, .filter-right select {
     width: 100% !important;
     max-width: 100% !important;
+  }
+
+  /* Order Details Modal Mobile Responsiveness */
+  #orderDetailsModal {
+    padding: 0.5rem 0.5rem 0 0.5rem !important;
+    align-items: flex-end !important;
+  }
+
+  #orderDetailsModal .admin-modal-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 92vh !important;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4) !important;
+    margin: 0 !important;
+  }
+
+  .order-modal-header {
+    padding: 1rem 1.15rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  .order-modal-body {
+    padding: 1rem 0.9rem !important;
+    max-height: calc(92vh - 140px) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .order-details-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .order-info-card {
+    padding: 1rem 0.9rem !important;
+  }
+
+  .order-modal-footer {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+    padding: 0.85rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  .order-modal-footer-status {
+    width: 100% !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+
+  .order-modal-footer-status label {
+    width: 100% !important;
+    font-size: 0.78rem !important;
+    margin-bottom: 0.15rem !important;
+  }
+
+  .order-modal-footer-status select {
+    flex: 1 1 55% !important;
+    padding: 0.55rem 0.65rem !important;
+    font-size: 0.82rem !important;
+  }
+
+  .order-modal-footer-status button {
+    flex: 1 1 35% !important;
+    justify-content: center !important;
+    padding: 0.55rem 0.75rem !important;
+    font-size: 0.82rem !important;
+  }
+
+  .order-modal-footer-close {
+    width: 100% !important;
+  }
+
+  .order-modal-footer-close button {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 0.55rem 0.85rem !important;
+    font-size: 0.82rem !important;
+  }
+
+  #adminToast {
+    bottom: 0.75rem !important;
+    left: 0.75rem !important;
+    right: 0.75rem !important;
+    font-size: 0.8rem !important;
+    padding: 0.6rem 0.85rem !important;
+    max-width: calc(100vw - 1.5rem) !important;
   }
 }
 

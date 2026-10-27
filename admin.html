@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="assets/css/admin.css?v=2.9">
+  <link rel="stylesheet" href="assets/css/admin.css?v=3.0">
 </head>
 <body class="auth-gate-active">
 
@@ -1034,13 +1034,13 @@
     <div class="admin-modal-box" style="max-width: 780px; padding: 0; overflow: hidden; border-radius: var(--radius-lg); border: 1px solid var(--admin-border); box-shadow: var(--shadow-lg);">
       
       <!-- Modal Header -->
-      <div style="padding: 1.25rem 1.75rem; background: #0b1a13; color: white; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08);">
+      <div class="order-modal-header" style="padding: 1.25rem 1.75rem; background: #0b1a13; color: white; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08);">
         <div style="display: flex; align-items: center; gap: 0.75rem;">
           <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); display: flex; align-items: center; justify-content: center; color: #22c55e;">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
           </div>
           <div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
               <h3 id="modalOrderId" style="font-size: 1.15rem; font-weight: 800; color: white; margin: 0;">#AUV-000000</h3>
               <span id="modalOrderStatusBadge" class="order-status-pill status-pending">Pending</span>
             </div>
@@ -1053,13 +1053,13 @@
       </div>
 
       <!-- Modal Body -->
-      <div style="padding: 1.5rem 1.75rem; max-height: calc(85vh - 120px); overflow-y: auto;">
+      <div class="order-modal-body" style="padding: 1.5rem 1.75rem; max-height: calc(85vh - 120px); overflow-y: auto;">
         
         <!-- Two Column Grid -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
+        <div class="order-details-grid">
           
           <!-- Column 1: Customer Details -->
-          <div style="background: #f8fafc; border: 1px solid var(--admin-border); border-radius: var(--radius-md); padding: 1.15rem;">
+          <div class="order-info-card">
             <h4 style="font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; border-bottom: 1px solid var(--admin-border); padding-bottom: 0.4rem;">
               Customer Information
             </h4>
@@ -1069,24 +1069,24 @@
             </div>
             <div style="margin-bottom: 0.65rem;">
               <div style="font-size: 0.75rem; color: #64748b;">Phone Number</div>
-              <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.15rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.15rem; flex-wrap: wrap;">
                 <span id="modalCustomerPhone" style="font-size: 0.92rem; font-weight: 700; color: #0f172a; font-family: monospace;">01700-000000</span>
                 <a id="modalCustomerWaLink" href="#" target="_blank" class="btn-admin-outline" style="font-size: 0.7rem; padding: 0.2rem 0.5rem; color: #16a34a; border-color: #bbf7d0; background: #f0fdf4;">WhatsApp</a>
               </div>
             </div>
             <div style="margin-bottom: 0.65rem;">
               <div style="font-size: 0.75rem; color: #64748b;">Delivery Address</div>
-              <div id="modalCustomerAddress" style="font-size: 0.85rem; color: #334155; line-height: 1.4; margin-top: 0.15rem;">Address text here</div>
+              <div id="modalCustomerAddress" style="font-size: 0.85rem; color: #334155; line-height: 1.4; margin-top: 0.15rem; word-break: break-word;">Address text here</div>
             </div>
             <div>
               <div style="font-size: 0.75rem; color: #64748b;">Delivery Zone & Notes</div>
               <div id="modalCustomerZone" style="font-size: 0.82rem; font-weight: 600; color: #0f172a; margin-top: 0.15rem;">Inside Dhaka</div>
-              <div id="modalCustomerNotes" style="font-size: 0.78rem; color: #64748b; font-style: italic; margin-top: 0.2rem;"></div>
+              <div id="modalCustomerNotes" style="font-size: 0.78rem; color: #64748b; font-style: italic; margin-top: 0.2rem; word-break: break-word;"></div>
             </div>
           </div>
 
           <!-- Column 2: Payment & Verification -->
-          <div style="background: #f8fafc; border: 1px solid var(--admin-border); border-radius: var(--radius-md); padding: 1.15rem;">
+          <div class="order-info-card">
             <h4 style="font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; border-bottom: 1px solid var(--admin-border); padding-bottom: 0.4rem;">
               Payment Verification
             </h4>
@@ -1096,14 +1096,14 @@
             </div>
             <div style="margin-bottom: 0.65rem;">
               <div style="font-size: 0.75rem; color: #64748b;">Payment Number (যে নম্বর থেকে কাস্টমার পেমেন্ট করেছে)</div>
-              <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.2rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.2rem; flex-wrap: wrap;">
                 <span id="modalSenderNumber" style="font-size: 1rem; font-weight: 800; color: #0f172a; font-family: monospace; background: #e2e8f0; padding: 0.2rem 0.55rem; border-radius: 4px;">N/A</span>
                 <button type="button" class="btn-copy-number" onclick="copyModalField('modalSenderNumber', this)" style="padding: 0.2rem 0.45rem; font-size: 0.7rem; background: var(--admin-primary); color: white; border: none; border-radius: 4px; cursor: pointer;">Copy</button>
               </div>
             </div>
             <div style="margin-bottom: 0.65rem;">
               <div style="font-size: 0.75rem; color: #64748b;">Transaction ID (TrxID)</div>
-              <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.2rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.2rem; flex-wrap: wrap;">
                 <span id="modalTrxId" style="font-size: 0.95rem; font-weight: 800; color: #0f172a; font-family: monospace; background: #e2e8f0; padding: 0.2rem 0.55rem; border-radius: 4px;">N/A</span>
                 <button type="button" class="btn-copy-number" onclick="copyModalField('modalTrxId', this)" style="padding: 0.2rem 0.45rem; font-size: 0.7rem; background: var(--admin-primary); color: white; border: none; border-radius: 4px; cursor: pointer;">Copy</button>
               </div>
@@ -1127,7 +1127,7 @@
         </div>
 
         <!-- Ordered Items Section -->
-        <div style="background: #ffffff; border: 1px solid var(--admin-border); border-radius: var(--radius-md); padding: 1.15rem; margin-bottom: 1.25rem;">
+        <div class="order-items-card">
           <h4 style="font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">
             Ordered Items & Sizing Variations
           </h4>
@@ -1137,8 +1137,8 @@
         </div>
 
         <!-- Status Management Action Footer -->
-        <div style="background: #f1f5f9; border: 1px solid var(--admin-border); border-radius: var(--radius-md); padding: 1.15rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div class="order-modal-footer">
+          <div class="order-modal-footer-status">
             <label style="font-size: 0.82rem; font-weight: 700; color: #334155;">Update Status:</label>
             <select id="modalStatusSelect" class="toolbar-select" style="font-size: 0.82rem; padding: 0.4rem 0.75rem;">
               <option value="pending">Pending</option>
@@ -1150,7 +1150,7 @@
               Save Status
             </button>
           </div>
-          <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <div class="order-modal-footer-close">
             <button type="button" class="btn-admin-outline" onclick="closeAdminModal('orderDetailsModal')" style="font-size: 0.82rem; padding: 0.45rem 0.85rem;">
               Close
             </button>
@@ -1164,6 +1164,6 @@
   <!-- Supabase CDN & Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabaseClient.js?v=3.5"></script>
-  <script src="assets/js/admin.js?v=4.1"></script>
+  <script src="assets/js/admin.js?v=4.2"></script>
 </body>
 </html>

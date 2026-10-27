@@ -1294,7 +1294,11 @@ function switchTab(tabName) {
   }
 
   if (invActions) {
-    invActions.style.display = tabName === 'products' ? 'flex' : 'none';
+    if (tabName === 'products') {
+      invActions.style.setProperty('display', 'flex', 'important');
+    } else {
+      invActions.style.setProperty('display', 'none', 'important');
+    }
   }
 
   if (tabName === 'home') {
@@ -2118,18 +2122,19 @@ function showAdminToast(message, type = 'info') {
     right: 2rem;
     background: #0f172a;
     color: #ffffff;
-    padding: 0.9rem 1.4rem;
+    padding: 0.85rem 1.25rem;
     border-radius: var(--radius-sm);
-    font-size: 0.875rem;
+    font-size: 0.85rem;
     font-weight: 500;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    z-index: 200;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+    z-index: 95;
     opacity: 0;
     transition: all 0.25s ease;
     display: flex;
     align-items: center;
     gap: 0.6rem;
     border-left: 4px solid var(--admin-primary);
+    pointer-events: none;
   `;
   toast.innerHTML = `<span>${type === 'success' ? '✓' : 'ℹ'}</span> <span>${message}</span>`;
   document.body.appendChild(toast);
@@ -2138,7 +2143,7 @@ function showAdminToast(message, type = 'info') {
   setTimeout(() => {
     toast.style.opacity = '0';
     setTimeout(() => toast.remove(), 250);
-  }, 3500);
+  }, 2400);
 }
 
 // Setup Event Listeners

@@ -16,6 +16,21 @@ _(none)_
 
 ## Done
 
+- `#25` **2026-10-28** Fix Mobile Action Button Leakage Across Tabs & Responsive Order Details Modal:
+  - **Identified User Problems & Root Causes**:
+    1. *Topbar Action Buttons Leaking onto Orders & Other Tabs*: In mobile view (`max-width: 768px`), the action buttons "↺ Reset Samples" and "+ Add Product" (`#inventoryTopbarActions`) were visibly rendered across all tabs (including Orders, Home, and Users). The CSS rule `.admin-topbar-actions { display: flex !important; }` had forced display, overriding inline `style="display: none;"` toggled by `switchTab()`.
+    2. *Cramped Order Details Modal on Mobile*: Clicking an order row opened `#orderDetailsModal` with an inline 2-column grid (`grid-template-columns: 1fr 1fr`), squishing Customer Information and Payment Verification cards into ~140px columns. Long customer names, phone numbers, delivery addresses, and transaction IDs were truncated or awkwardly wrapped, while background toast notifications (`#adminToast`, `z-index: 200`) sat on top of the modal controls.
+  - **Implemented Clean Fixes**:
+    - *Tab-Specific Topbar Action Visibility*:
+      - Replaced `display: flex !important;` with `.admin-topbar-actions[style*="display: none"] { display: none !important; }` in `admin.css`.
+      - Updated `switchTab()` in `admin.js` to set `display: flex !important` specifically when `tabName === 'products'`, and `display: none !important` on all other tabs (Home, Orders, Users, Categories).
+    - *Full-Width Mobile Sheet for Order Details Modal*:
+      - Replaced rigid inline grid with `.order-details-grid` and enforced `grid-template-columns: 1fr !important; gap: 1rem !important;` on mobile. Customer Information and Payment Verification now cleanly stack in 1 column taking 100% width with ample spacing.
+      - Styled modal container as a modern bottom-sheet on mobile with responsive padding, touch-scrolling body (`max-height: calc(92vh - 140px)`), and word-breaking for long addresses and notes.
+      - Styled `.order-modal-footer` to stack the status selector, "Save Status" button, and "Close" button into comfortable full-width mobile touch targets.
+      - Lowered `#adminToast` z-index to `95` so that modal overlays (`z-index: 100/110`) naturally render above background toast notifications.
+  - **Asset Versioning**: Bumped `admin.css?v=3.0` and `admin.js?v=4.2`.
+
 - `#24` **2026-10-27** Comprehensive Mobile Layout & Touch Experience for Storefront and Admin:
   - **Identified User Requirements & Root Causes**:
     1. *Storefront Mobile Overflow & Displaced Cart Drawer*: The storefront filter bar secondary row (`.filter-secondary`) had no `flex-wrap`, causing child elements (status select, size select, search input) to stretch to 519px. This forced the HTML document width to 564px on 375px mobile screens. Because the page had horizontal overflow, opening the cart drawer (`position: fixed; right: 0; max-width: 440px`) rendered it far to the right, creating a giant empty space and distorted viewport. Furthermore, navbar links were hidden (`display: none`) without any mobile hamburger menu navigation.
