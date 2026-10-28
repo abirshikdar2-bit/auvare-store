@@ -237,6 +237,10 @@ body {
   gap: 1rem;
 }
 
+#inventoryTopbarActions {
+  display: none;
+}
+
 .btn-admin-primary {
   background-color: var(--admin-primary);
   color: white;
@@ -989,9 +993,10 @@ body {
 .admin-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(15, 23, 42, 0.65);
   backdrop-filter: blur(4px);
-  z-index: 100;
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1851,6 +1856,179 @@ body.auth-gate-active #settingsTabContent {
   margin-top: 0.25rem;
 }
 
+/* ==========================================================================
+   Product Variants Sector (Colors, Washes, Custom Prices)
+   ========================================================================== */
+.preset-pill {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.preset-pill:hover {
+  background: var(--admin-primary-soft);
+  border-color: var(--admin-primary);
+  color: var(--admin-primary);
+}
+
+.variant-size-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.variant-size-tag:has(input:checked) {
+  border-color: var(--admin-primary);
+  background: var(--admin-primary-soft);
+  color: var(--admin-primary);
+}
+
+.variant-row-card {
+  background: #ffffff;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-sm);
+  padding: 0.8rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+  gap: 0.75rem;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.variant-row-card:hover {
+  border-color: #94a3b8;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+}
+
+.variant-row-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.variant-badge-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--admin-primary);
+  display: inline-block;
+}
+
+.variant-name-title {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--admin-text-main);
+}
+
+.variant-price-tag {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--admin-primary);
+  background: #f1f5f9;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+
+.variant-sizes-list {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.variant-size-chip {
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: #e2e8f0;
+  color: #1e293b;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+}
+
+.variant-status-chip {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.variant-status-chip.available {
+  background: var(--admin-avail-bg);
+  color: var(--admin-avail);
+}
+
+.variant-status-chip.sold {
+  background: var(--admin-sold-bg);
+  color: var(--admin-sold);
+}
+
+.variant-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.variant-btn-edit {
+  background: #ffffff;
+  border: 1px solid var(--admin-border);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  padding: 0.35rem 0.65rem;
+  color: #334155;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.variant-btn-edit:hover {
+  border-color: var(--admin-primary);
+  color: var(--admin-primary);
+  background: #f8fafc;
+}
+
+.variant-btn-del {
+  background: #ffffff;
+  border: 1px solid #fee2e2;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  padding: 0.35rem 0.6rem;
+  color: #dc2626;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.variant-btn-del:hover {
+  background: #fee2e2;
+}
+
+.variants-empty-state {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: var(--radius-sm);
+  color: var(--admin-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
 /* Categories Grid (Tab 5) */
 .categories-display-grid {
   display: grid;
@@ -2360,6 +2538,9 @@ body.auth-gate-active #settingsTabContent {
   .categories-display-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  .order-details-grid {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 @media (max-width: 768px) {
@@ -2812,8 +2993,12 @@ body.auth-gate-active #settingsTabContent {
     overflow: hidden !important;
   }
 
-  body:has(.admin-modal-overlay.open) #adminToast {
+  body.modal-open #adminToast,
+  body:has(.admin-modal-overlay.open) #adminToast,
+  .admin-modal-overlay.open ~ #adminToast {
     display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
   }
 
   #adminToast {
@@ -2823,9 +3008,7 @@ body.auth-gate-active #settingsTabContent {
     font-size: 0.8rem !important;
     padding: 0.6rem 0.85rem !important;
     max-width: calc(100vw - 1.5rem) !important;
-  }
-    padding: 0.6rem 0.85rem !important;
-    max-width: calc(100vw - 1.5rem) !important;
+    z-index: 80 !important;
   }
 }
 

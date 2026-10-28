@@ -1953,3 +1953,42 @@ a {
   pointer-events: none;
 }
 
+/* ==========================================================================
+   Product Variants Display on Storefront
+   ========================================================================== */
+.product-variants-selector {
+  margin-top: 0.45rem;
+  margin-bottom: 0.35rem;
+}
+
+.variant-chips-group {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-top: 0.25rem;
+}
+
+.variant-chip {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.variant-chip:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.variant-chip.active {
+  background: #0b1a13;
+  border-color: #22c55e;
+  color: #86efac;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+

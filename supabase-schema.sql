@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_number TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS size TEXT;
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS images JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS variants JSONB DEFAULT '[]'::jsonb;
 
 -- Backfill payment_number and size for existing records if empty
 UPDATE public.orders 

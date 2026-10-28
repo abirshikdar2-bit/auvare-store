@@ -137,6 +137,7 @@ const state = {
   products: [],
   cart: [],
   selectedSizes: {}, // Maps productId -> selected size (default 'M')
+  selectedVariants: {}, // Maps productId -> selected variant id
   activeCategory: 'All',
   activeStatus: 'all',
   activeSize: 'all',
@@ -312,6 +313,27 @@ function selectCardSize(productId, size) {
   }
 }
 
+// Handle variant chip selection
+function selectCardVariant(productId, variantId) {
+  if (!state.selectedVariants) state.selectedVariants = {};
+  state.selectedVariants[productId] = variantId;
+
+  // Auto-align selected size if current size isn't in variant's sizes
+  const product = state.products.find(p => p.id === productId);
+  if (product && Array.isArray(product.variants)) {
+    const variant = product.variants.find(v => v.id === variantId);
+    if (variant && Array.isArray(variant.sizes) && variant.sizes.length > 0) {
+      const curSize = state.selectedSizes[productId];
+      if (!variant.sizes.includes(curSize)) {
+        state.selectedSizes[productId] = variant.sizes[0];
+      }
+    }
+  }
+
+  renderProducts();
+}
+window.selectCardVariant = selectCardVariant;
+
 // Render Products Grid
 function renderProducts() {
   const grid = document.getElementById('productsGrid');
@@ -424,6 +446,15 @@ function renderProducts() {
     const primaryImg = images[0] || DEFAULT_BOX_PLACEHOLDER;
     const hasMultiple = images.length > 1;
 
+    // Variant calculation
+    const hasVariants = Array.isArray(item.variants) && item.variants.length > 0;
+    const selectedVariantId = state.selectedVariants?.[item.id] || (hasVariants ? item.variants[0].id : null);
+    const activeVariant = hasVariants ? item.variants.find(v => v.id === selectedVariantId) : null;
+    const effectivePrice = (activeVariant && activeVariant.price) ? activeVariant.price : item.price;
+    const effectiveSizes = (activeVariant && Array.isArray(activeVariant.sizes) && activeVariant.sizes.length > 0)
+      ? activeVariant.sizes
+      : itemSizes;
+
     return `
       <article class="product-card ${item.sold ? 'sold-out' : ''}" data-id="${item.id}">
         <div class="product-image-box">
@@ -463,11 +494,30 @@ function renderProducts() {
 
           <h3 class="product-title">${item.title}</h3>
 
+          <!-- Variant Selector (Colorways / Editions) -->
+          ${hasVariants ? `
+            <div class="product-variants-selector">
+              <span class="sizes-label">Variant:</span>
+              <div class="variant-chips-group">
+                ${item.variants.map(v => `
+                  <button 
+                    type="button" 
+                    class="variant-chip ${v.id === selectedVariantId ? 'active' : ''}" 
+                    onclick="selectCardVariant('${item.id}', '${v.id}')"
+                    title="${v.name}"
+                  >
+                    ${v.name}
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+
           <!-- S, M, L, XL, XXL Size Selector -->
           <div class="product-sizes-selector">
             <span class="sizes-label">Select Size:</span>
             <div class="size-chips-group">
-              ${itemSizes.map(sz => `
+              ${effectiveSizes.map(sz => `
                 <button 
                   type="button" 
                   class="size-chip ${currentSelectedSize === sz ? 'active' : ''}" 
@@ -482,8 +532,8 @@ function renderProducts() {
           </div>
 
           <div class="product-price-row">
-            <span class="price-current">৳ ${item.price.toLocaleString()}</span>
-            <span class="size-pill selected-size-text">Size: ${currentSelectedSize}</span>
+            <span class="price-current">৳ ${effectivePrice.toLocaleString()}</span>
+            <span class="size-pill selected-size-text">Size: ${currentSelectedSize}${activeVariant ? ` • ${activeVariant.name}` : ''}</span>
           </div>
 
           <div class="product-actions-grid">
@@ -637,7 +687,15 @@ function addToCart(productId) {
   if (!product || product.sold) return;
 
   const chosenSize = state.selectedSizes[productId] || (product.sizes ? product.sizes[0] : 'M');
-  const cartItemId = `${productId}-${chosenSize}`;
+  
+  // Variant calculation
+  const hasVariants = Array.isArray(product.variants) && product.variants.length > 0;
+  const selectedVariantId = state.selectedVariants?.[productId] || (hasVariants ? product.variants[0].id : null);
+  const activeVariant = hasVariants ? product.variants.find(v => v.id === selectedVariantId) : null;
+  const effectivePrice = (activeVariant && activeVariant.price) ? activeVariant.price : product.price;
+  const variantName = activeVariant ? activeVariant.name : null;
+
+  const cartItemId = variantName ? `${productId}-${chosenSize}-${variantName}` : `${productId}-${chosenSize}`;
 
   const existing = state.cart.find(item => item.cartItemId === cartItemId);
   if (existing) {
@@ -645,20 +703,22 @@ function addToCart(productId) {
     saveCart();
     updateCartUI();
     openCart();
-    showToast(`Updated quantity for "${product.title}" (${chosenSize})!`, 'info');
+    showToast(`Updated quantity for "${product.title}" (${chosenSize}${variantName ? ` • ${variantName}` : ''})!`, 'info');
     return;
   }
 
   state.cart.push({
     ...product,
     cartItemId,
+    price: effectivePrice,
     selectedSize: chosenSize,
+    selectedVariant: variantName,
     quantity: 1
   });
   saveCart();
   updateCartUI();
   openCart();
-  showToast(`Added "${product.title}" [Size: ${chosenSize}] to bag!`, 'success');
+  showToast(`Added "${product.title}" [${chosenSize}${variantName ? ` • ${variantName}` : ''}] to bag!`, 'success');
 }
 
 function removeFromCart(cartItemId) {
@@ -701,6 +761,7 @@ function updateCartUI() {
           <strong style="color:var(--color-primary); background:var(--color-primary-soft); padding:0.1rem 0.4rem; border-radius:3px;">
             Size: ${item.selectedSize || item.size || 'M'}
           </strong>
+          ${item.selectedVariant ? `<span style="font-size:0.75rem; background:#e2e8f0; padding:0.1rem 0.4rem; border-radius:3px; color:#334155; font-weight:600;">${item.selectedVariant}</span>` : ''}
           ${item.quantity > 1 ? ` • Qty: ${item.quantity}` : ''}
         </div>
         <div class="cart-item-price">৳ ${(item.price * (item.quantity || 1)).toLocaleString()}</div>
@@ -734,13 +795,19 @@ function orderOnWhatsApp(productId) {
   if (!product) return;
 
   const chosenSize = state.selectedSizes[productId] || (product.sizes ? product.sizes[0] : 'M');
+  const hasVariants = Array.isArray(product.variants) && product.variants.length > 0;
+  const selectedVariantId = state.selectedVariants?.[productId] || (hasVariants ? product.variants[0].id : null);
+  const activeVariant = hasVariants ? product.variants.find(v => v.id === selectedVariantId) : null;
+  const effectivePrice = (activeVariant && activeVariant.price) ? activeVariant.price : product.price;
+  const variantText = activeVariant ? `• Variant: ${activeVariant.name}\n` : '';
 
   const msg = encodeURIComponent(
     `Hello AUVARE! 🇧🇩 I want to order this piece:\n\n` +
     `• Product: ${product.title}\n` +
+    variantText +
     `• Selected Size: ${chosenSize} (Available: S, M, L, XL, XXL)\n` +
-    `• Price: ৳${product.price}\n\n` +
-    `Please confirm my order for Size ${chosenSize}!`
+    `• Price: ৳${effectivePrice}\n\n` +
+    `Please confirm my order for Size ${chosenSize}${activeVariant ? ` (${activeVariant.name})` : ''}!`
   );
 
   const waNum = getCleanWaNumber(storeContactInfo.whatsapp_number);
@@ -971,7 +1038,13 @@ async function handleCheckoutSubmit(e) {
     phone,
     address,
     notes,
-    items: state.cart.map(c => ({ title: c.title, size: c.selectedSize || c.size || 'M', price: c.price, quantity: c.quantity || 1 })),
+    items: state.cart.map(c => ({ 
+      title: c.title, 
+      size: c.selectedSize || c.size || 'M', 
+      variant: c.selectedVariant || null, 
+      price: c.price, 
+      quantity: c.quantity || 1 
+    })),
     deliveryZone: state.deliveryZone,
     paymentMethod: state.selectedPayment,
     paymentNumber: senderPhone,
@@ -1004,7 +1077,7 @@ async function handleCheckoutSubmit(e) {
   }
 
   // Create WhatsApp message string for easy brother dispatch
-  const itemListText = state.cart.map(c => `• ${c.title} (Size: ${c.selectedSize || c.size || 'M'}, ৳${c.price})`).join('\n');
+  const itemListText = state.cart.map(c => `• ${c.title}${c.selectedVariant ? ` [${c.selectedVariant}]` : ''} (Size: ${c.selectedSize || c.size || 'M'}, ৳${c.price}${c.quantity > 1 ? ` x${c.quantity}` : ''})`).join('\n');
   const waReceipt = encodeURIComponent(
     `🛍️ *NEW ORDER CONFIRMED!* [Order #${orderId}]\n\n` +
     `*Customer Details:*\n` +

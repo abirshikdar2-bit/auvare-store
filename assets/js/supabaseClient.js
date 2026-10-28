@@ -80,9 +80,16 @@ const SupabaseService = (function() {
             } else if (item.image) {
               images = [item.image];
             }
+            let variants = [];
+            if (Array.isArray(item.variants)) {
+              variants = item.variants;
+            } else if (typeof item.variants === 'string') {
+              try { variants = JSON.parse(item.variants); } catch(e) { variants = []; }
+            }
             return {
               ...item,
               images,
+              variants,
               instagramUrl: item.instagram_url || item.instagramUrl || 'https://www.instagram.com/auvare_official/'
             };
           });
@@ -115,14 +122,16 @@ const SupabaseService = (function() {
           price: parseInt(product.price, 10) || 0,
           image: product.image || (product.images && product.images[0]) || 'assets/images/item1.jpg',
           images: product.images || (product.image ? [product.image] : []),
+          variants: product.variants || [],
           sold: !!product.sold,
           instagram_url: product.instagramUrl || product.instagram_url || 'https://www.instagram.com/auvare_official/',
           description: product.description || ''
         };
         let res = await client.from('products').insert([payload]).select();
-        if (res.error && res.error.message && res.error.message.includes('images')) {
+        if (res.error && res.error.message && (res.error.message.includes('images') || res.error.message.includes('variants'))) {
           const fallbackPayload = { ...payload };
           delete fallbackPayload.images;
+          delete fallbackPayload.variants;
           res = await client.from('products').insert([fallbackPayload]).select();
         }
         if (res.error) throw res.error;
@@ -148,8 +157,9 @@ const SupabaseService = (function() {
         }
         delete payload.size;
         let res = await client.from('products').update(payload).eq('id', productId);
-        if (res.error && res.error.message && res.error.message.includes('images')) {
+        if (res.error && res.error.message && (res.error.message.includes('images') || res.error.message.includes('variants'))) {
           delete payload.images;
+          delete payload.variants;
           res = await client.from('products').update(payload).eq('id', productId);
         }
         if (res.error) throw res.error;

@@ -12,9 +12,39 @@ _(no active backlog items)_
 
 ## In Progress
 
-_(none)_
+_(no active items in progress)_
 
 ## Done
+
+- `#28` **2026-10-28** Admin Sidebar Tab Reordering, Product Variants Manager, and Mobile Modal & Action Isolation:
+  - **Identified User Requests & Pain Points**:
+    1. *Admin Sidebar Tab Order*: In the admin portal, the user requested swapping the positions of `Orders` and `Products` so that `Orders` is positioned directly after `Home` (`Home` -> `Orders` -> `Products` -> `Users` -> `Categories`).
+    2. *Dedicated Product Variants Manager*: When editing or creating products in the admin panel ("edits, edit এ ঢুকলে"), store owners needed a dedicated sector to manage multiple product variants (different colorways, acid washes, special editions, custom prices, specific sizing subsets, and stock status) rather than just single generic items.
+    3. *Topbar Action Buttons Leakage*: Action buttons (`↺ Reset Samples` and `+ Add Product`) were appearing on mobile even when viewing the `Orders` tab.
+    4. *Order Details Modal Mobile Squishing & Toast Obstruction*: On mobile screens, the Order Details modal was rendering Customer Information and Payment Verification side-by-side in narrow squished columns, and floating toast notifications (`#adminToast`) were covering the modal dialog buttons at the bottom.
+  - **Implemented Clean Architecture & Solutions**:
+    - *Admin Sidebar Reordering (`admin.html`)*:
+      - Swapped `tabBtn_orders` and `tabBtn_products` in `.sidebar-menu`.
+      - Consistent tab order on both desktop sidebar and mobile off-canvas sliding drawer: `Home` -> `Orders` -> `Products` -> `Users` -> `Categories`.
+    - *Shopify-Inspired Product Variants Sector (`admin.html`, `admin.css`, `admin.js`)*:
+      - Added `#editorVariantsCard` under Size Options containing an inline add/edit form (`#variantFormBox`) and live variants list (`#editorVariantsList`).
+      - Features quick preset pills: `Washed Black`, `Vintage Olive`, `Oatmeal Beige`, `Faded Navy`, `Acid Wash`, `Distressed White`, and `Earth Brown`.
+      - Configurable custom price (BDT) or fallback to main product price, specific size selection (S, M, L, XL, XXL), and stock status (In Stock / Sold Out).
+      - Live variant count badge (`#editorVariantCountBadge`) and empty state canvas.
+      - Persistence into `product.variants` array in `localStorage` and Supabase cloud.
+    - *Mobile Order Details Modal & Toast Isolation (`admin.css`, `admin.js`)*:
+      - Enforced full-width responsive single-column stacked layout (`.order-details-grid { grid-template-columns: 1fr !important; }` on screens `<= 1024px` and `<= 768px`). Customer Information cleanly precedes Payment Verification with full 100% width and word-break wrapping.
+      - Raised modal overlay z-index to `1000` and enforced `body.modal-open #adminToast { display: none !important; opacity: 0 !important; }`.
+      - Updated `showAdminToast()` in `admin.js` to immediately suppress toasts if any modal is active or open.
+      - Fixed CSS media query syntax error at end of `admin.css`.
+    - *Topbar Action Button Isolation (`admin.css`, `admin.js`)*:
+      - Defaulted `#inventoryTopbarActions` to `display: none;` in CSS and strictly scoped `display: flex !important` in `switchTab()` only when `tabName === 'products'`.
+    - *Storefront & Cart Integration (`style.css`, `app.js`)*:
+      - Rendered `.product-variants-selector` with interactive chips on storefront product cards.
+      - Implemented `selectCardVariant(productId, variantId)` with automatic size re-alignment.
+      - Updated `addToCart()`, `updateCartUI()`, and `orderOnWhatsApp()` to attach and display the chosen variant and calculate effective variant price.
+      - Order submission saves `variant` metadata with every line item to Supabase and local storage.
+  - **Asset Versioning**: Bumped `admin.css?v=3.5`, `admin.js?v=4.7`, `style.css?v=3.2`, `app.js?v=4.2`, and `supabaseClient.js?v=3.8`.
 
 - `#27` **2026-10-28** Multi-Image Gallery in Product Editor with Default Box-Box Checkerboard Pattern & Storefront Multi-Photo Support:
   - **Identified User Problems & Requirements**:

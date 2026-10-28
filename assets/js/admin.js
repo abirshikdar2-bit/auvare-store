@@ -144,6 +144,7 @@ const adminState = {
   editingProductId: null,
   uploadedImageBase64: null,
   editorImages: [],
+  editorVariants: [],
   isAuthenticated: false,
   currentUser: null,
   currentUserProfile: null
@@ -810,7 +811,10 @@ function renderInventoryTable() {
             </div>
             <div>
               <div class="table-product-title">${item.title}</div>
-              <div class="table-product-cat">${item.condition || 'Pre-loved'}</div>
+              <div class="table-product-cat">
+                ${item.condition || 'Pre-loved'}
+                ${(item.variants && item.variants.length > 0) ? `<span class="photo-count-pill" style="font-size:0.6rem; padding:0.08rem 0.35rem; margin-left:0.35rem; background:#ecfdf5; color:#15803d; border-color:#86efac;">🎨 ${item.variants.length} vars</span>` : ''}
+              </div>
             </div>
           </div>
         </td>
@@ -891,7 +895,10 @@ function renderInventoryTable() {
               </div>
               <div class="mobile-product-info">
                 <div class="mobile-product-title">${item.title}</div>
-                <div class="mobile-product-meta">${item.category} • ${item.condition || 'Pre-loved'}</div>
+                <div class="mobile-product-meta">
+                  ${item.category} • ${item.condition || 'Pre-loved'}
+                  ${(item.variants && item.variants.length > 0) ? `<span class="photo-count-pill" style="font-size:0.6rem; padding:0.08rem 0.35rem; margin-left:0.25rem; background:#ecfdf5; color:#15803d; border-color:#86efac;">🎨 ${item.variants.length} vars</span>` : ''}
+                </div>
                 <div class="mobile-product-specs">Chest: <strong>${item.chest}</strong> | L: <strong>${item.length}</strong></div>
                 <div class="mobile-product-price-row">
                   <span class="mobile-product-price">৳ ${item.price.toLocaleString()}</span>
@@ -1002,6 +1009,7 @@ function renderOrdersTable() {
               <div style="display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.2rem;">
                 <span style="font-weight: 600;">${i.title}</span>
                 <span class="item-size-badge">${i.size || 'M'}</span>
+                ${i.variant ? `<span class="variant-size-chip" style="font-size:0.7rem;">${i.variant}</span>` : ''}
                 <span style="color: var(--admin-text-muted); font-size: 0.75rem;">x${i.quantity || 1}</span>
               </div>
             `).join('')}
@@ -1098,7 +1106,7 @@ function renderOrdersTable() {
                   ${(order.items || []).map(i => `
                     <div class="mobile-item-chip">
                       <span style="font-weight: 600;">${i.title}</span>
-                      <span><span class="item-size-badge">${i.size || 'M'}</span> <span style="color: var(--admin-text-muted); font-size: 0.78rem;">x${i.quantity || 1}</span></span>
+                      <span><span class="item-size-badge">${i.size || 'M'}</span> ${i.variant ? `<span class="variant-size-chip" style="font-size:0.7rem;">${i.variant}</span>` : ''} <span style="color: var(--admin-text-muted); font-size: 0.78rem;">x${i.quantity || 1}</span></span>
                     </div>
                   `).join('')}
                 </div>
@@ -1188,6 +1196,7 @@ function openOrderDetailsModal(orderId) {
           <div style="font-weight: 700; color: #0f172a; font-size: 0.9rem;">
             ${item.title}
             <span class="item-size-badge">${item.size || 'M'}</span>
+            ${item.variant ? `<span class="variant-size-chip" style="margin-left:0.35rem; font-size:0.75rem;">${item.variant}</span>` : ''}
           </div>
           <div style="font-size: 0.78rem; color: #64748b; margin-top: 0.15rem;">
             ৳ ${(item.price || 0).toLocaleString()} × ${item.quantity || 1}
@@ -1594,10 +1603,18 @@ function openProductEditor(mode = 'add', productId = null) {
 
     renderEditorMediaGrid();
 
+    // Product Variants populate
+    adminState.editorVariants = Array.isArray(item.variants)
+      ? JSON.parse(JSON.stringify(item.variants))
+      : [];
+    cancelVariantForm();
+    renderEditorVariantsList();
+
   } else {
     // Add mode - DEFAULT STATE: NO PRODUCT PHOTO! Shows Box-Box Theme Canvas
     adminState.editingProductId = null;
     adminState.editorImages = []; // Absolutely NO images by default as requested!
+    adminState.editorVariants = [];
     
     document.getElementById('editorPageHeading').textContent = 'New Product Drop';
     document.getElementById('editorProductId').value = '';
@@ -1621,6 +1638,8 @@ function openProductEditor(mode = 'add', productId = null) {
     });
 
     renderEditorMediaGrid();
+    cancelVariantForm();
+    renderEditorVariantsList();
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1796,7 +1815,186 @@ function handleEditorStatusChange(val) {
 }
 window.handleEditorStatusChange = handleEditorStatusChange;
 
-// Save / Publish from Shopify Editor with Multi-Image Support
+// ==========================================
+// Product Variants Sector (Colors, Washes, Custom Prices)
+// ==========================================
+
+function toggleVariantForm(forceOpen = null) {
+  const box = document.getElementById('variantFormBox');
+  const btnIcon = document.getElementById('toggleVariantFormIcon');
+  if (!box) return;
+
+  const shouldOpen = forceOpen !== null ? forceOpen : box.style.display === 'none';
+  box.style.display = shouldOpen ? 'block' : 'none';
+  if (btnIcon) btnIcon.textContent = shouldOpen ? '−' : '+';
+
+  if (shouldOpen) {
+    document.getElementById('variantInputName')?.focus();
+  }
+}
+window.toggleVariantForm = toggleVariantForm;
+
+function cancelVariantForm() {
+  const box = document.getElementById('variantFormBox');
+  const btnIcon = document.getElementById('toggleVariantFormIcon');
+  if (box) box.style.display = 'none';
+  if (btnIcon) btnIcon.textContent = '+';
+  const idxInput = document.getElementById('variantEditIndex');
+  if (idxInput) idxInput.value = '-1';
+  const heading = document.getElementById('variantFormHeading');
+  if (heading) heading.textContent = 'New Product Variant';
+  const nameInput = document.getElementById('variantInputName');
+  if (nameInput) nameInput.value = '';
+  const priceInput = document.getElementById('variantInputPrice');
+  if (priceInput) priceInput.value = '';
+  const statusSel = document.getElementById('variantInputStatus');
+  if (statusSel) statusSel.value = 'available';
+  document.querySelectorAll('.var-size-cb').forEach(cb => { cb.checked = true; });
+}
+window.cancelVariantForm = cancelVariantForm;
+
+function applyVariantPreset(name) {
+  const input = document.getElementById('variantInputName');
+  if (input) {
+    input.value = name;
+    input.focus();
+  }
+}
+window.applyVariantPreset = applyVariantPreset;
+
+function renderEditorVariantsList() {
+  const container = document.getElementById('editorVariantsList');
+  const badge = document.getElementById('editorVariantCountBadge');
+  if (!container) return;
+
+  const variants = adminState.editorVariants || [];
+  const count = variants.length;
+
+  if (badge) {
+    badge.textContent = `${count} ${count === 1 ? 'variant' : 'variants'}`;
+    badge.style.background = count > 0 ? '#ecfdf5' : '#f1f5f9';
+    badge.style.color = count > 0 ? '#15803d' : '#475569';
+    badge.style.borderColor = count > 0 ? '#86efac' : '#cbd5e1';
+  }
+
+  if (count === 0) {
+    container.innerHTML = `
+      <div class="variants-empty-state">
+        <p style="margin:0 0 0.35rem 0; font-weight:700; color:#334155;">No extra variants added yet.</p>
+        <p style="margin:0;">By default, this item is sold as a single drop edition. Click <strong>"+ Add Variant"</strong> above to add colorways, washes, or style variations.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = variants.map((v, idx) => {
+    const isAvail = (v.status || 'available') === 'available';
+    const displayPrice = v.price ? `৳ ${parseInt(v.price, 10).toLocaleString()}` : 'Default Price';
+    const sizes = Array.isArray(v.sizes) && v.sizes.length > 0 ? v.sizes : ['All'];
+
+    return `
+      <div class="variant-row-card">
+        <div class="variant-row-info">
+          <span class="variant-badge-dot"></span>
+          <div>
+            <div class="variant-name-title">${v.name}</div>
+            <div style="font-size:0.75rem; color:#64748b; margin-top:0.15rem;">
+              Sizes: ${sizes.join(', ')}
+            </div>
+          </div>
+          <span class="variant-price-tag">${displayPrice}</span>
+          <span class="variant-status-chip ${isAvail ? 'available' : 'sold'}">
+            ${isAvail ? 'In Stock' : 'Sold Out'}
+          </span>
+        </div>
+        <div class="variant-actions">
+          <button type="button" class="variant-btn-edit" onclick="editVariant(${idx})">✏️ Edit</button>
+          <button type="button" class="variant-btn-del" onclick="deleteVariant(${idx})" title="Remove">✕</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+window.renderEditorVariantsList = renderEditorVariantsList;
+
+function editVariant(idx) {
+  const variants = adminState.editorVariants || [];
+  const v = variants[idx];
+  if (!v) return;
+
+  document.getElementById('variantEditIndex').value = idx;
+  document.getElementById('variantFormHeading').textContent = `Edit Variant: ${v.name}`;
+  document.getElementById('variantInputName').value = v.name;
+  document.getElementById('variantInputPrice').value = v.price || '';
+  document.getElementById('variantInputStatus').value = v.status || 'available';
+
+  const vSizes = v.sizes || ['S', 'M', 'L', 'XL', 'XXL'];
+  document.querySelectorAll('.var-size-cb').forEach(cb => {
+    cb.checked = vSizes.includes(cb.value);
+  });
+
+  toggleVariantForm(true);
+}
+window.editVariant = editVariant;
+
+function deleteVariant(idx) {
+  if (!adminState.editorVariants) return;
+  const v = adminState.editorVariants[idx];
+  adminState.editorVariants.splice(idx, 1);
+  renderEditorVariantsList();
+  showAdminToast(`Removed variant "${v?.name || ''}"`, 'info');
+}
+window.deleteVariant = deleteVariant;
+
+function saveVariantFromForm() {
+  const nameInput = document.getElementById('variantInputName');
+  const priceInput = document.getElementById('variantInputPrice');
+  const statusSelect = document.getElementById('variantInputStatus');
+  const editIndex = parseInt(document.getElementById('variantEditIndex')?.value || '-1', 10);
+
+  const name = nameInput?.value.trim();
+  if (!name) {
+    alert('Please enter a variant name (e.g. Washed Black).');
+    nameInput?.focus();
+    return;
+  }
+
+  const selectedSizes = [];
+  document.querySelectorAll('.var-size-cb:checked').forEach(cb => selectedSizes.push(cb.value));
+  if (selectedSizes.length === 0) selectedSizes.push('M');
+
+  const customPrice = priceInput?.value ? parseInt(priceInput.value, 10) : null;
+  const status = statusSelect?.value || 'available';
+
+  if (!adminState.editorVariants) adminState.editorVariants = [];
+
+  if (editIndex >= 0 && editIndex < adminState.editorVariants.length) {
+    adminState.editorVariants[editIndex] = {
+      ...adminState.editorVariants[editIndex],
+      name,
+      price: customPrice,
+      sizes: selectedSizes,
+      status
+    };
+    showAdminToast(`Updated variant "${name}"!`, 'success');
+  } else {
+    const newVariant = {
+      id: 'var_' + Date.now(),
+      name,
+      price: customPrice,
+      sizes: selectedSizes,
+      status
+    };
+    adminState.editorVariants.push(newVariant);
+    showAdminToast(`Added variant "${name}"!`, 'success');
+  }
+
+  cancelVariantForm();
+  renderEditorVariantsList();
+}
+window.saveVariantFromForm = saveVariantFromForm;
+
+// Save / Publish from Shopify Editor with Multi-Image & Multi-Variant Support
 async function handleSaveProductEditor() {
   const title = document.getElementById('editorTitle').value.trim();
   const priceVal = document.getElementById('editorPrice').value;
@@ -1836,6 +2034,9 @@ async function handleSaveProductEditor() {
   const primaryImage = images.length > 0 ? images[0] : DEFAULT_BOX_PLACEHOLDER;
   const finalImages = images.length > 0 ? images : [primaryImage];
 
+  // Resolve variants
+  const variants = [...(adminState.editorVariants || [])];
+
   const editId = adminState.editingProductId;
 
   if (editId) {
@@ -1852,6 +2053,7 @@ async function handleSaveProductEditor() {
       item.sizes = selectedSizes;
       item.image = primaryImage;
       item.images = finalImages;
+      item.variants = variants;
       item.description = description;
 
       saveProducts();
@@ -1863,10 +2065,10 @@ async function handleSaveProductEditor() {
 
       if (window.SupabaseService) {
         await window.SupabaseService.updateProduct(editId, {
-          title, category, price, chest, length, condition, sold, sizes: selectedSizes, image: primaryImage, images: finalImages, description
+          title, category, price, chest, length, condition, sold, sizes: selectedSizes, image: primaryImage, images: finalImages, variants, description
         });
       }
-      showAdminToast(`Updated "${title}" successfully! (${finalImages.length} photos)`, 'success');
+      showAdminToast(`Updated "${title}" successfully! (${finalImages.length} photos, ${variants.length} variants)`, 'success');
     }
   } else {
     // Add new product
@@ -1882,6 +2084,7 @@ async function handleSaveProductEditor() {
       condition,
       image: primaryImage,
       images: finalImages,
+      variants,
       sold,
       description: description || `Curated 1-of-1 ${category} drop.`
     };
@@ -1905,7 +2108,7 @@ async function handleSaveProductEditor() {
         console.warn('Supabase product cloud insert error:', err);
       }
     }
-    showAdminToast(`Published "${title}" to online catalog! (${finalImages.length} photos)`, 'success');
+    showAdminToast(`Published "${title}" to online catalog! (${finalImages.length} photos, ${variants.length} variants)`, 'success');
   }
 }
 window.handleSaveProductEditor = handleSaveProductEditor;
@@ -2406,6 +2609,9 @@ function closeAdminModal(id) {
 
 // Toast
 function showAdminToast(message, type = 'info') {
+  if (document.body.classList.contains('modal-open') || document.querySelector('.admin-modal-overlay.open')) {
+    return; // Do not display toast over active modals
+  }
   const existing = document.getElementById('adminToast');
   if (existing) existing.remove();
 
