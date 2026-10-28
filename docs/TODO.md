@@ -16,6 +16,22 @@ _(no active items in progress)_
 
 ## Done
 
+- `#30` **2026-10-28** Migration to Full-Stack Next.js 15 (App Router), Tailwind CSS, TypeScript & Supabase Backend:
+  - **Completed Core Full-Stack Architecture**:
+    1. *Next.js 15, TypeScript & Tailwind Setup*: Configured `package.json` (Next 15.1, React 19, TypeScript 5.7, Tailwind CSS 3.4), `tsconfig.json` with path aliases (`@/*`), `next.config.ts` with remote image patterns, and `tailwind.config.ts` preserving AUVARE's luxury forest green and typography tokens.
+    2. *TypeScript Domain Contracts (`src/types/index.ts`)*: Authoritative interfaces for `Product`, `ProductVariant`, `Order`, `OrderItem`, `AdminUser`, and `SiteSettings`.
+    3. *Supabase Server & Client SDK Integration*: Implemented `src/lib/supabase/client.ts` (browser client via `@supabase/ssr`), `src/lib/supabase/server.ts` (Next 15 async cookies server client), and `src/lib/supabase/middleware.ts` edge session updater.
+    4. *Dynamic Server-Rendered Storefront Catalog (`src/app/page.tsx`)*: Completely eliminated hard-coded `DEFAULT_PRODUCTS` arrays. Catalog executes on server runtime, fetching live database records and dynamic contact settings directly from Supabase with 60-second ISR.
+    5. *Interactive Storefront Experience (`src/components/storefront/StorefrontClient.tsx`)*: Responsive category filter bar, instant search, product cards with multi-photo dots, variant selector chips, garment sizing chips (S, M, L, XL, XXL), sliding Bag drawer, delivery zone calculation (70/130 BDT), and checkout modal.
+    6. *Dynamic Admin Portal (`src/app/admin/page.tsx` & `src/components/admin/AdminPortal.tsx`)*: Built full Polaris-style management system with tab order `Home` -> `Orders` -> `Products` -> `Users` -> `Categories`, live KPI metrics ribbons, customer orders spreadsheet with responsive details modal, and Product Editor featuring multi-variant management with hover cross-delete and custom preset addition.
+    7. *Secure Back-End API Endpoints*:
+       - `/api/checkout`: Authoritative server-side price recalculation preventing price tampering and inserting directly to Supabase `orders` table.
+       - `/api/upload`: Direct streaming media upload to Supabase Storage `product-images` bucket, eliminating Base64 database bloat.
+       - `/api/admin/products` & `/api/admin/products/[id]`: Full CRUD with Zod validation.
+       - `/api/admin/orders` & `/api/admin/orders/[id]`: Real-time orders listing and fulfillment status PATCH.
+    8. *Verification*: Passed `npm run type-check` with zero errors and `npm run build` producing optimized production bundles and static routes.
+  - **Asset Versioning**: Upgraded project to Next.js 15 Full-Stack v2.0.0.
+
 - `#29` **2026-10-28** Dynamic Variant Presets Manager with Custom Preset Input & Top-Right Hover Cross Delete:
   - **Identified User Problem & Need**:
     - Previously, the quick preset buttons (`Washed Black`, `Vintage Olive`, etc.) were static hardcoded buttons.
