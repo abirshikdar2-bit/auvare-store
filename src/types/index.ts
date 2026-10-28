@@ -51,6 +51,7 @@ export interface OrderItem {
   variantId?: string;
   variantName?: string;
   unitPrice: number;
+  price?: number;
   quantity: number;
   totalPrice?: number;
 }
