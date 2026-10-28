@@ -16,6 +16,22 @@ _(no active items in progress)_
 
 ## Done
 
+- `#29` **2026-10-28** Dynamic Variant Presets Manager with Custom Preset Input & Top-Right Hover Cross Delete:
+  - **Identified User Problem & Need**:
+    - Previously, the quick preset buttons (`Washed Black`, `Vintage Olive`, etc.) were static hardcoded buttons.
+    - The store owner required the ability to:
+      1. Add their own custom variant presets by typing them directly into an input field.
+      2. Delete unneeded presets on demand via a sleek red cross (`✕`) badge that smoothly appears on the top-right corner of the preset pill when hovered with the mouse pointer.
+      3. Persist custom presets across browser sessions and allow restoring default presets anytime.
+  - **Implemented Clean Solution**:
+    - *Dynamic Preset Architecture (`admin.html`, `admin.css`, `admin.js`)*:
+      - Rendered dynamic `.preset-pill-wrap` containers housing `.preset-pill` and top-right `.preset-pill-del` cross badge (`position: absolute; top: -6px; right: -6px;`).
+      - On mouse hover (`:hover`), the red circular cross badge smoothly scales in with spring physics (`opacity: 1; transform: scale(1); pointer-events: auto;`).
+      - Added touch support (`@media (hover: none)`) so mobile and tablet screens can also view and tap the delete cross.
+      - Integrated dedicated custom preset input sector (`.preset-add-bar`) with enter-key shortcut and `+ Add Preset` button, validating duplicate names and auto-selecting the newly created preset.
+      - Backed with `localStorage` persistence (`auvare_variant_presets_v1`) and a 1-click `↺ Reset Defaults` fallback link.
+  - **Asset Versioning**: Bumped `admin.css?v=3.6` and `admin.js?v=4.8`.
+
 - `#28` **2026-10-28** Admin Sidebar Tab Reordering, Product Variants Manager, and Mobile Modal & Action Isolation:
   - **Identified User Requests & Pain Points**:
     1. *Admin Sidebar Tab Order*: In the admin portal, the user requested swapping the positions of `Orders` and `Products` so that `Orders` is positioned directly after `Home` (`Home` -> `Orders` -> `Products` -> `Users` -> `Categories`).

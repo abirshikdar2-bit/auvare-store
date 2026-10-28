@@ -1609,6 +1609,7 @@ function openProductEditor(mode = 'add', productId = null) {
       : [];
     cancelVariantForm();
     renderEditorVariantsList();
+    renderVariantPresets();
 
   } else {
     // Add mode - DEFAULT STATE: NO PRODUCT PHOTO! Shows Box-Box Theme Canvas
@@ -1640,6 +1641,7 @@ function openProductEditor(mode = 'add', productId = null) {
     renderEditorMediaGrid();
     cancelVariantForm();
     renderEditorVariantsList();
+    renderVariantPresets();
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1829,6 +1831,7 @@ function toggleVariantForm(forceOpen = null) {
   if (btnIcon) btnIcon.textContent = shouldOpen ? '−' : '+';
 
   if (shouldOpen) {
+    renderVariantPresets();
     document.getElementById('variantInputName')?.focus();
   }
 }
@@ -1850,8 +1853,103 @@ function cancelVariantForm() {
   const statusSel = document.getElementById('variantInputStatus');
   if (statusSel) statusSel.value = 'available';
   document.querySelectorAll('.var-size-cb').forEach(cb => { cb.checked = true; });
+  syncActivePresetHighlight('');
 }
 window.cancelVariantForm = cancelVariantForm;
+
+// ==========================================
+// Dynamic Variant Presets Manager (Add & Delete)
+// ==========================================
+
+const DEFAULT_VARIANT_PRESETS = [
+  'Washed Black',
+  'Vintage Olive',
+  'Oatmeal Beige',
+  'Faded Navy',
+  'Acid Wash',
+  'Distressed White',
+  'Earth Brown'
+];
+
+function getVariantPresets() {
+  try {
+    const saved = localStorage.getItem('auvare_variant_presets_v1');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {
+    console.warn('Error reading variant presets', e);
+  }
+  return [...DEFAULT_VARIANT_PRESETS];
+}
+
+function saveVariantPresets(presets) {
+  try {
+    localStorage.setItem('auvare_variant_presets_v1', JSON.stringify(presets));
+  } catch (e) {
+    console.warn('Error saving variant presets', e);
+  }
+}
+
+function syncActivePresetHighlight(activeName = '') {
+  const norm = (activeName || '').trim().toLowerCase();
+  document.querySelectorAll('.preset-pill-wrap').forEach(wrap => {
+    const btn = wrap.querySelector('.preset-pill');
+    if (btn) {
+      const pName = btn.getAttribute('data-preset-name') || btn.textContent.trim();
+      btn.classList.toggle('active', norm !== '' && pName.toLowerCase() === norm);
+    }
+  });
+}
+
+function renderVariantPresets() {
+  const container = document.getElementById('variantPresetsContainer');
+  if (!container) return;
+
+  const presets = getVariantPresets();
+  const activeInputVal = document.getElementById('variantInputName')?.value?.trim() || '';
+
+  if (presets.length === 0) {
+    container.innerHTML = `
+      <span style="font-size:0.75rem; color:#94a3b8; font-style:italic;">
+        No presets saved. Type in the box below to add your own, or click "Reset Defaults".
+      </span>
+    `;
+    return;
+  }
+
+  container.innerHTML = presets.map((preset, idx) => {
+    const isSelected = activeInputVal.toLowerCase() === preset.toLowerCase();
+    // Escape single quotes for inline JS string
+    const safeEscaped = preset.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    const safeDisplay = preset.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    return `
+      <div class="preset-pill-wrap" title="Click to auto-fill: ${safeDisplay}">
+        <button 
+          type="button" 
+          class="preset-pill ${isSelected ? 'active' : ''}" 
+          data-preset-name="${safeDisplay}"
+          onclick="applyVariantPreset('${safeEscaped}')"
+        >
+          <span>${safeDisplay}</span>
+        </button>
+        <button 
+          type="button" 
+          class="preset-pill-del" 
+          onclick="deleteVariantPreset(${idx}, event)" 
+          title="Remove '${safeDisplay}' from presets"
+          aria-label="Delete preset ${safeDisplay}"
+        >
+          &times;
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+window.renderVariantPresets = renderVariantPresets;
+window.syncActivePresetHighlight = syncActivePresetHighlight;
 
 function applyVariantPreset(name) {
   const input = document.getElementById('variantInputName');
@@ -1859,8 +1957,57 @@ function applyVariantPreset(name) {
     input.value = name;
     input.focus();
   }
+  syncActivePresetHighlight(name);
 }
 window.applyVariantPreset = applyVariantPreset;
+
+function addCustomPreset() {
+  const input = document.getElementById('newPresetInput');
+  if (!input) return;
+  const val = input.value.trim();
+  if (!val) {
+    input.focus();
+    return;
+  }
+
+  const presets = getVariantPresets();
+  const exists = presets.some(p => p.toLowerCase() === val.toLowerCase());
+  if (exists) {
+    showAdminToast(`"${val}" preset already exists!`, 'info');
+    applyVariantPreset(val);
+    input.value = '';
+    return;
+  }
+
+  presets.push(val);
+  saveVariantPresets(presets);
+  renderVariantPresets();
+  applyVariantPreset(val);
+  input.value = '';
+  showAdminToast(`Added "${val}" to quick presets!`, 'success');
+}
+window.addCustomPreset = addCustomPreset;
+
+function deleteVariantPreset(idx, e) {
+  if (e) {
+    e.stopPropagation();
+    e.preventDefault();
+  }
+  const presets = getVariantPresets();
+  if (idx < 0 || idx >= presets.length) return;
+  const removed = presets.splice(idx, 1)[0];
+  saveVariantPresets(presets);
+  renderVariantPresets();
+  showAdminToast(`Removed "${removed}" preset`, 'info');
+}
+window.deleteVariantPreset = deleteVariantPreset;
+
+function resetVariantPresets() {
+  saveVariantPresets([...DEFAULT_VARIANT_PRESETS]);
+  renderVariantPresets();
+  showAdminToast('Restored default presets!', 'success');
+}
+window.resetVariantPresets = resetVariantPresets;
 
 function renderEditorVariantsList() {
   const container = document.getElementById('editorVariantsList');
