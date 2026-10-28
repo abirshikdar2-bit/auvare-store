@@ -19,6 +19,13 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      { source: '/admin.html', destination: '/admin' },
+      { source: '/admin/login', destination: '/admin' },
+    ];
+  },
 };
 
 export default nextConfig;
+

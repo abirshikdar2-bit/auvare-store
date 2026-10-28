@@ -33,16 +33,6 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect /admin routes (except login)
-  const isProtectedAdminRoute = request.nextUrl.pathname.startsWith('/admin') &&
-    !request.nextUrl.pathname.startsWith('/admin/login');
-
-  if (isProtectedAdminRoute && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/admin/login';
-    url.searchParams.set('redirect', request.nextUrl.pathname);
-    return NextResponse.redirect(url);
-  }
-
+  // Do not redirect /admin to non-existent /admin/login
   return supabaseResponse;
 }
