@@ -1992,7 +1992,6 @@ function toggleVariantForm(forceOpen = null) {
   if (btnIcon) btnIcon.textContent = shouldOpen ? '−' : '+';
 
   if (shouldOpen) {
-    renderVariantPresets();
     document.getElementById('variantInputName')?.focus();
   }
 }
@@ -2006,7 +2005,7 @@ function cancelVariantForm() {
   const idxInput = document.getElementById('variantEditIndex');
   if (idxInput) idxInput.value = '-1';
   const heading = document.getElementById('variantFormHeading');
-  if (heading) heading.textContent = 'New Product Variant';
+  if (heading) heading.textContent = 'Customize Variant Details';
   const nameInput = document.getElementById('variantInputName');
   if (nameInput) nameInput.value = '';
   const priceInput = document.getElementById('variantInputPrice');
@@ -2014,7 +2013,6 @@ function cancelVariantForm() {
   const statusSel = document.getElementById('variantInputStatus');
   if (statusSel) statusSel.value = 'available';
   document.querySelectorAll('.var-size-cb').forEach(cb => { cb.checked = true; });
-  syncActivePresetHighlight('');
 }
 window.cancelVariantForm = cancelVariantForm;
 
@@ -2053,54 +2051,46 @@ function saveVariantPresets(presets) {
   }
 }
 
-function syncActivePresetHighlight(activeName = '') {
-  const norm = (activeName || '').trim().toLowerCase();
-  document.querySelectorAll('.preset-pill-wrap').forEach(wrap => {
-    const btn = wrap.querySelector('.preset-pill');
-    if (btn) {
-      const pName = btn.getAttribute('data-preset-name') || btn.textContent.trim();
-      btn.classList.toggle('active', norm !== '' && pName.toLowerCase() === norm);
-    }
-  });
-}
-
 function renderVariantPresets() {
   const container = document.getElementById('variantPresetsContainer');
   if (!container) return;
 
   const presets = getVariantPresets();
-  const activeInputVal = document.getElementById('variantInputName')?.value?.trim() || '';
+  const currentVariants = adminState.editorVariants || [];
 
   if (presets.length === 0) {
     container.innerHTML = `
       <span style="font-size:0.75rem; color:#94a3b8; font-style:italic;">
-        No presets saved. Type in the box below to add your own, or click "Reset Defaults".
+        No presets saved. Type in the box below to add custom variants, or click "Reset Defaults".
       </span>
     `;
     return;
   }
 
   container.innerHTML = presets.map((preset, idx) => {
-    const isSelected = activeInputVal.toLowerCase() === preset.toLowerCase();
-    // Escape single quotes for inline JS string
+    // Check if this preset is currently selected/attached to this product
+    const isAttached = currentVariants.some(
+      v => (v.name || '').trim().toLowerCase() === preset.trim().toLowerCase()
+    );
+
     const safeEscaped = preset.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     const safeDisplay = preset.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
     return `
-      <div class="preset-pill-wrap" title="Click to auto-fill: ${safeDisplay}">
+      <div class="preset-pill-wrap" title="${isAttached ? `Selected! Click to remove "${safeDisplay}"` : `Click to add "${safeDisplay}" to this drop`}">
         <button 
           type="button" 
-          class="preset-pill ${isSelected ? 'active' : ''}" 
+          class="preset-pill ${isAttached ? 'active' : ''}" 
           data-preset-name="${safeDisplay}"
-          onclick="applyVariantPreset('${safeEscaped}')"
+          onclick="toggleVariantPreset('${safeEscaped}')"
         >
-          <span>${safeDisplay}</span>
+          <span>${isAttached ? '✓ ' + safeDisplay : '+ ' + safeDisplay}</span>
         </button>
         <button 
           type="button" 
           class="preset-pill-del" 
           onclick="deleteVariantPreset(${idx}, event)" 
-          title="Remove '${safeDisplay}' from presets"
+          title="Delete '${safeDisplay}' from presets library"
           aria-label="Delete preset ${safeDisplay}"
         >
           &times;
@@ -2110,18 +2100,40 @@ function renderVariantPresets() {
   }).join('');
 }
 window.renderVariantPresets = renderVariantPresets;
-window.syncActivePresetHighlight = syncActivePresetHighlight;
 
-function applyVariantPreset(name) {
-  const input = document.getElementById('variantInputName');
-  if (input) {
-    input.value = name;
-    input.focus();
+// Instant Multi-Variant Toggle: Click to add or remove variant from this product
+function toggleVariantPreset(name) {
+  if (!adminState.editorVariants) adminState.editorVariants = [];
+  const trimmed = (name || '').trim();
+  if (!trimmed) return;
+
+  const existingIdx = adminState.editorVariants.findIndex(
+    v => (v.name || '').trim().toLowerCase() === trimmed.toLowerCase()
+  );
+
+  if (existingIdx >= 0) {
+    // Variant was already selected -> unselect / remove it
+    const removed = adminState.editorVariants.splice(existingIdx, 1)[0];
+    showAdminToast(`Removed "${removed.name}" from this drop`, 'info');
+  } else {
+    // Add new variant to this product!
+    const newVariant = {
+      id: 'var_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      name: trimmed,
+      price: null, // Uses default product price unless customized
+      sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+      status: 'available'
+    };
+    adminState.editorVariants.push(newVariant);
+    showAdminToast(`Added "${trimmed}" variant! (${adminState.editorVariants.length} total)`, 'success');
   }
-  syncActivePresetHighlight(name);
-}
-window.applyVariantPreset = applyVariantPreset;
 
+  renderVariantPresets();
+  renderEditorVariantsList();
+}
+window.toggleVariantPreset = toggleVariantPreset;
+
+// Add custom variant directly to presets library and attach to product
 function addCustomPreset() {
   const input = document.getElementById('newPresetInput');
   if (!input) return;
@@ -2131,24 +2143,40 @@ function addCustomPreset() {
     return;
   }
 
+  // 1. Add to presets library if not already present
   const presets = getVariantPresets();
-  const exists = presets.some(p => p.toLowerCase() === val.toLowerCase());
-  if (exists) {
-    showAdminToast(`"${val}" preset already exists!`, 'info');
-    applyVariantPreset(val);
-    input.value = '';
-    return;
+  const existsInPresets = presets.some(p => p.toLowerCase() === val.toLowerCase());
+  if (!existsInPresets) {
+    presets.push(val);
+    saveVariantPresets(presets);
   }
 
-  presets.push(val);
-  saveVariantPresets(presets);
-  renderVariantPresets();
-  applyVariantPreset(val);
+  // 2. Add to current product's active variants
+  if (!adminState.editorVariants) adminState.editorVariants = [];
+  const existsInProduct = adminState.editorVariants.some(
+    v => (v.name || '').trim().toLowerCase() === val.toLowerCase()
+  );
+
+  if (!existsInProduct) {
+    adminState.editorVariants.push({
+      id: 'var_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      name: val,
+      price: null,
+      sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+      status: 'available'
+    });
+    showAdminToast(`Added variant "${val}" to product! (${adminState.editorVariants.length} selected)`, 'success');
+  } else {
+    showAdminToast(`Variant "${val}" is already added to this product!`, 'info');
+  }
+
   input.value = '';
-  showAdminToast(`Added "${val}" to quick presets!`, 'success');
+  renderVariantPresets();
+  renderEditorVariantsList();
 }
 window.addCustomPreset = addCustomPreset;
 
+// Delete preset from preset library
 function deleteVariantPreset(idx, e) {
   if (e) {
     e.stopPropagation();
@@ -2159,10 +2187,11 @@ function deleteVariantPreset(idx, e) {
   const removed = presets.splice(idx, 1)[0];
   saveVariantPresets(presets);
   renderVariantPresets();
-  showAdminToast(`Removed "${removed}" preset`, 'info');
+  showAdminToast(`Removed "${removed}" from presets library`, 'info');
 }
 window.deleteVariantPreset = deleteVariantPreset;
 
+// Reset presets to defaults
 function resetVariantPresets() {
   saveVariantPresets([...DEFAULT_VARIANT_PRESETS]);
   renderVariantPresets();
@@ -2188,8 +2217,8 @@ function renderEditorVariantsList() {
   if (count === 0) {
     container.innerHTML = `
       <div class="variants-empty-state">
-        <p style="margin:0 0 0.35rem 0; font-weight:700; color:#334155;">No extra variants added yet.</p>
-        <p style="margin:0;">By default, this item is sold as a single drop edition. Click <strong>"+ Add Variant"</strong> above to add colorways, washes, or style variations.</p>
+        <p style="margin:0 0 0.35rem 0; font-weight:700; color:#334155;">Single Drop Edition (0 extra variants)</p>
+        <p style="margin:0;">By default, this item is sold as a single drop edition. Click any preset pill above or type a name to select multiple colorways and editions.</p>
       </div>
     `;
     return;
@@ -2216,8 +2245,8 @@ function renderEditorVariantsList() {
           </span>
         </div>
         <div class="variant-actions">
-          <button type="button" class="variant-btn-edit" onclick="editVariant(${idx})">✏️ Edit</button>
-          <button type="button" class="variant-btn-del" onclick="deleteVariant(${idx})" title="Remove">✕</button>
+          <button type="button" class="variant-btn-edit" onclick="editVariant(${idx})">✏️ Customize</button>
+          <button type="button" class="variant-btn-del" onclick="deleteVariant(${idx})" title="Remove '${v.name}' from this drop">✕</button>
         </div>
       </div>
     `;
@@ -2231,7 +2260,7 @@ function editVariant(idx) {
   if (!v) return;
 
   document.getElementById('variantEditIndex').value = idx;
-  document.getElementById('variantFormHeading').textContent = `Edit Variant: ${v.name}`;
+  document.getElementById('variantFormHeading').textContent = `Customize Variant: ${v.name}`;
   document.getElementById('variantInputName').value = v.name;
   document.getElementById('variantInputPrice').value = v.price || '';
   document.getElementById('variantInputStatus').value = v.status || 'available';
@@ -2249,6 +2278,7 @@ function deleteVariant(idx) {
   if (!adminState.editorVariants) return;
   const v = adminState.editorVariants[idx];
   adminState.editorVariants.splice(idx, 1);
+  renderVariantPresets();
   renderEditorVariantsList();
   showAdminToast(`Removed variant "${v?.name || ''}"`, 'info');
 }
@@ -2287,7 +2317,7 @@ function saveVariantFromForm() {
     showAdminToast(`Updated variant "${name}"!`, 'success');
   } else {
     const newVariant = {
-      id: 'var_' + Date.now(),
+      id: 'var_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
       name,
       price: customPrice,
       sizes: selectedSizes,
@@ -2297,7 +2327,15 @@ function saveVariantFromForm() {
     showAdminToast(`Added variant "${name}"!`, 'success');
   }
 
+  // Ensure preset library has this variant too
+  const presets = getVariantPresets();
+  if (!presets.some(p => p.toLowerCase() === name.toLowerCase())) {
+    presets.push(name);
+    saveVariantPresets(presets);
+  }
+
   cancelVariantForm();
+  renderVariantPresets();
   renderEditorVariantsList();
 }
 window.saveVariantFromForm = saveVariantFromForm;
@@ -2341,6 +2379,23 @@ async function handleSaveProductEditor() {
   // Cover image: 1st image from array or default box-box pattern SVG
   const primaryImage = images.length > 0 ? images[0] : DEFAULT_BOX_PLACEHOLDER;
   const finalImages = images.length > 0 ? images : [primaryImage];
+
+  // Auto-commit any pending custom variant in the inputs before saving
+  const pendingPresetInput = document.getElementById('newPresetInput');
+  if (pendingPresetInput && pendingPresetInput.value.trim()) {
+    const pendingVal = pendingPresetInput.value.trim();
+    if (!adminState.editorVariants) adminState.editorVariants = [];
+    if (!adminState.editorVariants.some(v => (v.name || '').toLowerCase() === pendingVal.toLowerCase())) {
+      adminState.editorVariants.push({
+        id: 'var_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        name: pendingVal,
+        price: null,
+        sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+        status: 'available'
+      });
+    }
+    pendingPresetInput.value = '';
+  }
 
   // Resolve variants
   const variants = [...(adminState.editorVariants || [])];

@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="assets/css/admin.css?v=4.0">
+  <link rel="stylesheet" href="assets/css/admin.css?v=4.1">
 </head>
 <body class="auth-gate-active">
 
@@ -491,60 +491,60 @@
                         <span id="editorVariantCountBadge" class="image-count-badge">0 variants</span>
                       </div>
                       <p style="font-size:0.78rem; color:var(--admin-text-muted); margin:0.2rem 0 0 0;">
-                        Add colorways, washes, special editions, or styles (যেমন: Washed Black, Vintage Olive, Acid Wash ইত্যাদি)।
+                        Add colorways, washes, or style variations. Click presets below to toggle multiple variants at once!
                       </p>
                     </div>
                     <button type="button" class="btn-admin-outline" id="btnToggleVariantForm" onclick="toggleVariantForm()" style="padding:0.45rem 0.85rem; font-size:0.8rem; font-weight:700; color:var(--admin-primary); border-color:var(--admin-primary); display:flex; align-items:center; gap:0.35rem;">
                       <span id="toggleVariantFormIcon">+</span>
-                      <span>Add Variant</span>
+                      <span>Custom Details</span>
                     </button>
                   </div>
 
-                  <!-- New / Edit Variant Inline Card Form -->
-                  <div id="variantFormBox" style="display:none; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:1.15rem; margin-bottom:1rem; box-shadow:0 2px 6px rgba(0,0,0,0.03);">
-                    <input type="hidden" id="variantEditIndex" value="-1" />
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
-                      <span id="variantFormHeading" style="font-size:0.88rem; font-weight:700; color:#0f172a;">New Product Variant</span>
-                      <button type="button" onclick="cancelVariantForm()" style="background:none; border:none; color:#64748b; font-size:1.2rem; cursor:pointer;">&times;</button>
+                  <!-- Quick Select Presets Bar (Always Visible) -->
+                  <div style="margin-bottom:0.95rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:0.85rem 1rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.55rem; flex-wrap:wrap; gap:0.5rem;">
+                      <label style="display:block; font-size:0.75rem; font-weight:700; color:#334155; text-transform:uppercase; letter-spacing:0.04em;">
+                        Select Variants for this Drop (Click to toggle multiple):
+                      </label>
+                      <button type="button" class="preset-reset-link" onclick="resetVariantPresets()" title="Restore default presets">
+                        ↺ Reset Defaults
+                      </button>
                     </div>
 
-                    <!-- Quick Preset Pills System -->
-                    <div style="margin-bottom:0.95rem; background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:0.75rem 0.85rem;">
-                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.45rem; flex-wrap:wrap; gap:0.5rem;">
-                        <label style="display:block; font-size:0.74rem; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.04em;">
-                          Quick Presets (Click to Auto-Fill):
-                        </label>
-                        <button type="button" class="preset-reset-link" onclick="resetVariantPresets()" title="Restore default presets">
-                          ↺ Reset Defaults
-                        </button>
-                      </div>
+                    <!-- Dynamic Preset Pills Container with Multi-Select Toggle & Hover Cross Delete -->
+                    <div id="variantPresetsContainer" style="display:flex; gap:0.55rem; flex-wrap:wrap; align-items:center; margin-bottom:0.75rem;">
+                      <!-- Rendered dynamically via JS with active states & hover cross delete -->
+                    </div>
 
-                      <!-- Dynamic Preset Pills Container with Hover Cross Delete -->
-                      <div id="variantPresetsContainer" style="display:flex; gap:0.55rem; flex-wrap:wrap; align-items:center; margin-bottom:0.65rem;">
-                        <!-- Rendered dynamically via JS with hover cross buttons -->
-                      </div>
+                    <!-- Add Custom Variant Input Sector -->
+                    <div class="preset-add-bar" style="max-width:100%;">
+                      <input 
+                        type="text" 
+                        id="newPresetInput" 
+                        class="preset-add-input" 
+                        placeholder="+ Type new variant name (e.g. Snow White, Sage Green, Tie-Dye)..." 
+                        maxlength="40"
+                        onkeydown="if(event.key === 'Enter'){ event.preventDefault(); addCustomPreset(); }"
+                      />
+                      <button type="button" class="preset-add-btn" onclick="addCustomPreset()">
+                        + Add Variant
+                      </button>
+                    </div>
+                  </div>
 
-                      <!-- Add Custom Preset Input Sector -->
-                      <div class="preset-add-bar">
-                        <input 
-                          type="text" 
-                          id="newPresetInput" 
-                          class="preset-add-input" 
-                          placeholder="+ Type new variant name to add to presets..." 
-                          maxlength="40"
-                          onkeydown="if(event.key === 'Enter'){ event.preventDefault(); addCustomPreset(); }"
-                        />
-                        <button type="button" class="preset-add-btn" onclick="addCustomPreset()">
-                          + Add Preset
-                        </button>
-                      </div>
+                  <!-- New / Edit Variant Inline Card Form (For Custom Pricing / Sizes) -->
+                  <div id="variantFormBox" style="display:none; background:#ffffff; border:1.5px solid var(--admin-primary); border-radius:8px; padding:1.15rem; margin-bottom:1rem; box-shadow:0 4px 12px rgba(11,26,19,0.06);">
+                    <input type="hidden" id="variantEditIndex" value="-1" />
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+                      <span id="variantFormHeading" style="font-size:0.88rem; font-weight:700; color:#0f172a;">Customize Variant Details</span>
+                      <button type="button" onclick="cancelVariantForm()" style="background:none; border:none; color:#64748b; font-size:1.2rem; cursor:pointer;">&times;</button>
                     </div>
 
                     <!-- Fields Grid -->
                     <div class="form-grid-2" style="margin-bottom:0.75rem;">
                       <div>
                         <label style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:0.3rem;">Variant Name *</label>
-                        <input type="text" id="variantInputName" class="toolbar-input" placeholder="e.g. Washed Black or Acid Wash" oninput="syncActivePresetHighlight(this.value)" style="padding-left:0.85rem;" />
+                        <input type="text" id="variantInputName" class="toolbar-input" placeholder="e.g. Washed Black" style="padding-left:0.85rem;" />
                       </div>
                       <div>
                         <label style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:0.3rem;">Custom Price (৳ BDT - Optional)</label>
@@ -575,7 +575,7 @@
 
                     <div style="display:flex; justify-content:flex-end; gap:0.5rem;">
                       <button type="button" class="btn-admin-outline" onclick="cancelVariantForm()" style="padding:0.45rem 0.85rem; font-size:0.82rem;">Cancel</button>
-                      <button type="button" class="btn-admin-primary" onclick="saveVariantFromForm()" style="padding:0.45rem 1rem; font-size:0.82rem;">Save Variant</button>
+                      <button type="button" class="btn-admin-primary" onclick="saveVariantFromForm()" style="padding:0.45rem 1rem; font-size:0.82rem;">Save Variant Details</button>
                     </div>
                   </div>
 
@@ -1352,7 +1352,7 @@
 
   <!-- Supabase CDN & Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="assets/js/supabaseClient.js?v=3.8"></script>
-  <script src="assets/js/admin.js?v=5.2"></script>
+  <script src="assets/js/supabaseClient.js?v=4.0"></script>
+  <script src="assets/js/admin.js?v=5.3"></script>
 </body>
 </html>

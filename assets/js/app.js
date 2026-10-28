@@ -319,9 +319,9 @@ function selectCardVariant(productId, variantId) {
   state.selectedVariants[productId] = variantId;
 
   // Auto-align selected size if current size isn't in variant's sizes
-  const product = state.products.find(p => p.id === productId);
+  const product = state.products.find(p => String(p.id) === String(productId));
   if (product && Array.isArray(product.variants)) {
-    const variant = product.variants.find(v => v.id === variantId);
+    const variant = product.variants.find(v => String(v.id || v.name) === String(variantId));
     if (variant && Array.isArray(variant.sizes) && variant.sizes.length > 0) {
       const curSize = state.selectedSizes[productId];
       if (!variant.sizes.includes(curSize)) {
@@ -448,8 +448,8 @@ function renderProducts() {
 
     // Variant calculation
     const hasVariants = Array.isArray(item.variants) && item.variants.length > 0;
-    const selectedVariantId = state.selectedVariants?.[item.id] || (hasVariants ? item.variants[0].id : null);
-    const activeVariant = hasVariants ? item.variants.find(v => v.id === selectedVariantId) : null;
+    const selectedVariantId = state.selectedVariants?.[item.id] || (hasVariants ? (item.variants[0].id || item.variants[0].name) : null);
+    const activeVariant = hasVariants ? item.variants.find(v => String(v.id || v.name) === String(selectedVariantId)) : null;
     const effectivePrice = (activeVariant && activeVariant.price) ? activeVariant.price : item.price;
     const effectiveSizes = (activeVariant && Array.isArray(activeVariant.sizes) && activeVariant.sizes.length > 0)
       ? activeVariant.sizes
@@ -499,16 +499,20 @@ function renderProducts() {
             <div class="product-variants-selector">
               <span class="sizes-label">Variant:</span>
               <div class="variant-chips-group">
-                ${item.variants.map(v => `
-                  <button 
-                    type="button" 
-                    class="variant-chip ${v.id === selectedVariantId ? 'active' : ''}" 
-                    onclick="selectCardVariant('${item.id}', '${v.id}')"
-                    title="${v.name}"
-                  >
-                    ${v.name}
-                  </button>
-                `).join('')}
+                ${item.variants.map(v => {
+                  const vKey = String(v.id || v.name);
+                  const isSel = String(selectedVariantId) === vKey;
+                  return `
+                    <button 
+                      type="button" 
+                      class="variant-chip ${isSel ? 'active' : ''}" 
+                      onclick="selectCardVariant('${item.id}', '${vKey}')"
+                      title="${v.name}"
+                    >
+                      ${v.name}
+                    </button>
+                  `;
+                }).join('')}
               </div>
             </div>
           ` : ''}
@@ -690,8 +694,8 @@ function addToCart(productId) {
   
   // Variant calculation
   const hasVariants = Array.isArray(product.variants) && product.variants.length > 0;
-  const selectedVariantId = state.selectedVariants?.[productId] || (hasVariants ? product.variants[0].id : null);
-  const activeVariant = hasVariants ? product.variants.find(v => v.id === selectedVariantId) : null;
+  const selectedVariantId = state.selectedVariants?.[productId] || (hasVariants ? (product.variants[0].id || product.variants[0].name) : null);
+  const activeVariant = hasVariants ? product.variants.find(v => String(v.id || v.name) === String(selectedVariantId)) : null;
   const effectivePrice = (activeVariant && activeVariant.price) ? activeVariant.price : product.price;
   const variantName = activeVariant ? activeVariant.name : null;
 
@@ -796,8 +800,8 @@ function orderOnWhatsApp(productId) {
 
   const chosenSize = state.selectedSizes[productId] || (product.sizes ? product.sizes[0] : 'M');
   const hasVariants = Array.isArray(product.variants) && product.variants.length > 0;
-  const selectedVariantId = state.selectedVariants?.[productId] || (hasVariants ? product.variants[0].id : null);
-  const activeVariant = hasVariants ? product.variants.find(v => v.id === selectedVariantId) : null;
+  const selectedVariantId = state.selectedVariants?.[productId] || (hasVariants ? (product.variants[0].id || product.variants[0].name) : null);
+  const activeVariant = hasVariants ? product.variants.find(v => String(v.id || v.name) === String(selectedVariantId)) : null;
   const effectivePrice = (activeVariant && activeVariant.price) ? activeVariant.price : product.price;
   const variantText = activeVariant ? `• Variant: ${activeVariant.name}\n` : '';
 

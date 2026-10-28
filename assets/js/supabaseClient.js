@@ -71,6 +71,13 @@ const SupabaseService = (function() {
           .order('created_at', { ascending: false })
           .order('id', { ascending: true });
         if (!error && data && data.length > 0) {
+          // Read local storage for fallback if needed
+          const existingLocal = [];
+          try {
+            const raw = localStorage.getItem('auvare_inventory_v1');
+            if (raw) existingLocal.push(...JSON.parse(raw));
+          } catch (e) {}
+
           const mapped = data.map(item => {
             let images = [];
             if (Array.isArray(item.images)) {
@@ -86,10 +93,47 @@ const SupabaseService = (function() {
             } else if (typeof item.variants === 'string') {
               try { variants = JSON.parse(item.variants); } catch(e) { variants = []; }
             }
+
+            // Extract metadata comments from description if column was missing
+            let cleanDesc = item.description || '';
+            const varMatch = cleanDesc.match(/<!--AUVARE_VARIANTS:(.*?)-->/);
+            if (varMatch && (!variants || variants.length === 0)) {
+              try {
+                const parsedVars = JSON.parse(varMatch[1]);
+                if (Array.isArray(parsedVars) && parsedVars.length > 0) {
+                  variants = parsedVars;
+                }
+              } catch(e) {
+                console.warn('Failed parsing variants from description metadata:', e);
+              }
+            }
+
+            const imgMatch = cleanDesc.match(/<!--AUVARE_IMAGES:(.*?)-->/);
+            if (imgMatch && (!images || images.length <= 1)) {
+              try {
+                const parsedImgs = JSON.parse(imgMatch[1]);
+                if (Array.isArray(parsedImgs) && parsedImgs.length > 0) {
+                  images = parsedImgs;
+                }
+              } catch(e) {}
+            }
+
+            // Ensure variants preserve existing local variants if remote didn't have them yet
+            if ((!variants || variants.length === 0) && existingLocal.length > 0) {
+              const localMatch = existingLocal.find(lp => String(lp.id) === String(item.id));
+              if (localMatch && Array.isArray(localMatch.variants) && localMatch.variants.length > 0) {
+                variants = localMatch.variants;
+              }
+            }
+
+            // Clean description of hidden metadata comments for presentation
+            cleanDesc = cleanDesc.replace(/<!--AUVARE_VARIANTS:.*?-->/g, '').replace(/<!--AUVARE_IMAGES:.*?-->/g, '').trim();
+
             return {
               ...item,
               images,
               variants,
+              description: cleanDesc,
               instagramUrl: item.instagram_url || item.instagramUrl || 'https://www.instagram.com/auvare_official/'
             };
           });
@@ -111,6 +155,18 @@ const SupabaseService = (function() {
     initClient();
     if (client) {
       try {
+        const variants = product.variants || [];
+        const images = product.images || (product.image ? [product.image] : []);
+
+        // Embed variants & images metadata in description as persistent cloud backup
+        let embedDesc = (product.description || '').replace(/<!--AUVARE_VARIANTS:.*?-->/g, '').replace(/<!--AUVARE_IMAGES:.*?-->/g, '').trim();
+        if (Array.isArray(variants) && variants.length > 0) {
+          embedDesc += `\n<!--AUVARE_VARIANTS:${JSON.stringify(variants)}-->`;
+        }
+        if (Array.isArray(images) && images.length > 1) {
+          embedDesc += `\n<!--AUVARE_IMAGES:${JSON.stringify(images)}-->`;
+        }
+
         const payload = {
           id: product.id || ('drop_' + Date.now()),
           title: product.title,
@@ -120,13 +176,14 @@ const SupabaseService = (function() {
           length: product.length || '27"',
           condition: product.condition || '9.5/10 (Mint Condition)',
           price: parseInt(product.price, 10) || 0,
-          image: product.image || (product.images && product.images[0]) || 'assets/images/item1.jpg',
-          images: product.images || (product.image ? [product.image] : []),
-          variants: product.variants || [],
+          image: product.image || (images && images[0]) || 'assets/images/item1.jpg',
+          images: images,
+          variants: variants,
           sold: !!product.sold,
           instagram_url: product.instagramUrl || product.instagram_url || 'https://www.instagram.com/auvare_official/',
-          description: product.description || ''
+          description: embedDesc
         };
+
         let res = await client.from('products').insert([payload]).select();
         if (res.error && res.error.message && (res.error.message.includes('images') || res.error.message.includes('variants'))) {
           const fallbackPayload = { ...payload };
@@ -156,6 +213,20 @@ const SupabaseService = (function() {
           delete payload.instagramUrl;
         }
         delete payload.size;
+
+        const variants = payload.variants || [];
+        const images = payload.images || [];
+
+        // Embed variants & images metadata in description as persistent cloud backup
+        let embedDesc = (payload.description || '').replace(/<!--AUVARE_VARIANTS:.*?-->/g, '').replace(/<!--AUVARE_IMAGES:.*?-->/g, '').trim();
+        if (Array.isArray(variants) && variants.length > 0) {
+          embedDesc += `\n<!--AUVARE_VARIANTS:${JSON.stringify(variants)}-->`;
+        }
+        if (Array.isArray(images) && images.length > 1) {
+          embedDesc += `\n<!--AUVARE_IMAGES:${JSON.stringify(images)}-->`;
+        }
+        payload.description = embedDesc;
+
         let res = await client.from('products').update(payload).eq('id', productId);
         if (res.error && res.error.message && (res.error.message.includes('images') || res.error.message.includes('variants'))) {
           delete payload.images;
