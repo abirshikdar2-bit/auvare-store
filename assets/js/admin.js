@@ -8,6 +8,13 @@
 const DEFAULT_BOX_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='750' viewBox='0 0 600 750'><defs><pattern id='boxgrid' width='24' height='24' patternUnits='userSpaceOnUse'><rect width='24' height='24' fill='%23f8fafc'/><rect width='12' height='12' fill='%23e2e8f0'/><rect x='12' y='12' width='12' height='12' fill='%23e2e8f0'/></pattern></defs><rect width='600' height='750' fill='url(%23boxgrid)'/><rect x='120' y='260' width='360' height='230' rx='16' fill='%23ffffff' fill-opacity='0.95' stroke='%23cbd5e1' stroke-width='1.5'/><g transform='translate(265, 290)' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='3' width='64' height='50' rx='8'/><circle cx='23' cy='20' r='6'/><path d='M67 43l-18-18-30 30'/><path d='M40 37l6-6 10 10'/></g><text x='300' y='395' font-family='Playfair Display, serif, -apple-system' font-size='20' font-weight='700' letter-spacing='0.08em' fill='%230f172a' text-anchor='middle'>AUVARE</text><text x='300' y='425' font-family='Plus Jakarta Sans, sans-serif' font-size='12' font-weight='600' letter-spacing='0.05em' fill='%2364748b' text-anchor='middle'>VINTAGE &amp; PRELOVED</text><text x='300' y='452' font-family='Plus Jakarta Sans, sans-serif' font-size='11' font-weight='500' fill='%2394a3b8' text-anchor='middle'>No Photo Uploaded</text></svg>";
 window.DEFAULT_BOX_PLACEHOLDER = DEFAULT_BOX_PLACEHOLDER;
 
+// BDT Currency Formatter Helper (Global Authority)
+function formatBDT(amount) {
+  const num = typeof amount === 'number' ? amount : parseFloat(amount) || 0;
+  return num.toLocaleString('en-BD');
+}
+window.formatBDT = formatBDT;
+
 // Default Seed with S, M, L, XL, XXL
 const DEFAULT_SEED = [
   {
@@ -943,139 +950,155 @@ async function adminToggleSold(productId) {
 let pendingConfirmCallback = null;
 
 function showBrandedConfirm(options) {
-  const {
-    title = 'Delete Garment Drop?',
-    metaSub = 'INVENTORY CONTROL • PERMANENT REMOVAL',
-    badgeText = 'CONFIRMATION',
-    itemName = '',
-    itemImage = '',
-    itemMeta = '',
-    warningText = 'Are you sure you want to permanently delete this piece from the inventory? This cannot be undone.',
-    confirmBtnText = 'Delete Drop',
-    cancelBtnText = 'Cancel / Keep Drop',
-    isDestructive = true,
-    onConfirm = null
-  } = options || {};
+  try {
+    const {
+      title = 'Delete Garment Drop?',
+      metaSub = 'INVENTORY CONTROL • PERMANENT REMOVAL',
+      badgeText = 'CONFIRMATION',
+      itemName = '',
+      itemImage = '',
+      itemMeta = '',
+      warningText = 'Are you sure you want to permanently delete this piece from the inventory? This cannot be undone.',
+      confirmBtnText = 'Delete Drop',
+      cancelBtnText = 'Cancel / Keep Drop',
+      isDestructive = true,
+      onConfirm = null
+    } = options || {};
 
-  pendingConfirmCallback = onConfirm;
+    pendingConfirmCallback = onConfirm;
 
-  const modal = document.getElementById('brandedConfirmModal');
-  if (!modal) {
-    // Fallback if modal DOM element is not present
-    if (confirm(`${title}\n\n${itemName ? `Item: "${itemName}"\n` : ''}${warningText}`)) {
-      if (typeof onConfirm === 'function') onConfirm();
-    }
-    return;
-  }
-
-  // Populate dynamic text fields
-  const titleEl = document.getElementById('brandedConfirmTitle');
-  if (titleEl) titleEl.textContent = title;
-
-  const metaSubEl = document.getElementById('brandedConfirmMetaSub');
-  if (metaSubEl) metaSubEl.textContent = metaSub;
-
-  const badgeEl = document.getElementById('brandedConfirmHeaderBadge');
-  if (badgeEl) badgeEl.textContent = badgeText;
-
-  const warnEl = document.getElementById('brandedConfirmWarning');
-  if (warnEl) warnEl.textContent = warningText;
-
-  const btnTextEl = document.getElementById('brandedConfirmActionBtnText');
-  if (btnTextEl) btnTextEl.textContent = confirmBtnText;
-
-  const cancelBtnEl = document.getElementById('brandedConfirmCancelBtn');
-  if (cancelBtnEl) cancelBtnEl.textContent = cancelBtnText;
-
-  // Item highlight card
-  const itemCard = document.getElementById('brandedConfirmItemCard');
-  if (itemName) {
-    if (itemCard) itemCard.style.display = 'flex';
-    const nameEl = document.getElementById('brandedConfirmItemName');
-    if (nameEl) nameEl.textContent = itemName;
-
-    const itemMetaEl = document.getElementById('brandedConfirmItemMeta');
-    if (itemMetaEl) itemMetaEl.textContent = itemMeta || 'Curated Garment Piece';
-
-    const imgEl = document.getElementById('brandedConfirmItemImg');
-    if (imgEl) {
-      imgEl.src = itemImage || 'assets/images/logo.jpg';
-      imgEl.onerror = () => { imgEl.src = 'assets/images/logo.jpg'; };
-    }
-  } else if (itemCard) {
-    itemCard.style.display = 'none';
-  }
-
-  // Action button styling
-  const actionBtn = document.getElementById('brandedConfirmActionBtn');
-  if (actionBtn) {
-    if (isDestructive) {
-      actionBtn.style.background = 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)';
-      actionBtn.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.35)';
-      if (metaSubEl) metaSubEl.style.color = '#dc2626';
-    } else {
-      actionBtn.style.background = 'linear-gradient(135deg, #15803d 0%, #166534 100%)';
-      actionBtn.style.boxShadow = '0 4px 12px rgba(22, 101, 52, 0.35)';
-      if (metaSubEl) metaSubEl.style.color = '#15803d';
-    }
-
-    actionBtn.onclick = async () => {
-      const cb = pendingConfirmCallback;
-      closeBrandedConfirm();
-      if (typeof cb === 'function') {
-        await cb();
+    const modal = document.getElementById('brandedConfirmModal');
+    if (!modal) {
+      console.warn('brandedConfirmModal element not found in DOM');
+      if (confirm(`${title}\n\n${itemName ? `Item: "${itemName}"\n` : ''}${warningText}`)) {
+        if (typeof onConfirm === 'function') onConfirm();
       }
-    };
-  }
+      return;
+    }
 
-  openAdminModal('brandedConfirmModal');
+    // Populate dynamic text fields
+    const titleEl = document.getElementById('brandedConfirmTitle');
+    if (titleEl) titleEl.textContent = title;
+
+    const metaSubEl = document.getElementById('brandedConfirmMetaSub');
+    if (metaSubEl) metaSubEl.textContent = metaSub;
+
+    const badgeEl = document.getElementById('brandedConfirmHeaderBadge');
+    if (badgeEl) badgeEl.textContent = badgeText;
+
+    const warnEl = document.getElementById('brandedConfirmWarning');
+    if (warnEl) warnEl.textContent = warningText;
+
+    const btnTextEl = document.getElementById('brandedConfirmActionBtnText');
+    if (btnTextEl) btnTextEl.textContent = confirmBtnText;
+
+    const cancelBtnEl = document.getElementById('brandedConfirmCancelBtn');
+    if (cancelBtnEl) cancelBtnEl.textContent = cancelBtnText;
+
+    // Item highlight card
+    const itemCard = document.getElementById('brandedConfirmItemCard');
+    if (itemName && itemCard) {
+      itemCard.style.display = 'flex';
+      const nameEl = document.getElementById('brandedConfirmItemName');
+      if (nameEl) nameEl.textContent = itemName;
+
+      const itemMetaEl = document.getElementById('brandedConfirmItemMeta');
+      if (itemMetaEl) itemMetaEl.textContent = itemMeta || 'Curated Garment Piece';
+
+      const imgEl = document.getElementById('brandedConfirmItemImg');
+      if (imgEl) {
+        imgEl.src = itemImage || 'assets/images/logo.jpg';
+        imgEl.onerror = () => { imgEl.src = 'assets/images/logo.jpg'; };
+      }
+    } else if (itemCard) {
+      itemCard.style.display = 'none';
+    }
+
+    // Action button styling
+    const actionBtn = document.getElementById('brandedConfirmActionBtn');
+    if (actionBtn) {
+      if (isDestructive) {
+        actionBtn.style.background = 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)';
+        actionBtn.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.35)';
+      } else {
+        actionBtn.style.background = 'linear-gradient(135deg, #15803d 0%, #166534 100%)';
+        actionBtn.style.boxShadow = '0 4px 12px rgba(22, 101, 52, 0.35)';
+      }
+
+      actionBtn.onclick = async (e) => {
+        if (e) e.preventDefault();
+        const cb = pendingConfirmCallback;
+        closeBrandedConfirm();
+        if (typeof cb === 'function') {
+          await cb();
+        }
+      };
+    }
+
+    // Direct open execution
+    modal.classList.add('open');
+    document.body.classList.add('modal-open');
+    const toast = document.getElementById('adminToast');
+    if (toast) toast.remove();
+  } catch (err) {
+    console.error('showBrandedConfirm error:', err);
+    if (typeof onConfirm === 'function') onConfirm();
+  }
 }
 
 function closeBrandedConfirm() {
   pendingConfirmCallback = null;
-  closeAdminModal('brandedConfirmModal');
+  const modal = document.getElementById('brandedConfirmModal');
+  if (modal) modal.classList.remove('open');
+  if (!document.querySelector('.admin-modal-overlay.open')) {
+    document.body.classList.remove('modal-open');
+  }
 }
 window.showBrandedConfirm = showBrandedConfirm;
 window.closeBrandedConfirm = closeBrandedConfirm;
 
 // Delete Product with AUVARE Branded Modal (Replaces browser confirm)
 function adminDeleteProduct(productId) {
-  const item = adminState.products.find(p => p.id === productId);
-  if (!item) return;
+  try {
+    const item = (adminState.products || []).find(p => String(p.id) === String(productId));
+    const title = item ? item.title : 'Selected Garment Drop';
+    const itemImg = (item && (item.image || (Array.isArray(item.images) && item.images[0]))) || 'assets/images/logo.jpg';
+    const numPrice = item ? (typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0) : 0;
+    const priceDisplay = `৳ ${numPrice.toLocaleString()}`;
+    const sizeDisplay = (item && (item.size || (Array.isArray(item.sizes) ? item.sizes.join(', ') : 'All Sizes'))) || 'M';
+    const itemMeta = item ? `${item.category || 'Clothing'} • ${priceDisplay} • Size: ${sizeDisplay}` : 'Curated Garment Piece';
 
-  const itemImg = item.image || (Array.isArray(item.images) ? item.images[0] : null) || 'assets/images/logo.jpg';
-  const priceDisplay = (item.price !== undefined && item.price !== null) ? `৳ ${formatBDT(item.price)}` : '৳ 0';
-  const sizeDisplay = item.size || (Array.isArray(item.sizes) ? item.sizes.join(', ') : 'All Sizes');
-  const itemMeta = `${item.category || 'Garment'} • ${priceDisplay} • Size: ${sizeDisplay}`;
+    showBrandedConfirm({
+      title: 'Delete Garment Drop?',
+      metaSub: 'INVENTORY CONTROL • PERMANENT REMOVAL',
+      badgeText: 'DELETE DROP',
+      itemName: title,
+      itemImage: itemImg,
+      itemMeta: itemMeta,
+      warningText: `Are you sure you want to permanently delete "${title}" from the inventory? This will remove the piece from the AUVARE catalog and Supabase database. This action cannot be undone.`,
+      confirmBtnText: 'Delete Drop',
+      cancelBtnText: 'Cancel / Keep Drop',
+      isDestructive: true,
+      onConfirm: async () => {
+        adminState.products = (adminState.products || []).filter(p => String(p.id) !== String(productId));
+        saveProducts();
+        renderInventoryTable();
+        updateSidebarBadges();
 
-  showBrandedConfirm({
-    title: 'Delete Garment Drop?',
-    metaSub: 'INVENTORY CONTROL • PERMANENT REMOVAL',
-    badgeText: 'DELETE DROP',
-    itemName: item.title,
-    itemImage: itemImg,
-    itemMeta: itemMeta,
-    warningText: `Are you sure you want to permanently delete "${item.title}" from the inventory? This will remove the piece from the AUVARE catalog and Supabase database. This action cannot be undone.`,
-    confirmBtnText: 'Delete Drop',
-    cancelBtnText: 'Cancel / Keep Drop',
-    isDestructive: true,
-    onConfirm: async () => {
-      adminState.products = adminState.products.filter(p => p.id !== productId);
-      saveProducts();
-      renderInventoryTable();
-      updateSidebarBadges();
-
-      if (window.SupabaseService) {
-        try {
-          await window.SupabaseService.deleteProduct(productId);
-        } catch (err) {
-          console.warn('Supabase delete product error:', err);
+        if (window.SupabaseService) {
+          try {
+            await window.SupabaseService.deleteProduct(productId);
+          } catch (err) {
+            console.warn('Supabase delete product error:', err);
+          }
         }
-      }
 
-      showAdminToast(`Deleted "${item.title}".`, 'info');
-    }
-  });
+        showAdminToast(`Deleted "${title}".`, 'info');
+      }
+    });
+  } catch (err) {
+    console.error('Error in adminDeleteProduct:', err);
+  }
 }
 window.adminDeleteProduct = adminDeleteProduct;
 
