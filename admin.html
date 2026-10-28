@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="assets/css/admin.css?v=3.6">
+  <link rel="stylesheet" href="assets/css/admin.css?v=3.7">
 </head>
 <body class="auth-gate-active">
 
@@ -971,6 +971,60 @@
     </div>
   </div>
 
+  <!-- ================= MODAL: AUVARE BRANDED CONFIRMATION ================= -->
+  <div id="brandedConfirmModal" class="admin-modal-overlay" onclick="if(event.target === this) closeBrandedConfirm();">
+    <div class="admin-modal-box branded-confirm-box" role="dialog" aria-modal="true" aria-labelledby="brandedConfirmTitle">
+      <!-- Modal Header with AUVARE Crest -->
+      <div class="branded-confirm-header">
+        <div class="branded-confirm-crest-wrap">
+          <img src="assets/images/logo.jpg" alt="AUVARE Logo" class="branded-confirm-crest" />
+          <div>
+            <div style="display:flex; align-items:center; gap:0.45rem;">
+              <span style="font-family:'Playfair Display', serif; font-size:1.1rem; font-weight:700; color:white; letter-spacing:0.04em;">AUVARE</span>
+              <span id="brandedConfirmHeaderBadge" style="font-size:0.65rem; background:rgba(220,38,38,0.25); color:#fca5a5; border:1px solid rgba(239,68,68,0.4); padding:0.12rem 0.45rem; border-radius:999px; font-weight:700;">CONFIRMATION</span>
+            </div>
+            <div style="font-size:0.75rem; color:#94a3b8; margin-top:0.1rem;">Store Manager &bull; Catalog Authority</div>
+          </div>
+        </div>
+        <button type="button" class="branded-confirm-close" onclick="closeBrandedConfirm()" aria-label="Close dialog">&times;</button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="branded-confirm-body">
+        <div class="branded-confirm-meta-sub" id="brandedConfirmMetaSub">INVENTORY CONTROL &bull; PERMANENT REMOVAL</div>
+        <h3 class="branded-confirm-title" id="brandedConfirmTitle">Delete Garment Drop?</h3>
+        
+        <!-- Item Highlight Card -->
+        <div class="branded-confirm-item-card" id="brandedConfirmItemCard">
+          <img id="brandedConfirmItemImg" src="assets/images/logo.jpg" alt="Product Thumbnail" class="branded-confirm-item-thumb" />
+          <div class="branded-confirm-item-info">
+            <h4 id="brandedConfirmItemName" class="branded-confirm-item-name">Product Title</h4>
+            <div id="brandedConfirmItemMeta" class="branded-confirm-item-meta">Category • ৳ Price • Size</div>
+          </div>
+        </div>
+
+        <p class="branded-confirm-warning" id="brandedConfirmWarning">
+          Are you sure you want to permanently delete this piece from the inventory? This cannot be undone.
+        </p>
+      </div>
+
+      <!-- Modal Actions Footer -->
+      <div class="branded-confirm-footer">
+        <button type="button" class="btn-admin-outline branded-confirm-cancel-btn" id="brandedConfirmCancelBtn" onclick="closeBrandedConfirm()">
+          Cancel / Keep Drop
+        </button>
+        <button type="button" class="branded-confirm-action-btn" id="brandedConfirmActionBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18"></path>
+            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+          </svg>
+          <span id="brandedConfirmActionBtnText">Delete Drop</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= MODAL: REJECT OR BLOCK CONFIRMATION ================= -->
   <div id="rejectConfirmModal" class="admin-modal-overlay">
     <div class="admin-modal-box" style="max-width: 480px; padding: 0; overflow: hidden; border-radius: var(--radius-lg); border: 1px solid var(--admin-border); box-shadow: var(--shadow-lg);">
@@ -1299,6 +1353,6 @@
   <!-- Supabase CDN & Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabaseClient.js?v=3.8"></script>
-  <script src="assets/js/admin.js?v=4.8"></script>
+  <script src="assets/js/admin.js?v=4.9"></script>
 </body>
 </html>

@@ -3150,3 +3150,199 @@ body.auth-gate-active #settingsTabContent {
     font-size: 1.4rem !important;
   }
 }
+
+
+/* ==========================================================================
+   AUVARE Branded Confirmation Modal Dialog
+   ========================================================================== */
+.branded-confirm-box {
+  max-width: 460px !important;
+  padding: 0 !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(15, 23, 42, 0.12) !important;
+  box-shadow: 0 25px 60px -15px rgba(11, 26, 19, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+  background: #ffffff !important;
+  animation: brandedModalIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes brandedModalIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.94) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.branded-confirm-header {
+  position: relative;
+  padding: 1.25rem 1.5rem 1rem 1.5rem;
+  background: linear-gradient(135deg, #0b1a13 0%, #162f22 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.branded-confirm-crest-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.branded-confirm-crest {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(197, 160, 89, 0.6);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.branded-confirm-close {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 1.25rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.branded-confirm-close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.branded-confirm-body {
+  padding: 1.35rem 1.5rem 1.15rem 1.5rem;
+  background: #ffffff;
+}
+
+.branded-confirm-meta-sub {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #dc2626;
+  margin-bottom: 0.35rem;
+}
+
+.branded-confirm-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #0b1a13;
+  margin: 0 0 0.85rem 0;
+  line-height: 1.25;
+}
+
+.branded-confirm-item-card {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.75rem 0.9rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 0.85rem;
+}
+
+.branded-confirm-item-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #e2e8f0;
+  border: 1px solid #cbd5e1;
+  flex-shrink: 0;
+}
+
+.branded-confirm-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.branded-confirm-item-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.2rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.branded-confirm-item-meta {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.branded-confirm-warning {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #475569;
+  margin: 0;
+}
+
+.branded-confirm-footer {
+  padding: 1rem 1.5rem 1.25rem 1.5rem;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
+.branded-confirm-cancel-btn {
+  font-size: 0.82rem !important;
+  padding: 0.6rem 1.15rem !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  cursor: pointer;
+}
+
+.branded-confirm-cancel-btn:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+.branded-confirm-action-btn {
+  font-size: 0.82rem !important;
+  padding: 0.6rem 1.25rem !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+  border: none !important;
+  border-radius: var(--radius-sm) !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.4rem !important;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35) !important;
+  transition: all 0.15s ease !important;
+}
+
+.branded-confirm-action-btn:hover {
+  background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%) !important;
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.45) !important;
+  transform: translateY(-1px);
+}
+
+.branded-confirm-action-btn:active {
+  transform: translateY(0);
+}

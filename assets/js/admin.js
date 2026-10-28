@@ -937,33 +937,171 @@ async function adminToggleSold(productId) {
   showAdminToast(`"${item.title}" status changed to ${item.sold ? 'SOLD OUT' : 'AVAILABLE'}.`, 'success');
 }
 
-// Delete Product
-async function adminDeleteProduct(productId) {
+// ==========================================================================
+// AUVARE Branded Confirmation Modal System (Replaces native browser confirm)
+// ==========================================================================
+let pendingConfirmCallback = null;
+
+function showBrandedConfirm(options) {
+  const {
+    title = 'Delete Garment Drop?',
+    metaSub = 'INVENTORY CONTROL • PERMANENT REMOVAL',
+    badgeText = 'CONFIRMATION',
+    itemName = '',
+    itemImage = '',
+    itemMeta = '',
+    warningText = 'Are you sure you want to permanently delete this piece from the inventory? This cannot be undone.',
+    confirmBtnText = 'Delete Drop',
+    cancelBtnText = 'Cancel / Keep Drop',
+    isDestructive = true,
+    onConfirm = null
+  } = options || {};
+
+  pendingConfirmCallback = onConfirm;
+
+  const modal = document.getElementById('brandedConfirmModal');
+  if (!modal) {
+    // Fallback if modal DOM element is not present
+    if (confirm(`${title}\n\n${itemName ? `Item: "${itemName}"\n` : ''}${warningText}`)) {
+      if (typeof onConfirm === 'function') onConfirm();
+    }
+    return;
+  }
+
+  // Populate dynamic text fields
+  const titleEl = document.getElementById('brandedConfirmTitle');
+  if (titleEl) titleEl.textContent = title;
+
+  const metaSubEl = document.getElementById('brandedConfirmMetaSub');
+  if (metaSubEl) metaSubEl.textContent = metaSub;
+
+  const badgeEl = document.getElementById('brandedConfirmHeaderBadge');
+  if (badgeEl) badgeEl.textContent = badgeText;
+
+  const warnEl = document.getElementById('brandedConfirmWarning');
+  if (warnEl) warnEl.textContent = warningText;
+
+  const btnTextEl = document.getElementById('brandedConfirmActionBtnText');
+  if (btnTextEl) btnTextEl.textContent = confirmBtnText;
+
+  const cancelBtnEl = document.getElementById('brandedConfirmCancelBtn');
+  if (cancelBtnEl) cancelBtnEl.textContent = cancelBtnText;
+
+  // Item highlight card
+  const itemCard = document.getElementById('brandedConfirmItemCard');
+  if (itemName) {
+    if (itemCard) itemCard.style.display = 'flex';
+    const nameEl = document.getElementById('brandedConfirmItemName');
+    if (nameEl) nameEl.textContent = itemName;
+
+    const itemMetaEl = document.getElementById('brandedConfirmItemMeta');
+    if (itemMetaEl) itemMetaEl.textContent = itemMeta || 'Curated Garment Piece';
+
+    const imgEl = document.getElementById('brandedConfirmItemImg');
+    if (imgEl) {
+      imgEl.src = itemImage || 'assets/images/logo.jpg';
+      imgEl.onerror = () => { imgEl.src = 'assets/images/logo.jpg'; };
+    }
+  } else if (itemCard) {
+    itemCard.style.display = 'none';
+  }
+
+  // Action button styling
+  const actionBtn = document.getElementById('brandedConfirmActionBtn');
+  if (actionBtn) {
+    if (isDestructive) {
+      actionBtn.style.background = 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)';
+      actionBtn.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.35)';
+      if (metaSubEl) metaSubEl.style.color = '#dc2626';
+    } else {
+      actionBtn.style.background = 'linear-gradient(135deg, #15803d 0%, #166534 100%)';
+      actionBtn.style.boxShadow = '0 4px 12px rgba(22, 101, 52, 0.35)';
+      if (metaSubEl) metaSubEl.style.color = '#15803d';
+    }
+
+    actionBtn.onclick = async () => {
+      const cb = pendingConfirmCallback;
+      closeBrandedConfirm();
+      if (typeof cb === 'function') {
+        await cb();
+      }
+    };
+  }
+
+  openAdminModal('brandedConfirmModal');
+}
+
+function closeBrandedConfirm() {
+  pendingConfirmCallback = null;
+  closeAdminModal('brandedConfirmModal');
+}
+window.showBrandedConfirm = showBrandedConfirm;
+window.closeBrandedConfirm = closeBrandedConfirm;
+
+// Delete Product with AUVARE Branded Modal (Replaces browser confirm)
+function adminDeleteProduct(productId) {
   const item = adminState.products.find(p => p.id === productId);
   if (!item) return;
 
-  if (confirm(`Are you sure you want to delete "${item.title}" from the inventory? This cannot be undone.`)) {
-    adminState.products = adminState.products.filter(p => p.id !== productId);
-    saveProducts();
-    renderInventoryTable();
+  const itemImg = item.image || (Array.isArray(item.images) ? item.images[0] : null) || 'assets/images/logo.jpg';
+  const priceDisplay = (item.price !== undefined && item.price !== null) ? `৳ ${formatBDT(item.price)}` : '৳ 0';
+  const sizeDisplay = item.size || (Array.isArray(item.sizes) ? item.sizes.join(', ') : 'All Sizes');
+  const itemMeta = `${item.category || 'Garment'} • ${priceDisplay} • Size: ${sizeDisplay}`;
 
-    if (window.SupabaseService) {
-      await window.SupabaseService.deleteProduct(productId);
+  showBrandedConfirm({
+    title: 'Delete Garment Drop?',
+    metaSub: 'INVENTORY CONTROL • PERMANENT REMOVAL',
+    badgeText: 'DELETE DROP',
+    itemName: item.title,
+    itemImage: itemImg,
+    itemMeta: itemMeta,
+    warningText: `Are you sure you want to permanently delete "${item.title}" from the inventory? This will remove the piece from the AUVARE catalog and Supabase database. This action cannot be undone.`,
+    confirmBtnText: 'Delete Drop',
+    cancelBtnText: 'Cancel / Keep Drop',
+    isDestructive: true,
+    onConfirm: async () => {
+      adminState.products = adminState.products.filter(p => p.id !== productId);
+      saveProducts();
+      renderInventoryTable();
+      updateSidebarBadges();
+
+      if (window.SupabaseService) {
+        try {
+          await window.SupabaseService.deleteProduct(productId);
+        } catch (err) {
+          console.warn('Supabase delete product error:', err);
+        }
+      }
+
+      showAdminToast(`Deleted "${item.title}".`, 'info');
     }
-
-    showAdminToast(`Deleted "${item.title}".`, 'info');
-  }
+  });
 }
+window.adminDeleteProduct = adminDeleteProduct;
 
-// Reset Inventory to Default Seed Drops
+// Reset Inventory to Default Seed Drops (AUVARE Branded Modal)
 function adminResetDefaults() {
-  if (confirm('Reset store inventory back to initial default items?')) {
-    adminState.products = [...DEFAULT_SEED];
-    saveProducts();
-    renderInventoryTable();
-    showAdminToast('Inventory reset to original sample drops (S, M, L, XL, XXL).', 'info');
-  }
+  showBrandedConfirm({
+    title: 'Reset Store Inventory?',
+    metaSub: 'INVENTORY CONTROL • DATABASE RESEED',
+    badgeText: 'RESEED SAMPLE DROPS',
+    itemName: 'Reset All Drops to Default Seed',
+    itemImage: 'assets/images/logo.jpg',
+    itemMeta: 'Restores initial catalog sample garments (S, M, L, XL, XXL)',
+    warningText: 'Are you sure you want to reset all current inventory back to the default sample drops? Custom added products will be replaced.',
+    confirmBtnText: 'Reset Inventory',
+    cancelBtnText: 'Cancel / Keep Inventory',
+    isDestructive: true,
+    onConfirm: () => {
+      adminState.products = [...DEFAULT_SEED];
+      saveProducts();
+      renderInventoryTable();
+      updateSidebarBadges();
+      showAdminToast('Inventory reset to original sample drops (S, M, L, XL, XXL).', 'info');
+    }
+  });
 }
+window.adminResetDefaults = adminResetDefaults;
 
 // Orders View
 function renderOrdersTable() {
@@ -2462,22 +2600,34 @@ async function loadAuthUsersTable() {
   }
 }
 
-// Approve User Admin Request
-async function approveUser(userId, name) {
+// Approve User Admin Request (AUVARE Branded Modal)
+function approveUser(userId, name) {
   if (!isSuperAdmin()) {
-    alert('Access Denied: Super Admin authority is required to approve admin access requests.');
+    showAdminToast('Access Denied: Super Admin authority is required.', 'error');
     return;
   }
 
-  if (!confirm(`Are you sure you want to approve "${name}" as an Admin? They will have full access to manage stock and view orders.`)) return;
-
-  if (window.SupabaseService) {
-    const updated = await window.SupabaseService.updateUserStatus(userId, 'approved', 'admin');
-    if (updated) {
-      showAdminToast(`"${name}" approved as Admin successfully!`, 'success');
-      loadAuthUsersTable();
+  showBrandedConfirm({
+    title: 'Authorize Admin Access?',
+    metaSub: 'STAFF CONTROL • PRIVILEGE ELEVATION',
+    badgeText: 'AUTHORIZE ADMIN',
+    itemName: name,
+    itemImage: 'assets/images/logo.jpg',
+    itemMeta: 'Super Admin Authority • Full Catalog & Orders Access',
+    warningText: `Are you sure you want to approve "${name}" as an Admin? They will have full access to manage stock and view orders.`,
+    confirmBtnText: 'Approve Admin',
+    cancelBtnText: 'Cancel',
+    isDestructive: false,
+    onConfirm: async () => {
+      if (window.SupabaseService) {
+        const updated = await window.SupabaseService.updateUserStatus(userId, 'approved', 'admin');
+        if (updated) {
+          showAdminToast(`"${name}" approved as Admin successfully!`, 'success');
+          loadAuthUsersTable();
+        }
+      }
     }
-  }
+  });
 }
 
 // Select Reject Option in Modal (Reject vs Block)
@@ -2603,22 +2753,34 @@ async function executeSelectedRejectAction() {
 }
 window.executeSelectedRejectAction = executeSelectedRejectAction;
 
-// Unblock User
-async function unblockUser(userId, name) {
+// Unblock User (AUVARE Branded Modal)
+function unblockUser(userId, name) {
   if (!isSuperAdmin()) {
-    alert('Access Denied: Super Admin authority is required to unblock users.');
+    showAdminToast('Access Denied: Super Admin authority is required.', 'error');
     return;
   }
 
-  if (!confirm(`Are you sure you want to unblock "${name}"? They will be allowed to submit access requests again.`)) return;
-
-  if (window.SupabaseService) {
-    const updated = await window.SupabaseService.unblockUser(userId);
-    if (updated) {
-      showAdminToast(`"${name}" has been unblocked.`, 'success');
-      loadAuthUsersTable();
+  showBrandedConfirm({
+    title: 'Unblock User Account?',
+    metaSub: 'STAFF CONTROL • RESTORE ACCESS',
+    badgeText: 'UNBLOCK USER',
+    itemName: name,
+    itemImage: 'assets/images/logo.jpg',
+    itemMeta: 'Restores ability to submit access requests',
+    warningText: `Are you sure you want to unblock "${name}"? They will be allowed to submit access requests again.`,
+    confirmBtnText: 'Unblock Account',
+    cancelBtnText: 'Cancel',
+    isDestructive: false,
+    onConfirm: async () => {
+      if (window.SupabaseService) {
+        const updated = await window.SupabaseService.unblockUser(userId);
+        if (updated) {
+          showAdminToast(`"${name}" has been unblocked.`, 'success');
+          loadAuthUsersTable();
+        }
+      }
     }
-  }
+  });
 }
 window.unblockUser = unblockUser;
 
@@ -2834,3 +2996,16 @@ function setupAdminListeners() {
 }
 
 document.addEventListener('DOMContentLoaded', initAdmin);
+
+
+// Global Escape Key Listener for Modals
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const openModals = document.querySelectorAll('.admin-modal-overlay.open');
+    openModals.forEach(m => {
+      if (m.id !== 'adminAuthGate') {
+        closeAdminModal(m.id);
+      }
+    });
+  }
+});

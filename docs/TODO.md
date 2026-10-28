@@ -16,6 +16,20 @@ _(no active items in progress)_
 
 ## Done
 
+- `#31` **2026-10-28** AUVARE Branded Confirmation Modal Dialog (Eliminated Browser Native `confirm()`):
+  - **Identified User Pain Point**:
+    - When clicking the delete button (trash can) on any garment in the products table, the browser displayed a generic, unstyled native popup (`auvare-store.vercel.app says: Are you sure you want to delete...`).
+    - The user explicitly instructed that as a luxury clothing brand (AUVARE), generic browser alert/confirm UI is unacceptable and must be replaced with a bespoke, luxury branded UI.
+  - **Implemented Clean Solution**:
+    - *Branded Modal UI (`admin.html`, `admin.css`, `admin.js` & `AdminPortal.tsx`)*:
+      - Crafted `#brandedConfirmModal` featuring AUVARE's luxury dark forest green header, brand crest logo, gold border accents, and high-contrast red destructive badge.
+      - Dynamic item highlight card displaying the product's thumbnail image, title in quotes, category, formatted BDT price, and size.
+      - Crystal clear warning text highlighting permanent removal from catalog and Supabase cloud.
+      - Two branded buttons: "Cancel / Keep Drop" (secondary outline) and "Delete Drop" (crimson gradient with trash icon).
+      - Reusable `showBrandedConfirm({...})` helper replacing native `confirm()` across product deletion (`adminDeleteProduct`), inventory seed reset (`adminResetDefaults`), and staff approvals (`approveUser`, `unblockUser`).
+      - Keyboard accessibility with `Escape` key dismissal and backdrop click-outside cancellation.
+    - *Asset Versioning & Deployment*: Bumped `admin.css?v=3.7` and `admin.js?v=4.9`, deployed live to Vercel production.
+
 - `#30` **2026-10-28** Migration to Full-Stack Next.js 15 (App Router), Tailwind CSS, TypeScript & Supabase Backend:
   - **Completed Core Full-Stack Architecture**:
     1. *Next.js 15, TypeScript & Tailwind Setup*: Configured `package.json` (Next 15.1, React 19, TypeScript 5.7, Tailwind CSS 3.4), `tsconfig.json` with path aliases (`@/*`), `next.config.ts` with remote image patterns, and `tailwind.config.ts` preserving AUVARE's luxury forest green and typography tokens.
@@ -335,5 +349,19 @@ immediately. The 2h expiry is only the backstop for when
 nobody notices.
 
 ## Done
+
+- `#31` **2026-10-28** AUVARE Branded Confirmation Modal Dialog (Eliminated Browser Native `confirm()`):
+  - **Identified User Pain Point**:
+    - When clicking the delete button (trash can) on any garment in the products table, the browser displayed a generic, unstyled native popup (`auvare-store.vercel.app says: Are you sure you want to delete...`).
+    - The user explicitly instructed that as a luxury clothing brand (AUVARE), generic browser alert/confirm UI is unacceptable and must be replaced with a bespoke, luxury branded UI.
+  - **Implemented Clean Solution**:
+    - *Branded Modal UI (`admin.html`, `admin.css`, `admin.js` & `AdminPortal.tsx`)*:
+      - Crafted `#brandedConfirmModal` featuring AUVARE's luxury dark forest green header, brand crest logo, gold border accents, and high-contrast red destructive badge.
+      - Dynamic item highlight card displaying the product's thumbnail image, title in quotes, category, formatted BDT price, and size.
+      - Crystal clear warning text highlighting permanent removal from catalog and Supabase cloud.
+      - Two branded buttons: "Cancel / Keep Drop" (secondary outline) and "Delete Drop" (crimson gradient with trash icon).
+      - Reusable `showBrandedConfirm({...})` helper replacing native `confirm()` across product deletion (`adminDeleteProduct`), inventory seed reset (`adminResetDefaults`), and staff approvals (`approveUser`, `unblockUser`).
+      - Keyboard accessibility with `Escape` key dismissal and backdrop click-outside cancellation.
+    - *Asset Versioning & Deployment*: Bumped `admin.css?v=3.7` and `admin.js?v=4.9`, deployed live to Vercel production.
 
 _(completed work, newest first, with the date it landed)_
