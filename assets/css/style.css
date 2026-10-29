@@ -1123,45 +1123,395 @@ a {
   font-weight: 600;
 }
 
-/* Floating WhatsApp Button */
-.floating-wa-btn {
+/* Multichannel Floating Help Widget (Bottom Left - Inspired by Mediasoft) */
+.auvare-help-widget {
   position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  z-index: 40;
-  background-color: #25d366;
-  color: white;
-  width: 60px;
-  height: 60px;
+  bottom: 24px;
+  left: 24px;
+  z-index: 100000;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-start;
+  pointer-events: none;
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+}
+
+.auvare-help-widget * {
+  box-sizing: border-box;
+}
+
+/* Main Shifting Trigger Button */
+.help-widget-trigger {
+  width: 58px;
+  height: 58px;
   border-radius: 50%;
-  box-shadow: 0 8px 24px rgba(37, 211, 102, 0.4);
+  background: var(--color-primary, #0b1a13);
+  color: #ffffff;
+  border: 2.5px solid #ffffff;
+  box-shadow: 0 10px 25px -4px rgba(11, 26, 19, 0.45), 0 4px 10px -2px rgba(11, 26, 19, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
-  text-decoration: none;
-  transition: var(--transition);
-  border: 2px solid white;
+  cursor: pointer;
+  position: relative;
+  pointer-events: auto;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  padding: 0;
 }
 
-.floating-wa-btn:hover {
-  transform: scale(1.1) translateY(-4px);
-  box-shadow: 0 12px 30px rgba(37, 211, 102, 0.6);
+.help-widget-trigger:hover {
+  transform: scale(1.08) translateY(-2px);
+  box-shadow: 0 14px 30px -4px rgba(11, 26, 19, 0.55), 0 6px 14px -2px rgba(11, 26, 19, 0.35);
 }
 
-.wa-pulse {
+.help-widget-pulse {
   position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 2px solid #10b981;
+  opacity: 0.6;
+  animation: help-pulse-anim 2.5s infinite;
+  pointer-events: none;
+}
+
+@keyframes help-pulse-anim {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.22); opacity: 0; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+.help-widget-icon-box {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.help-shifting-icon {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   height: 100%;
-  border-radius: 50%;
-  background-color: #25d366;
-  opacity: 0.6;
-  animation: wa-pulse-anim 2s infinite;
-  z-index: -1;
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes wa-pulse-anim {
-  0% { transform: scale(1); opacity: 0.7; }
-  100% { transform: scale(1.5); opacity: 0; }
+.help-shifting-icon.active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.help-shifting-icon.exiting {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.8);
+  pointer-events: none;
+}
+
+.help-shifting-icon.entering {
+  opacity: 0;
+  transform: translateY(8px) scale(0.8);
+  pointer-events: none;
+}
+
+/* "Help" Tooltip Pill on Hover of Main Trigger */
+.help-trigger-label {
+  position: absolute;
+  left: 70px;
+  background: var(--color-primary, #0b1a13);
+  color: #ffffff;
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 6px 15px;
+  border-radius: 20px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-10px);
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.help-widget-trigger:hover .help-trigger-label {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Popup Menu List */
+.help-widget-menu {
+  list-style: none;
+  margin: 0 0 12px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(14px) scale(0.92);
+  transform-origin: bottom left;
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.25s ease;
+  pointer-events: none;
+}
+
+.help-widget-menu.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.help-menu-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.help-item-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  padding: 0;
+  outline: none;
+}
+
+.help-item-btn:hover {
+  transform: scale(1.1) translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  border-color: #cbd5e1;
+}
+
+.help-item-btn.btn-wa:hover {
+  border-color: #25D366;
+  background: #f0fdf4;
+}
+
+.help-item-btn.btn-messenger:hover {
+  border-color: #0084FF;
+  background: #eff6ff;
+}
+
+.help-item-btn.btn-email:hover {
+  border-color: #0284c7;
+  background: #f0f9ff;
+}
+
+.help-item-btn.btn-call:hover {
+  border-color: #16a34a;
+  background: #f0fdf4;
+}
+
+.help-item-btn.btn-support:hover {
+  border-color: #0b1a13;
+  background: #f8fafc;
+}
+
+.help-item-btn.btn-minimize:hover {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+/* Tooltip Pill for Menu Items */
+.help-item-tooltip {
+  position: absolute;
+  left: 60px;
+  background: var(--color-primary, #0b1a13);
+  color: #ffffff;
+  padding: 6px 13px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-8px);
+  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.help-item-btn:hover .help-item-tooltip {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Support & Customer Care Modal */
+.support-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(6px);
+  z-index: 100005;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.support-modal-overlay.open {
+  display: flex;
+  opacity: 1;
+}
+
+.support-modal-card {
+  background: #ffffff;
+  border-radius: 14px;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+  animation: support-card-pop 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@keyframes support-card-pop {
+  0% { transform: scale(0.92) translateY(10px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.support-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.15rem 1.4rem;
+  background: var(--color-primary, #0b1a13);
+  color: #ffffff;
+}
+
+.support-modal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.support-modal-title-wrap h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+}
+
+.support-modal-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0.35rem;
+  transition: color 0.15s ease;
+}
+
+.support-modal-close:hover {
+  color: #ffffff;
+}
+
+.support-modal-body {
+  padding: 1.35rem 1.4rem;
+}
+
+.support-modal-sub {
+  font-size: 0.88rem;
+  color: #475569;
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+}
+
+.support-channels-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+.support-channel-card {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+}
+
+.support-channel-card:hover {
+  background: #ffffff;
+  border-color: #10b981;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.12);
+  transform: translateY(-1px);
+}
+
+.support-channel-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.support-channel-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.support-channel-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.support-channel-desc {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-top: 0.15rem;
+}
+
+@media (max-width: 640px) {
+  .auvare-help-widget {
+    bottom: 18px;
+    left: 18px;
+  }
+  .help-widget-trigger {
+    width: 52px;
+    height: 52px;
+  }
+  .help-item-btn {
+    width: 44px;
+    height: 44px;
+  }
+  .help-trigger-label {
+    left: 60px;
+    font-size: 0.78rem;
+    padding: 5px 12px;
+  }
+  .help-item-tooltip {
+    left: 54px;
+    font-size: 0.75rem;
+    padding: 5px 10px;
+  }
 }
 
 /* Cart Drawer */
