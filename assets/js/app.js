@@ -466,7 +466,10 @@ function renderProducts() {
           </div>
 
           ${hasMultiple ? `
-            <span class="multi-photo-badge">📸 ${images.length}</span>
+            <span class="multi-photo-badge">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              ${images.length}
+            </span>
             <div class="product-card-gallery-dots" onclick="event.stopPropagation();">
               ${images.map((img, idx) => `
                 <button type="button" class="gallery-dot ${idx === 0 ? 'active' : ''}" onclick="switchCardImage('${item.id}', ${idx}, this)" title="Photo ${idx + 1}"></button>
@@ -477,10 +480,10 @@ function renderProducts() {
           ${state.isAdmin ? `
             <div class="admin-card-bar" onclick="event.stopPropagation();">
               <button class="btn-admin-action" onclick="toggleSoldState('${item.id}')" title="Toggle Sold Status">
-                ${item.sold ? '✓ Mark Available' : '✕ Mark Sold'}
+                ${item.sold ? 'Mark Available' : 'Mark Sold'}
               </button>
               <button class="btn-admin-action btn-admin-delete" onclick="deleteProduct('${item.id}')" title="Delete Product">
-                🗑
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
               </button>
             </div>
           ` : ''}
@@ -745,7 +748,9 @@ function updateCartUI() {
   if (state.cart.length === 0) {
     itemsContainer.innerHTML = `
       <div style="text-align: center; padding: 3rem 1rem; color: var(--color-text-muted);">
-        <p style="font-size: 2.5rem; margin-bottom: 0.5rem;">🛍️</p>
+        <div style="margin-bottom: 0.75rem; color: var(--color-primary);">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        </div>
         <p style="font-size: 1.1rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.25rem;">Your bag is empty</p>
         <p style="font-size: 0.85rem;">Discover our latest S, M, L, XL, XXL drops and select your size!</p>
       </div>
@@ -806,7 +811,7 @@ function orderOnWhatsApp(productId) {
   const variantText = activeVariant ? `• Variant: ${activeVariant.name}\n` : '';
 
   const msg = encodeURIComponent(
-    `Hello AUVARE! 🇧🇩 I want to order this piece:\n\n` +
+    `Hello AUVARE! I want to order this piece:\n\n` +
     `• Product: ${product.title}\n` +
     variantText +
     `• Selected Size: ${chosenSize} (Available: S, M, L, XL, XXL)\n` +
@@ -867,7 +872,7 @@ function selectPaymentMethod(method) {
   switch (method) {
     case 'cod':
       instructionsBox.innerHTML = `
-        <h5 style="font-weight:700; color:var(--color-primary); margin-bottom:0.35rem;">💵 Cash on Delivery (ক্যাশ অন ডেলিভারি)</h5>
+        <h5 style="font-weight:700; color:var(--color-primary); margin-bottom:0.35rem;">Cash on Delivery (ক্যাশ অন ডেলিভারি)</h5>
         <p style="font-size:0.85rem; color:var(--color-text-muted);">
           পণ্য ডেলিভারিম্যানের কাছ থেকে বুঝে পেয়ে সম্পূর্ণ টাকা নগদ পরিশোধ করুন। ডেলিভারির সময় পার্সেল চেক করার সুযোগ থাকবে।
         </p>
@@ -1083,7 +1088,7 @@ async function handleCheckoutSubmit(e) {
   // Create WhatsApp message string for easy brother dispatch
   const itemListText = state.cart.map(c => `• ${c.title}${c.selectedVariant ? ` [${c.selectedVariant}]` : ''} (Size: ${c.selectedSize || c.size || 'M'}, ৳${c.price}${c.quantity > 1 ? ` x${c.quantity}` : ''})`).join('\n');
   const waReceipt = encodeURIComponent(
-    `🛍️ *NEW ORDER CONFIRMED!* [Order #${orderId}]\n\n` +
+    `*NEW ORDER CONFIRMED!* [Order #${orderId}]\n\n` +
     `*Customer Details:*\n` +
     `• Name: ${name}\n` +
     `• Phone: ${phone}\n` +
@@ -1177,14 +1182,54 @@ function closeModal(modalId) {
 }
 
 // ==========================================
-// Full-Screen Dedicated Product In-Details System
+// Sailor-Inspired Luxury Product Experience
 // ==========================================
+
+function trackRecentlyViewed(productId) {
+  if (!productId) return;
+  try {
+    let recent = JSON.parse(sessionStorage.getItem('auvare_recently_viewed') || '[]');
+    recent = recent.filter(id => String(id) !== String(productId));
+    recent.unshift(String(productId));
+    if (recent.length > 8) recent = recent.slice(0, 8);
+    sessionStorage.setItem('auvare_recently_viewed', JSON.stringify(recent));
+  } catch (e) {}
+}
+
+function getRecentlyViewed(currentProductId) {
+  try {
+    const recent = JSON.parse(sessionStorage.getItem('auvare_recently_viewed') || '[]');
+    return recent
+      .filter(id => String(id) !== String(currentProductId))
+      .map(id => state.products.find(p => String(p.id) === String(id)))
+      .filter(Boolean);
+  } catch (e) {
+    return [];
+  }
+}
+
+function getSuggestedProducts(currentProduct) {
+  if (!currentProduct) return [];
+  const sameCat = state.products.filter(p => 
+    String(p.id) !== String(currentProduct.id) && 
+    p.category === currentProduct.category
+  );
+  if (sameCat.length >= 4) {
+    return sameCat.slice(0, 4);
+  }
+  const others = state.products.filter(p => 
+    String(p.id) !== String(currentProduct.id) && 
+    p.category !== currentProduct.category
+  );
+  return sameCat.concat(others).slice(0, 4);
+}
 
 function openProductDetailScreen(productId) {
   const product = state.products.find(p => String(p.id) === String(productId));
   if (!product) return;
 
   state.activeDetailProductId = String(productId);
+  trackRecentlyViewed(productId);
   renderProductDetailScreen(product);
 
   const screenEl = document.getElementById('productDetailScreen');
@@ -1250,7 +1295,7 @@ function switchDetailScreenImage(imgSrc, btnEl) {
   const mainImg = document.getElementById('screenMainImg');
   if (mainImg) {
     mainImg.style.transition = 'opacity 0.15s ease';
-    mainImg.style.opacity = '0.5';
+    mainImg.style.opacity = '0.4';
     setTimeout(() => {
       mainImg.src = imgSrc;
       mainImg.style.opacity = '1';
@@ -1285,7 +1330,6 @@ window.selectModalSize = selectScreenSize; // alias
 function addScreenProductToBag(productId) {
   addToCart(productId);
   closeProductDetailScreen();
-  // Open cart drawer so user sees updated bag
   if (typeof toggleCart === 'function') {
     toggleCart();
   }
@@ -1323,110 +1367,67 @@ function renderProductDetailScreen(product) {
     .replace(/<!--AUVARE_FABRIC:.*?-->/g, '')
     .trim();
 
-  container.innerHTML = `
-    <div class="screen-detail-grid">
-      <!-- Left Column: Visual High-Res Gallery -->
-      <div class="screen-gallery-col">
-        <div class="screen-main-img-box">
-          <img id="screenMainImg" src="${primaryImg}" alt="${product.title}" />
-          
-          <div class="screen-gallery-badges">
-            <span class="badge-tag unique">Curated Archive Drop</span>
-            ${product.sold ? '<span class="badge-tag sold">SOLD OUT</span>' : '<span class="badge-tag condition">' + (product.condition ? product.condition.split('(')[0].trim() : 'Mint') + '</span>'}
-          </div>
-        </div>
+  // Dynamic recommendations & browsing history
+  const suggestedProducts = getSuggestedProducts(product);
+  const recentViewedProducts = getRecentlyViewed(product.id);
 
+  container.innerHTML = `
+    <!-- Breadcrumb Bar -->
+    <nav class="screen-breadcrumb" aria-label="Breadcrumb">
+      <a onclick="closeProductDetailScreen()">Collection</a>
+      <span class="crumb-sep">/</span>
+      <a onclick="closeProductDetailScreen(); setCategoryFilter('${product.category}')">${product.category}</a>
+      <span class="crumb-sep">/</span>
+      <span class="crumb-current">${product.title}</span>
+    </nav>
+
+    <!-- Main Product Two-Column Hero -->
+    <div class="screen-detail-grid">
+      <!-- Left Column: Studio Gallery (Vertical Thumbs + Main Image) -->
+      <div class="screen-gallery-col">
         ${hasMultipleImages ? `
-          <div class="screen-thumbs-strip">
+          <div class="screen-vertical-thumbs">
             ${images.map((img, idx) => `
               <button 
                 type="button" 
                 class="screen-thumb-btn ${idx === 0 ? 'active' : ''}" 
                 onclick="switchDetailScreenImage('${img}', this)"
-                title="Photo ${idx + 1}"
+                title="View Photo ${idx + 1}"
               >
-                <img src="${img}" alt="Thumbnail ${idx + 1}" />
+                <img src="${img}" alt="Thumbnail ${idx + 1}" loading="lazy" />
               </button>
             `).join('')}
           </div>
         ` : ''}
+
+        <div class="screen-main-img-box">
+          <img id="screenMainImg" src="${primaryImg}" alt="${product.title}" />
+          
+          <div class="screen-gallery-badges">
+            <span class="badge-tag unique">Curated Drop</span>
+            ${product.sold ? '<span class="badge-tag sold">Sold Out</span>' : '<span class="badge-tag condition">' + (product.condition ? product.condition.split('(')[0].trim() : 'Mint') + '</span>'}
+          </div>
+        </div>
       </div>
 
-      <!-- Right Column: In-Details Specifications, Story & Purchasing -->
+      <!-- Right Column: Purchasing & Specifications -->
       <div class="screen-info-col">
-        <div class="screen-meta-pills">
-          <span class="screen-pill-cat">${product.category}</span>
-          <span class="screen-pill-cond">★ ${product.condition || '9.5/10 Mint'}</span>
-          ${hasVariants ? `<span class="screen-pill-cat" style="background:#ecfdf5; color:#15803d; border-color:#86efac;">${product.variants.length} Colorways</span>` : ''}
+        <div class="screen-sku-row">
+          <span class="screen-sku-code">SKU : ${String(product.id).toUpperCase()}</span>
+          <span class="badge-tag condition">${product.category}</span>
         </div>
 
         <h1 class="screen-product-title">${product.title}</h1>
 
         <div class="screen-price-row">
           <span class="screen-price-val">৳ ${effectivePrice.toLocaleString()}</span>
-          <span class="screen-price-note">• All import duties & taxes included</span>
+          <span class="screen-price-note">All Import & VAT Included</span>
         </div>
 
-        <!-- In-Depth Specifications & Measurements -->
-        <div class="screen-specs-box">
-          <div class="screen-specs-heading">
-            <span>📐</span>
-            <span>Garment Measurements & Piece Specifications</span>
-          </div>
-
-          <div class="screen-spec-row">
-            <span class="screen-spec-icon">📏</span>
-            <div>
-              <span class="screen-spec-label">Chest & Pit-to-Pit</span>
-              <span class="screen-spec-value"><strong>${product.chest || '40"-48"'}</strong> (Relaxed Pit-to-Pit width)</span>
-            </div>
-          </div>
-
-          <div class="screen-spec-row">
-            <span class="screen-spec-icon">📐</span>
-            <div>
-              <span class="screen-spec-label">Length & Silhouette</span>
-              <span class="screen-spec-value"><strong>${product.length || '26"-30"'}</strong> (Collar-to-Hem length • Vintage Boxy Drop)</span>
-            </div>
-          </div>
-
-          <div class="screen-spec-row">
-            <span class="screen-spec-icon">🏷️</span>
-            <div>
-              <span class="screen-spec-label">Authenticity & Condition Grade</span>
-              <span class="screen-spec-value">Grade: <strong>${product.condition || '9.5/10 Pristine Vintage'}</strong> • Sanitized & verified 1-of-1 archive piece</span>
-            </div>
-          </div>
-
-          <div class="screen-spec-row">
-            <span class="screen-spec-icon">🗂️</span>
-            <div>
-              <span class="screen-spec-label">Archive Collection Category</span>
-              <span class="screen-spec-value"><strong>${product.category}</strong> • Authentic Vintage Streetwear</span>
-            </div>
-          </div>
-
-          <div class="screen-spec-row">
-            <span class="screen-spec-icon">🧼</span>
-            <div>
-              <span class="screen-spec-label">Care & Longevity Instructions</span>
-              <span class="screen-spec-value" style="font-size:0.82rem;">Machine wash cold (30°C) inside out • Gentle cycle • Line dry in shade to preserve cotton fibres</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Full Curation Story / Description -->
-        ${cleanDescription ? `
-          <div class="screen-description-box">
-            <div class="screen-desc-heading">Archive Notes & Curation Story</div>
-            <div class="screen-desc-body">${cleanDescription}</div>
-          </div>
-        ` : ''}
-
-        <!-- Variant Selector -->
+        <!-- Available Colorways / Variants -->
         ${hasVariants ? `
           <div class="screen-selector-group">
-            <span class="screen-selector-title">Available Colorways & Editions:</span>
+            <span class="screen-selector-title">Available Colorways / Editions:</span>
             <div class="variant-chips-group">
               ${product.variants.map(v => {
                 const vKey = String(v.id || v.name);
@@ -1445,7 +1446,7 @@ function renderProductDetailScreen(product) {
           </div>
         ` : ''}
 
-        <!-- Size Selection -->
+        <!-- Available Sizes -->
         <div class="screen-selector-group">
           <span class="screen-selector-title">Select Size:</span>
           <div class="size-chips-group">
@@ -1462,7 +1463,7 @@ function renderProductDetailScreen(product) {
           </div>
         </div>
 
-        <!-- Action Buttons -->
+        <!-- Dual Action Buttons -->
         <div class="screen-actions-bar">
           <button 
             type="button" 
@@ -1470,7 +1471,7 @@ function renderProductDetailScreen(product) {
             onclick="addScreenProductToBag('${product.id}')"
             ${product.sold ? 'disabled' : ''}
           >
-            <span>🛍️</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
             <span>${product.sold ? 'Sold Out' : `Add to Bag (৳ ${effectivePrice.toLocaleString()})`}</span>
           </button>
 
@@ -1480,24 +1481,146 @@ function renderProductDetailScreen(product) {
             onclick="orderOnWhatsApp('${product.id}')"
             title="Direct WhatsApp Order"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-            <span>Order on WhatsApp</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            <span>Order via WhatsApp</span>
           </button>
+        </div>
 
-          ${product.instagramUrl ? `
-            <a 
-              href="${product.instagramUrl}" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              class="btn-screen-ig"
-              title="View on Instagram"
-            >
-              <span>📸 Instagram ↗</span>
-            </a>
-          ` : ''}
+        <!-- Trust Badges Strip (Clean Professional SVGs) -->
+        <div class="screen-trust-badges">
+          <div class="trust-item">
+            <svg class="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            <div>
+              <div class="trust-text">Fast Delivery</div>
+              <span class="trust-sub">Dhaka 24-48h • All BD 2-4d</span>
+            </div>
+          </div>
+
+          <div class="trust-item">
+            <svg class="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <div>
+              <div class="trust-text">Curated Authentic</div>
+              <span class="trust-sub">1-of-1 verified piece</span>
+            </div>
+          </div>
+
+          <div class="trust-item">
+            <svg class="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            <div>
+              <div class="trust-text">Hassle-Free Support</div>
+              <span class="trust-sub">Hotline & WhatsApp</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clean Collapsible Accordions (Sailor Structure) -->
+        <div class="screen-accordion-group">
+          <details class="screen-accordion" open>
+            <summary class="screen-accordion-summary">
+              <span>Garment Details & Description</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="screen-accordion-content">
+              ${cleanDescription || 'Authentic curated vintage streetwear piece. Verified condition, premium textile weave, and signature boxy silhouette.'}
+            </div>
+          </details>
+
+          <details class="screen-accordion" open>
+            <summary class="screen-accordion-summary">
+              <span>Measurements & Sizing Guide</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="screen-accordion-content">
+              <table class="screen-spec-table">
+                <tbody>
+                  <tr>
+                    <td class="spec-name">Chest (Pit-to-Pit)</td>
+                    <td class="spec-val"><strong>${product.chest || '40"-48"'}</strong> (Relaxed width)</td>
+                  </tr>
+                  <tr>
+                    <td class="spec-name">Length (Collar-to-Hem)</td>
+                    <td class="spec-val"><strong>${product.length || '26"-30"'}</strong> (Vintage Boxy Drop)</td>
+                  </tr>
+                  <tr>
+                    <td class="spec-name">Condition Grade</td>
+                    <td class="spec-val"><strong>${product.condition || '9.5/10 Mint'}</strong></td>
+                  </tr>
+                  <tr>
+                    <td class="spec-name">Category</td>
+                    <td class="spec-val">${product.category}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+
+          <details class="screen-accordion">
+            <summary class="screen-accordion-summary">
+              <span>Shipping & Care Guide</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="screen-accordion-content">
+              <p style="margin-bottom:0.5rem;"><strong>Shipping:</strong> Standard delivery within Dhaka takes 24 to 48 hours. Nationwide express delivery takes 2 to 4 business days. Cash on delivery is available with parcel checking.</p>
+              <p><strong>Care:</strong> Machine wash cold (30°C) inside out on gentle cycle. Line dry in shade to preserve cotton fibres. Do not iron directly on vintage graphics or prints.</p>
+            </div>
+          </details>
         </div>
       </div>
     </div>
+
+    <!-- Suggested Pieces (Suggested Category) Section -->
+    ${suggestedProducts.length > 0 ? `
+      <section class="screen-section-container">
+        <div class="screen-section-header">
+          <h3 class="screen-section-title">Suggested Pieces</h3>
+          <span class="screen-section-sub">More from ${product.category}</span>
+        </div>
+        <div class="screen-product-grid">
+          ${suggestedProducts.map(item => `
+            <div class="screen-card-item" onclick="openProductDetailScreen('${item.id}')">
+              <div class="screen-card-img-wrap">
+                <img src="${(item.images && item.images[0]) || item.image || DEFAULT_BOX_PLACEHOLDER}" alt="${item.title}" loading="lazy" />
+              </div>
+              <div class="screen-card-body">
+                <span class="screen-card-cat">${item.category}</span>
+                <h4 class="screen-card-title">${item.title}</h4>
+                <div class="screen-card-price-row">
+                  <span class="screen-card-price">৳ ${item.price.toLocaleString()}</span>
+                  <span class="screen-card-badge ${item.sold ? 'sold' : ''}">${item.sold ? 'Sold Out' : 'Available'}</span>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </section>
+    ` : ''}
+
+    <!-- Customer Recently Viewed Section -->
+    ${recentViewedProducts.length > 0 ? `
+      <section class="screen-section-container">
+        <div class="screen-section-header">
+          <h3 class="screen-section-title">Customer Recently Viewed</h3>
+          <span class="screen-section-sub">Your session browsing history</span>
+        </div>
+        <div class="screen-product-grid">
+          ${recentViewedProducts.map(item => `
+            <div class="screen-card-item" onclick="openProductDetailScreen('${item.id}')">
+              <div class="screen-card-img-wrap">
+                <img src="${(item.images && item.images[0]) || item.image || DEFAULT_BOX_PLACEHOLDER}" alt="${item.title}" loading="lazy" />
+              </div>
+              <div class="screen-card-body">
+                <span class="screen-card-cat">${item.category}</span>
+                <h4 class="screen-card-title">${item.title}</h4>
+                <div class="screen-card-price-row">
+                  <span class="screen-card-price">৳ ${item.price.toLocaleString()}</span>
+                  <span class="screen-card-badge ${item.sold ? 'sold' : ''}">${item.sold ? 'Sold Out' : 'Available'}</span>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </section>
+    ` : ''}
   `;
 }
 window.renderProductDetailScreen = renderProductDetailScreen;
