@@ -16,6 +16,17 @@ _(no active items in progress)_
 
 ## Done
 
+- `#34` **2026-10-30** Clean Minimalist Product Card Layout (Top Ten Mart Inspired, TK Currency, Title Divider & Inspect CTA):
+  - **Identified User Problem**:
+    - Product cards on homepage catalog were cluttered with category badges, chest/waist measurements, size indicators, and size buttons.
+    - Currency displayed double Bengali symbols (৳ ৳ 1,850) instead of clean English TK format (TK 1,850).
+  - **Implemented Clean Solution**:
+    - *Clutter-Free Card Grid (`StorefrontClient.tsx`)*: Removed category tags, chest/waist pills, size labels, and size chips from cards. Retained high-resolution imagery with curated drop badges.
+    - *Minimalist Typography & Divider*: Placed subtle product title, clean hairline divider, and bold `TK [amount]` price.
+    - *TK Currency Standardization (`src/lib/utils.ts`, `StorefrontClient.tsx`, `ProductDetailModal.tsx`, `AdminPortal.tsx`)*: Unified all currency labels across catalog cards, full-screen product studio, cart drawer, checkout modal, order confirmation modal, and WhatsApp message generation to `TK` (e.g. `TK 1,850`), eliminating double ৳ symbol leaks.
+    - *Direct CTAs*: Streamlined buttons to Add to Bag and Inspect. Clicking Inspect or clicking photo directly opens Full-Screen In-Details Studio (`ProductDetailModal`).
+    - *Production Live*: Built with `npm run build` (exit code 0), deployed to Vercel production and verified live on `https://auvare-store.vercel.app`.
+
 - `#33` **2026-10-30** Full-Screen In-Details Studio (Sailor Zoom, Suggested Pieces & Recently Viewed):
   - **Identified User Problem**:
     - Product clicks opened a floating popup modal over a dark overlay backdrop instead of a dedicated full-screen page view.
