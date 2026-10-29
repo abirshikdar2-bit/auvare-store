@@ -2525,8 +2525,8 @@ a {
 }
 
 .btn-screen-add-bag {
-  flex: 1.2;
-  min-width: 190px;
+  flex: 1;
+  min-width: 155px;
   background: var(--color-primary, #0b1a13);
   color: #ffffff;
   border: none;
@@ -2534,7 +2534,7 @@ a {
   font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.04em;
-  padding: 0.95rem 1.4rem;
+  padding: 0.95rem 1.35rem;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -2557,32 +2557,38 @@ a {
   box-shadow: none;
 }
 
-.btn-screen-wa {
-  flex: 1;
-  min-width: 170px;
-  background: #25D366;
+.btn-screen-buy-now {
+  flex: 1.1;
+  min-width: 155px;
+  background: #16a34a;
   color: #ffffff;
   border: none;
   border-radius: 8px;
   font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.04em;
-  padding: 0.95rem 1.3rem;
+  padding: 0.95rem 1.35rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.55rem;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 14px rgba(37, 211, 102, 0.28);
-  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.28);
 }
 
-.btn-screen-wa:hover {
-  background: #1eb857;
+.btn-screen-buy-now:hover {
+  background: #15803d;
   transform: translateY(-2px);
   color: #ffffff;
-  box-shadow: 0 6px 18px rgba(37, 211, 102, 0.38);
+  box-shadow: 0 6px 18px rgba(22, 163, 74, 0.38);
+}
+
+.btn-screen-buy-now:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .btn-screen-ig {

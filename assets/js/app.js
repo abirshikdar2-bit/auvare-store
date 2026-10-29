@@ -1603,6 +1603,47 @@ function addScreenProductToBag(productId) {
 window.addScreenProductToBag = addScreenProductToBag;
 window.addModalProductToBag = addScreenProductToBag; // alias
 
+function buyNowFromScreen(productId) {
+  const product = state.products.find(p => p.id === productId);
+  if (!product || product.sold) return;
+
+  const chosenSize = state.selectedSizes[productId] || (product.sizes ? product.sizes[0] : 'M');
+  const hasVariants = Array.isArray(product.variants) && product.variants.length > 0;
+  const selectedVariantId = state.selectedVariants?.[productId] || (hasVariants ? (product.variants[0].id || product.variants[0].name) : null);
+  const activeVariant = hasVariants ? product.variants.find(v => String(v.id || v.name) === String(selectedVariantId)) : null;
+  const effectivePrice = (activeVariant && activeVariant.price) ? activeVariant.price : product.price;
+  const variantName = activeVariant ? activeVariant.name : null;
+  const cartItemId = variantName ? `${productId}-${chosenSize}-${variantName}` : `${productId}-${chosenSize}`;
+
+  const existing = state.cart.find(item => item.cartItemId === cartItemId);
+  if (!existing) {
+    const images = (Array.isArray(product.images) && product.images.length > 0)
+      ? product.images
+      : [product.image || DEFAULT_BOX_PLACEHOLDER];
+
+    state.cart.push({
+      ...product,
+      image: (activeVariant && activeVariant.image) || images[0],
+      cartItemId,
+      selectedSize: chosenSize,
+      selectedVariant: variantName,
+      price: effectivePrice,
+      quantity: 1
+    });
+    saveCart();
+    updateCartUI();
+  }
+
+  // Close screen & drawer
+  closeProductDetailScreen();
+  closeCart();
+
+  // Directly open Checkout, Order & Payment Modal
+  openCheckoutModal();
+}
+window.buyNowFromScreen = buyNowFromScreen;
+window.buyNow = buyNowFromScreen;
+
 function renderProductDetailScreen(product) {
   const container = document.getElementById('productDetailScreenContent');
   if (!container) return;
@@ -1752,17 +1793,20 @@ function renderProductDetailScreen(product) {
             ${product.sold ? 'disabled' : ''}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-            <span>${product.sold ? 'Sold Out' : `Add to Bag (৳ ${effectivePrice.toLocaleString()})`}</span>
+            <span>${product.sold ? 'Sold Out' : 'Add to Bag'}</span>
           </button>
 
           <button 
             type="button" 
-            class="btn-screen-wa" 
-            onclick="orderOnWhatsApp('${product.id}')"
-            title="Direct WhatsApp Order"
+            class="btn-screen-buy-now" 
+            onclick="buyNowFromScreen('${product.id}')"
+            title="Instant Checkout - Complete Order & Payment"
+            ${product.sold ? 'disabled' : ''}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-            <span>Order via WhatsApp</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+            </svg>
+            <span>${product.sold ? 'Sold Out' : 'Buy Now'}</span>
           </button>
         </div>
 
