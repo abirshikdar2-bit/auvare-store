@@ -342,7 +342,7 @@ function selectCardVariant(productId, variantId) {
 window.selectCardVariant = selectCardVariant;
 
 // ==========================================
-// HERO FEATURED 5-SECOND REELS CAROUSEL CONTROLLER
+// HERO FEATURED 3.5-SECOND FULL-VIEW CAROUSEL CONTROLLER
 // ==========================================
 const heroCarouselState = {
   products: [],
@@ -351,7 +351,7 @@ const heroCarouselState = {
   timerId: null,
   progressTickerId: null,
   progressElapsed: 0,
-  intervalMs: 5000,
+  intervalMs: 3500,
   stepMs: 50,
   isHovered: false,
   touchStartX: 0,
@@ -393,7 +393,7 @@ function initHeroCarousel(productsList) {
   heroCarouselState.progressElapsed = 0;
   heroCarouselState.isTransitioning = false;
 
-  // Stop any running progress tickers
+  // Stop any running tickers
   if (heroCarouselState.progressTickerId) {
     clearInterval(heroCarouselState.progressTickerId);
     heroCarouselState.progressTickerId = null;
@@ -432,7 +432,7 @@ function initHeroCarousel(productsList) {
   void track.offsetWidth;
   track.style.transition = 'transform 0.65s cubic-bezier(0.16, 1, 0.3, 1)';
 
-  // Initial badge update
+  // Initial title update
   updateHeroBadge(items[0]);
 
   // Click handler to open product details
@@ -447,8 +447,6 @@ function initHeroCarousel(productsList) {
 
   // If only 1 product in catalog, don't run animation
   if (items.length <= 1) {
-    const progBar = document.getElementById('heroStoryProgressBar');
-    if (progBar) progBar.style.width = '100%';
     return;
   }
 
@@ -505,7 +503,7 @@ function initHeroCarousel(productsList) {
     heroCarouselState.listenersBound = true;
   }
 
-  // Start 5-second automatic progression
+  // Start 3.5-second automatic progression
   startHeroCarouselTimer();
 }
 
@@ -514,14 +512,7 @@ function startHeroCarouselTimer() {
     clearInterval(heroCarouselState.progressTickerId);
   }
 
-  const progBar = document.getElementById('heroStoryProgressBar');
   heroCarouselState.progressElapsed = 0;
-  if (progBar) {
-    progBar.style.transition = 'none';
-    progBar.style.width = '0%';
-    void progBar.offsetWidth;
-    progBar.style.transition = 'width 0.1s linear';
-  }
 
   heroCarouselState.progressTickerId = setInterval(() => {
     if (heroCarouselState.isHovered || document.hidden) {
@@ -529,19 +520,9 @@ function startHeroCarouselTimer() {
     }
 
     heroCarouselState.progressElapsed += heroCarouselState.stepMs;
-    const pct = Math.min(100, (heroCarouselState.progressElapsed / heroCarouselState.intervalMs) * 100);
-    if (progBar) {
-      progBar.style.width = `${pct}%`;
-    }
 
     if (heroCarouselState.progressElapsed >= heroCarouselState.intervalMs) {
       heroCarouselState.progressElapsed = 0;
-      if (progBar) {
-        progBar.style.transition = 'none';
-        progBar.style.width = '0%';
-        void progBar.offsetWidth;
-        progBar.style.transition = 'width 0.1s linear';
-      }
       heroNextSlide(false);
     }
   }, heroCarouselState.stepMs);
@@ -553,17 +534,10 @@ function heroNextSlide(manual = false) {
   if (total <= 1) return;
 
   const track = document.getElementById('heroCarouselTrack');
-  const progBar = document.getElementById('heroStoryProgressBar');
   if (!track) return;
 
   if (manual) {
     heroCarouselState.progressElapsed = 0;
-    if (progBar) {
-      progBar.style.transition = 'none';
-      progBar.style.width = '0%';
-      void progBar.offsetWidth;
-      progBar.style.transition = 'width 0.1s linear';
-    }
   }
 
   heroCarouselState.isTransitioning = true;
@@ -596,17 +570,10 @@ function heroPrevSlide(manual = true) {
   if (total <= 1) return;
 
   const track = document.getElementById('heroCarouselTrack');
-  const progBar = document.getElementById('heroStoryProgressBar');
   if (!track) return;
 
   if (manual) {
     heroCarouselState.progressElapsed = 0;
-    if (progBar) {
-      progBar.style.transition = 'none';
-      progBar.style.width = '0%';
-      void progBar.offsetWidth;
-      progBar.style.transition = 'width 0.1s linear';
-    }
   }
 
   heroCarouselState.isTransitioning = true;
@@ -635,48 +602,6 @@ function heroPrevSlide(manual = true) {
 function updateHeroBadge(product) {
   if (!product) return;
   const card = document.getElementById('heroCarouselCard');
-  const titleEl = document.getElementById('heroFeaturedTitle');
-  const subEl = document.getElementById('heroFeaturedSub');
-  const priceEl = document.getElementById('heroFeaturedPrice');
-  const liveTag = document.getElementById('heroBadgeLiveTag');
-  const badgeWrap = document.getElementById('heroFloatingBadge');
-
-  if (badgeWrap) {
-    badgeWrap.style.opacity = '0.35';
-    badgeWrap.style.transform = 'translateY(3px)';
-  }
-
-  setTimeout(() => {
-    if (titleEl) titleEl.textContent = product.title || 'Curated Drop';
-    if (priceEl && product.price !== undefined) {
-      priceEl.textContent = `৳ ${Number(product.price).toLocaleString()}`;
-    }
-    if (liveTag) {
-      liveTag.textContent = product.sold ? 'Sold Out' : (product.category || 'Curated Drop');
-      if (product.sold) {
-        liveTag.style.background = '#fef2f2';
-        liveTag.style.color = '#ef4444';
-        liveTag.style.borderColor = '#fca5a5';
-      } else {
-        liveTag.style.background = '#ecfdf5';
-        liveTag.style.color = '#15803d';
-        liveTag.style.borderColor = '#86efac';
-      }
-    }
-    if (subEl) {
-      const parts = [];
-      if (product.chest) parts.push(`Chest: ${product.chest}`);
-      if (product.length) parts.push(`L: ${product.length}`);
-      if (product.condition) parts.push(product.condition.split('(')[0].trim());
-      subEl.textContent = parts.length > 0 ? parts.join(' • ') : '1-of-1 Curated Drop • Authentic';
-    }
-
-    if (badgeWrap) {
-      badgeWrap.style.opacity = '1';
-      badgeWrap.style.transform = 'translateY(0)';
-    }
-  }, 120);
-
   if (card) {
     card.title = `View ${product.title || 'Drop'} In-Details`;
   }
