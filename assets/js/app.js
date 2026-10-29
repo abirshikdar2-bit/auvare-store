@@ -341,6 +341,350 @@ function selectCardVariant(productId, variantId) {
 }
 window.selectCardVariant = selectCardVariant;
 
+// ==========================================
+// HERO FEATURED 5-SECOND REELS CAROUSEL CONTROLLER
+// ==========================================
+const heroCarouselState = {
+  products: [],
+  currentIndex: 0,
+  isTransitioning: false,
+  timerId: null,
+  progressTickerId: null,
+  progressElapsed: 0,
+  intervalMs: 5000,
+  stepMs: 50,
+  isHovered: false,
+  touchStartX: 0,
+  touchStartY: 0,
+  touchEndX: 0,
+  preventClick: false,
+  listenersBound: false,
+  productsSignature: ''
+};
+
+function initHeroCarousel(productsList) {
+  const track = document.getElementById('heroCarouselTrack');
+  const card = document.getElementById('heroCarouselCard');
+  if (!track || !card) return;
+
+  // Filter valid products to display (sort active/available drops first)
+  const allValid = Array.isArray(productsList) && productsList.length > 0
+    ? productsList.filter(p => p && (p.image || (p.images && p.images.length > 0)))
+    : [];
+
+  if (allValid.length === 0) return;
+
+  // Sort available pieces first, sold pieces last
+  const items = [...allValid].sort((a, b) => {
+    if (a.sold && !b.sold) return 1;
+    if (!a.sold && b.sold) return -1;
+    return 0;
+  });
+
+  // Unique signature to avoid rebuilding DOM if products haven't changed
+  const currentSig = items.map(p => `${p.id}_${p.price}_${p.sold}`).join('|');
+  if (heroCarouselState.listenersBound && heroCarouselState.productsSignature === currentSig) {
+    return;
+  }
+
+  heroCarouselState.products = items;
+  heroCarouselState.productsSignature = currentSig;
+  heroCarouselState.currentIndex = 0;
+  heroCarouselState.progressElapsed = 0;
+  heroCarouselState.isTransitioning = false;
+
+  // Stop any running progress tickers
+  if (heroCarouselState.progressTickerId) {
+    clearInterval(heroCarouselState.progressTickerId);
+    heroCarouselState.progressTickerId = null;
+  }
+
+  // Build slides with clone of first item at end for infinite seamless wrap
+  track.style.transition = 'none';
+  track.style.transform = 'translateX(0%)';
+
+  const slidesHtml = items.map((item, idx) => {
+    const imgSrc = (item.images && item.images.length > 0 && item.images[0]) || item.image || 'assets/images/item1.jpg';
+    const titleEscaped = (item.title || 'AUVARE Drop').replace(/"/g, '&quot;');
+    return `
+      <div class="hero-carousel-slide" data-index="${idx}" data-product-id="${item.id}">
+        <img src="${imgSrc}" alt="${titleEscaped}" class="hero-card-img" />
+      </div>
+    `;
+  }).join('');
+
+  const cloneHtml = items.length > 1
+    ? (() => {
+        const first = items[0];
+        const cloneImg = (first.images && first.images.length > 0 && first.images[0]) || first.image || 'assets/images/item1.jpg';
+        const cloneTitle = (first.title || 'AUVARE Drop').replace(/"/g, '&quot;');
+        return `
+          <div class="hero-carousel-slide clone" data-index="${items.length}" data-product-id="${first.id}">
+            <img src="${cloneImg}" alt="${cloneTitle}" class="hero-card-img" />
+          </div>
+        `;
+      })()
+    : '';
+
+  track.innerHTML = slidesHtml + cloneHtml;
+
+  // Force reflow and restore transition
+  void track.offsetWidth;
+  track.style.transition = 'transform 0.65s cubic-bezier(0.16, 1, 0.3, 1)';
+
+  // Initial badge update
+  updateHeroBadge(items[0]);
+
+  // Click handler to open product details
+  card.style.cursor = 'pointer';
+  card.onclick = () => {
+    if (heroCarouselState.preventClick) return;
+    const curProduct = heroCarouselState.products[heroCarouselState.currentIndex % heroCarouselState.products.length];
+    if (curProduct && curProduct.id) {
+      openProductDetailScreen(curProduct.id);
+    }
+  };
+
+  // If only 1 product in catalog, don't run animation
+  if (items.length <= 1) {
+    const progBar = document.getElementById('heroStoryProgressBar');
+    if (progBar) progBar.style.width = '100%';
+    return;
+  }
+
+  // Bind interaction listeners once
+  if (!heroCarouselState.listenersBound) {
+    // Hover pause and resume
+    card.addEventListener('mouseenter', () => {
+      heroCarouselState.isHovered = true;
+    });
+
+    card.addEventListener('mouseleave', () => {
+      heroCarouselState.isHovered = false;
+    });
+
+    // Touch swipe for mobile devices
+    card.addEventListener('touchstart', (e) => {
+      heroCarouselState.isHovered = true;
+      heroCarouselState.touchStartX = e.changedTouches[0].screenX;
+      heroCarouselState.touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+
+    card.addEventListener('touchend', (e) => {
+      heroCarouselState.isHovered = false;
+      heroCarouselState.touchEndX = e.changedTouches[0].screenX;
+      const diffX = heroCarouselState.touchStartX - heroCarouselState.touchEndX;
+      const diffY = Math.abs(heroCarouselState.touchStartY - e.changedTouches[0].screenY);
+
+      if (Math.abs(diffX) > 40 && Math.abs(diffX) > diffY) {
+        heroCarouselState.preventClick = true;
+        setTimeout(() => { heroCarouselState.preventClick = false; }, 320);
+        if (diffX > 0) {
+          heroNextSlide(true); // Swipe Left -> Next
+        } else {
+          heroPrevSlide(true); // Swipe Right -> Prev
+        }
+      }
+    }, { passive: true });
+
+    // Transition end listener for infinite seamless continuous loop
+    track.addEventListener('transitionend', (e) => {
+      if (e.target !== track || e.propertyName !== 'transform') return;
+      heroCarouselState.isTransitioning = false;
+      const total = heroCarouselState.products.length;
+      if (heroCarouselState.currentIndex >= total) {
+        // Reached the clone at the end: instantaneously jump to slide 0
+        track.style.transition = 'none';
+        heroCarouselState.currentIndex = 0;
+        track.style.transform = 'translateX(0%)';
+        void track.offsetWidth;
+        track.style.transition = 'transform 0.65s cubic-bezier(0.16, 1, 0.3, 1)';
+      }
+    });
+
+    heroCarouselState.listenersBound = true;
+  }
+
+  // Start 5-second automatic progression
+  startHeroCarouselTimer();
+}
+
+function startHeroCarouselTimer() {
+  if (heroCarouselState.progressTickerId) {
+    clearInterval(heroCarouselState.progressTickerId);
+  }
+
+  const progBar = document.getElementById('heroStoryProgressBar');
+  heroCarouselState.progressElapsed = 0;
+  if (progBar) {
+    progBar.style.transition = 'none';
+    progBar.style.width = '0%';
+    void progBar.offsetWidth;
+    progBar.style.transition = 'width 0.1s linear';
+  }
+
+  heroCarouselState.progressTickerId = setInterval(() => {
+    if (heroCarouselState.isHovered || document.hidden) {
+      return;
+    }
+
+    heroCarouselState.progressElapsed += heroCarouselState.stepMs;
+    const pct = Math.min(100, (heroCarouselState.progressElapsed / heroCarouselState.intervalMs) * 100);
+    if (progBar) {
+      progBar.style.width = `${pct}%`;
+    }
+
+    if (heroCarouselState.progressElapsed >= heroCarouselState.intervalMs) {
+      heroCarouselState.progressElapsed = 0;
+      if (progBar) {
+        progBar.style.transition = 'none';
+        progBar.style.width = '0%';
+        void progBar.offsetWidth;
+        progBar.style.transition = 'width 0.1s linear';
+      }
+      heroNextSlide(false);
+    }
+  }, heroCarouselState.stepMs);
+}
+
+function heroNextSlide(manual = false) {
+  if (heroCarouselState.isTransitioning) return;
+  const total = heroCarouselState.products.length;
+  if (total <= 1) return;
+
+  const track = document.getElementById('heroCarouselTrack');
+  const progBar = document.getElementById('heroStoryProgressBar');
+  if (!track) return;
+
+  if (manual) {
+    heroCarouselState.progressElapsed = 0;
+    if (progBar) {
+      progBar.style.transition = 'none';
+      progBar.style.width = '0%';
+      void progBar.offsetWidth;
+      progBar.style.transition = 'width 0.1s linear';
+    }
+  }
+
+  heroCarouselState.isTransitioning = true;
+  heroCarouselState.currentIndex += 1;
+
+  track.style.transition = 'transform 0.65s cubic-bezier(0.16, 1, 0.3, 1)';
+  track.style.transform = `translateX(-${heroCarouselState.currentIndex * 100}%)`;
+
+  const activeProduct = heroCarouselState.products[heroCarouselState.currentIndex % total];
+  updateHeroBadge(activeProduct);
+
+  // Safety unlock in case transitionend fails
+  setTimeout(() => {
+    if (heroCarouselState.isTransitioning) {
+      heroCarouselState.isTransitioning = false;
+      if (heroCarouselState.currentIndex >= total) {
+        track.style.transition = 'none';
+        heroCarouselState.currentIndex = 0;
+        track.style.transform = 'translateX(0%)';
+        void track.offsetWidth;
+        track.style.transition = 'transform 0.65s cubic-bezier(0.16, 1, 0.3, 1)';
+      }
+    }
+  }, 750);
+}
+
+function heroPrevSlide(manual = true) {
+  if (heroCarouselState.isTransitioning) return;
+  const total = heroCarouselState.products.length;
+  if (total <= 1) return;
+
+  const track = document.getElementById('heroCarouselTrack');
+  const progBar = document.getElementById('heroStoryProgressBar');
+  if (!track) return;
+
+  if (manual) {
+    heroCarouselState.progressElapsed = 0;
+    if (progBar) {
+      progBar.style.transition = 'none';
+      progBar.style.width = '0%';
+      void progBar.offsetWidth;
+      progBar.style.transition = 'width 0.1s linear';
+    }
+  }
+
+  heroCarouselState.isTransitioning = true;
+
+  if (heroCarouselState.currentIndex === 0) {
+    track.style.transition = 'none';
+    heroCarouselState.currentIndex = total;
+    track.style.transform = `translateX(-${total * 100}%)`;
+    void track.offsetWidth;
+  }
+
+  heroCarouselState.currentIndex -= 1;
+  track.style.transition = 'transform 0.65s cubic-bezier(0.16, 1, 0.3, 1)';
+  track.style.transform = `translateX(-${heroCarouselState.currentIndex * 100}%)`;
+
+  const activeProduct = heroCarouselState.products[heroCarouselState.currentIndex % total];
+  updateHeroBadge(activeProduct);
+
+  setTimeout(() => {
+    if (heroCarouselState.isTransitioning) {
+      heroCarouselState.isTransitioning = false;
+    }
+  }, 750);
+}
+
+function updateHeroBadge(product) {
+  if (!product) return;
+  const card = document.getElementById('heroCarouselCard');
+  const titleEl = document.getElementById('heroFeaturedTitle');
+  const subEl = document.getElementById('heroFeaturedSub');
+  const priceEl = document.getElementById('heroFeaturedPrice');
+  const liveTag = document.getElementById('heroBadgeLiveTag');
+  const badgeWrap = document.getElementById('heroFloatingBadge');
+
+  if (badgeWrap) {
+    badgeWrap.style.opacity = '0.35';
+    badgeWrap.style.transform = 'translateY(3px)';
+  }
+
+  setTimeout(() => {
+    if (titleEl) titleEl.textContent = product.title || 'Curated Drop';
+    if (priceEl && product.price !== undefined) {
+      priceEl.textContent = `৳ ${Number(product.price).toLocaleString()}`;
+    }
+    if (liveTag) {
+      liveTag.textContent = product.sold ? 'Sold Out' : (product.category || 'Curated Drop');
+      if (product.sold) {
+        liveTag.style.background = '#fef2f2';
+        liveTag.style.color = '#ef4444';
+        liveTag.style.borderColor = '#fca5a5';
+      } else {
+        liveTag.style.background = '#ecfdf5';
+        liveTag.style.color = '#15803d';
+        liveTag.style.borderColor = '#86efac';
+      }
+    }
+    if (subEl) {
+      const parts = [];
+      if (product.chest) parts.push(`Chest: ${product.chest}`);
+      if (product.length) parts.push(`L: ${product.length}`);
+      if (product.condition) parts.push(product.condition.split('(')[0].trim());
+      subEl.textContent = parts.length > 0 ? parts.join(' • ') : '1-of-1 Curated Drop • Authentic';
+    }
+
+    if (badgeWrap) {
+      badgeWrap.style.opacity = '1';
+      badgeWrap.style.transform = 'translateY(0)';
+    }
+  }, 120);
+
+  if (card) {
+    card.title = `View ${product.title || 'Drop'} In-Details`;
+  }
+}
+window.initHeroCarousel = initHeroCarousel;
+window.heroNextSlide = heroNextSlide;
+window.heroPrevSlide = heroPrevSlide;
+
 // Render Products Grid
 function renderProducts() {
   const grid = document.getElementById('productsGrid');
@@ -348,46 +692,8 @@ function renderProducts() {
   
   if (!grid) return;
 
-  // Dynamically sync Hero Featured Card with live product data
-  // Select the top active/available product from the catalog
-  const heroFeatured = (state.products && state.products.length > 0)
-    ? (state.products.find(p => !p.sold) || state.products[0])
-    : null;
-
-  if (heroFeatured) {
-    const heroImgEl = document.getElementById('heroFeaturedImg');
-    const heroPriceEl = document.getElementById('heroFeaturedPrice');
-    const heroTitleEl = document.getElementById('heroFeaturedTitle');
-    const heroSubEl = document.getElementById('heroFeaturedSub');
-    const heroCardStack = document.querySelector('.hero-card-stack');
-
-    if (heroImgEl && heroFeatured.image) {
-      if (heroImgEl.getAttribute('src') !== heroFeatured.image) {
-        heroImgEl.src = heroFeatured.image;
-      }
-      heroImgEl.alt = heroFeatured.title || 'AUVARE Featured Drop';
-    }
-    if (heroPriceEl && heroFeatured.price !== undefined) {
-      heroPriceEl.textContent = `৳ ${Number(heroFeatured.price).toLocaleString()}`;
-    }
-    if (heroTitleEl && heroFeatured.title) {
-      heroTitleEl.textContent = heroFeatured.title;
-    }
-    if (heroSubEl) {
-      const parts = [];
-      if (heroFeatured.chest) parts.push(`Chest: ${heroFeatured.chest}`);
-      if (heroFeatured.length) parts.push(`L: ${heroFeatured.length}`);
-      if (heroFeatured.condition) parts.push(heroFeatured.condition.split('(')[0].trim());
-      heroSubEl.textContent = parts.length > 0 ? parts.join(' • ') : '1-of-1 Curated Drop • Mint';
-    }
-    if (heroCardStack) {
-      heroCardStack.style.cursor = 'pointer';
-      heroCardStack.title = `View ${heroFeatured.title} In-Details`;
-      heroCardStack.onclick = () => {
-        openProductDetailScreen(heroFeatured.id);
-      };
-    }
-  }
+  // Automatic Reels-style 5s Left-Swipe Carousel for Hero Featured Drop
+  initHeroCarousel(state.products);
 
   const filtered = state.products.filter(item => {
     // Category Filter

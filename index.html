@@ -14,7 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="assets/css/style.css?v=3.7">
+  <link rel="stylesheet" href="assets/css/style.css?v=3.8">
 
   <script>
     // Force manual scroll restoration so refreshes always start at homepage top
@@ -167,7 +167,7 @@
     <div class="container hero-grid">
       <div class="hero-content">
         <div class="hero-tag">
-          <span>✨</span>
+          <span class="hero-tag-dot" aria-hidden="true"></span>
           <span>New Lot Drop Just Landed</span>
         </div>
         
@@ -192,12 +192,27 @@
         </div>
       </div>
 
-      <!-- Hero Visual Card (Authentic Drop Preview) -->
+      <!-- Hero Visual Card (Authentic Drop Preview Carousel) -->
       <div class="hero-visual">
-        <div class="hero-card-stack">
-          <img src="assets/images/item1.jpg" alt="AUVARE Featured Drop" class="hero-card-img" id="heroFeaturedImg">
-          <div class="hero-floating-badge">
+        <div class="hero-card-stack" id="heroCarouselCard" title="Click to view product details">
+          <!-- Story Progress Indicator Bar -->
+          <div class="hero-story-progress-wrapper" id="heroStoryProgressWrap">
+            <div class="hero-story-progress-bar" id="heroStoryProgressBar"></div>
+          </div>
+
+          <!-- Carousel Slides Viewport & Track -->
+          <div class="hero-carousel-viewport">
+            <div class="hero-carousel-track" id="heroCarouselTrack">
+              <div class="hero-carousel-slide">
+                <img src="assets/images/item1.jpg" alt="AUVARE Featured Drop" class="hero-card-img" id="heroFeaturedImg">
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Floating Badge -->
+          <div class="hero-floating-badge" id="heroFloatingBadge">
             <div class="badge-info">
+              <span class="hero-badge-live-tag" id="heroBadgeLiveTag">Curated Drop</span>
               <h4 id="heroFeaturedTitle">Vintage Graphic Tee</h4>
               <p id="heroFeaturedSub">Chest: 38" • Length: 24" • Grade 9.5/10</p>
             </div>
@@ -440,7 +455,11 @@
     <div class="cart-body">
       <!-- 1-of-1 Notice -->
       <div class="cart-notice-1of1">
-        <span>⚠️</span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
         <span>Every piece is a unique 1-of-1 drop. We reserve items for 15 minutes during checkout.</span>
       </div>
 
@@ -775,7 +794,7 @@
   <script src="assets/js/supabaseClient.js?v=4.2"></script>
 
   <!-- Core App Scripts -->
-  <script src="assets/js/app.js?v=4.8"></script>
+  <script src="assets/js/app.js?v=4.9"></script>
 </body>
 </html>
 
