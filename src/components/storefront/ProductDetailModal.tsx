@@ -1,60 +1,106 @@
 'use client';
 
-import React, { useState, useRef, MouseEvent } from 'react';
+import React, { useState, useEffect, useRef, MouseEvent } from 'react';
 import type { Product, GarmentSize, ProductVariant } from '@/types';
 import { formatBDT } from '@/lib/utils';
-import { X, ArrowLeft, ShoppingBag, Zap, Truck, ShieldCheck, RefreshCw, ChevronDown } from 'lucide-react';
+import { ArrowLeft, X, ShoppingBag, Zap, ChevronDown, ZoomIn } from 'lucide-react';
 
 interface ProductDetailModalProps {
   product: Product;
+  allProducts: Product[];
   onClose: () => void;
+  onSelectProduct: (product: Product) => void;
   onAddToBag: (product: Product, size: GarmentSize, variant?: ProductVariant) => void;
   onBuyNow: (product: Product, size: GarmentSize, variant?: ProductVariant) => void;
 }
 
 export function ProductDetailModal({
   product,
+  allProducts,
   onClose,
+  onSelectProduct,
   onAddToBag,
   onBuyNow,
 }: ProductDetailModalProps) {
-  const images = product.images && product.images.length > 0 ? product.images : [product.image || '/assets/images/logo.jpg'];
+  const images = (product.images && product.images.length > 0)
+    ? product.images
+    : [product.image || '/assets/images/logo.jpg'];
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
 
   const availableSizes: GarmentSize[] = (product.sizes && product.sizes.length > 0)
     ? (product.sizes as GarmentSize[])
-    : ['S', 'M', 'L', 'XL'];
+    : ['S', 'M', 'L', 'XL', 'XXL'];
   const [selectedSize, setSelectedSize] = useState<GarmentSize>(availableSizes[0] || 'M');
 
   const variants = product.variants || [];
-  const [selectedVariantId, setSelectedVariantId] = useState<string>(variants[0]?.id || '');
+  const [selectedVariantId, setSelectedVariantId] = useState<string>(variants[0]?.id || variants[0]?.name || '');
 
   // Sizing and Garment accordion states
   const [isDescOpen, setIsDescOpen] = useState(true);
-  const [isSizingOpen, setIsSizingOpen] = useState(false);
+  const [isSizingOpen, setIsSizingOpen] = useState(true);
+  const [isShippingOpen, setIsShippingOpen] = useState(false);
 
-  // Zoom logic (Sailor clothing style mouse coordinate zoom)
-  const [zoomStyle, setZoomStyle] = useState<{ transformOrigin: string; transform: string; opacity: number }>({
+  // Studio Zoom state (Sailor coordinate-based mouse hover zoom)
+  const [zoomStyle, setZoomStyle] = useState<{ transformOrigin: string; transform: string }>({
     transformOrigin: 'center center',
     transform: 'scale(1)',
-    opacity: 1,
   });
   const [isZooming, setIsZooming] = useState(false);
   const imageContainerRef = useRef<HTMLDivElement>(null);
 
+  // Recently viewed products tracking via localStorage
+  const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
+
+  useEffect(() => {
+    // Record recently viewed
+    try {
+      const stored = localStorage.getItem('auvare_recent_views_v2');
+      let ids: string[] = stored ? JSON.parse(stored) : [];
+      ids = [String(product.id), ...ids.filter((id) => String(id) !== String(product.id))].slice(0, 8);
+      localStorage.setItem('auvare_recent_views_v2', JSON.stringify(ids));
+
+      const recentItems = ids
+        .filter((id) => String(id) !== String(product.id))
+        .map((id) => allProducts.find((p) => String(p.id) === String(id)))
+        .filter(Boolean) as Product[];
+
+      setRecentlyViewed(recentItems.slice(0, 4));
+    } catch {
+      // Storage unavailable fallback
+    }
+    // Reset selected image when product changes
+    setSelectedImageIdx(0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [product.id, allProducts]);
+
+  // Lock background body scroll
+  useEffect(() => {
+    const origOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = origOverflow;
+    };
+  }, []);
+
+  // Keyboard navigation (Escape key to close)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
     if (!imageContainerRef.current) return;
     const rect = imageContainerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const xPercent = Math.max(0, Math.min(100, (x / rect.width) * 100));
-    const yPercent = Math.max(0, Math.min(100, (y / rect.height) * 100));
+    const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+    const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
 
     setIsZooming(true);
     setZoomStyle({
-      transformOrigin: `${xPercent}% ${yPercent}%`,
-      transform: 'scale(2.1)',
-      opacity: 1,
+      transformOrigin: `${x.toFixed(2)}% ${y.toFixed(2)}%`,
+      transform: 'scale(2.2)',
     });
   };
 
@@ -63,149 +109,224 @@ export function ProductDetailModal({
     setZoomStyle({
       transformOrigin: 'center center',
       transform: 'scale(1)',
-      opacity: 1,
     });
   };
 
-  const selectedVariant = variants.find((v) => v.id === selectedVariantId);
+  // Clean description: strip any hidden HTML comments
+  const cleanDescription = (product.description || '')
+    .replace(/<!--AUVARE_VARIANTS:[\s\S]*?-->/g, '')
+    .replace(/<!--AUVARE_IMAGES:[\s\S]*?-->/g, '')
+    .replace(/<!--AUVARE_FABRIC:[\s\S]*?-->/g, '')
+    .trim();
+
+  const selectedVariant = variants.find((v) => (v.id || v.name) === selectedVariantId);
   const effectivePrice = selectedVariant?.price || product.price;
   const currentImage = images[selectedImageIdx] || images[0];
 
+  // Suggested products: same category, excluding current product
+  const suggestedProducts = allProducts
+    .filter((p) => p.category === product.category && String(p.id) !== String(product.id))
+    .slice(0, 4);
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/75 backdrop-blur-md flex flex-col items-center justify-start p-2 sm:p-4 md:p-6 animate-in fade-in duration-200">
-      {/* Top Header Bar */}
-      <div className="w-full max-w-6xl flex items-center justify-between py-3 px-4 bg-[#0b1a13] text-white rounded-t-2xl shadow-xl">
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex items-center gap-2 text-xs font-semibold text-slate-300 hover:text-white transition"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Collection</span>
-        </button>
+    <div
+      className="product-detail-screen open"
+      id="productDetailScreen"
+      aria-hidden="false"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        width: '100vw',
+        height: '100vh',
+        background: '#ffffff',
+        zIndex: 99999,
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        opacity: 1,
+        visibility: 'visible',
+      }}
+    >
+      {/* 1. Top Sticky Navigation Bar */}
+      <header className="detail-screen-header">
+        <div className="container detail-screen-header-inner">
+          <button
+            type="button"
+            className="btn-detail-back"
+            onClick={onClose}
+            aria-label="Back to Collection"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Collection</span>
+          </button>
 
-        <div className="flex flex-col items-center">
-          <span className="font-serif font-bold text-sm tracking-wider text-white">AUVARE</span>
-          <span className="text-[9px] uppercase tracking-widest text-emerald-300 font-semibold">Product Details</span>
+          <div className="detail-screen-brand">
+            <span className="brand-title">AUVARE</span>
+            <span className="brand-sub">Product Details</span>
+          </div>
+
+          <button
+            type="button"
+            className="btn-detail-close"
+            onClick={onClose}
+            aria-label="Close Screen"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
+      </header>
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition"
-          aria-label="Close"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
+      {/* 2. Full Screen Product Main Content */}
+      <div className="container detail-screen-main" style={{ padding: '2rem 1.5rem 5rem' }}>
+        {/* Breadcrumb Navigation */}
+        <nav className="screen-breadcrumb" aria-label="Breadcrumb">
+          <a onClick={onClose} style={{ cursor: 'pointer' }}>Collection</a>
+          <span className="crumb-sep">/</span>
+          <span style={{ color: 'var(--color-primary)', fontWeight: 600 }}>{product.category || 'Clothing'}</span>
+          <span className="crumb-sep">/</span>
+          <span className="crumb-current">{product.title}</span>
+        </nav>
 
-      {/* Main Content Card */}
-      <div className="w-full max-w-6xl bg-white rounded-b-2xl shadow-2xl overflow-hidden p-6 md:p-10">
-        {/* Breadcrumb */}
-        <p className="text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-6">
-          COLLECTION / {product.category || 'VINTAGE'} / {product.title}
-        </p>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          {/* Left Column: Image Canvas with Sailor-Style Zoom */}
-          <div className="lg:col-span-7 flex flex-col gap-4">
-            <div
-              ref={imageContainerRef}
-              onMouseMove={handleMouseMove}
-              onMouseLeave={handleMouseLeave}
-              className="relative w-full aspect-[4/5] bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 cursor-crosshair group shadow-inner"
-            >
-              {/* Badges */}
-              <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-none">
-                <span className="bg-[#0b1a13] text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-md tracking-wider shadow">
-                  Curated Drop
-                </span>
-                <span className="bg-emerald-800 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-md shadow">
-                  {product.condition || '9.5/10'}
-                </span>
-              </div>
-
-              {/* Main Product Image with coordinate scale */}
-              <img
-                src={currentImage}
-                alt={product.title}
-                className="w-full h-full object-contain object-center transition-transform duration-100 ease-out select-none pointer-events-none"
-                style={zoomStyle}
-              />
-
-              {/* Roll over zoom hint badge */}
-              <div
-                className={`absolute bottom-3 right-3 z-20 bg-black/60 backdrop-blur-md text-white text-[11px] font-medium px-3 py-1 rounded-full pointer-events-none transition-opacity duration-200 ${
-                  isZooming ? 'opacity-0' : 'opacity-100'
-                }`}
-              >
-                Roll over to zoom
-              </div>
-            </div>
-
-            {/* Thumbnail Strip */}
+        {/* Main Product Two-Column Hero Grid */}
+        <div className="screen-detail-grid">
+          {/* Left Column: Studio Gallery (Vertical Thumbs + Main Sailor Zoom Canvas) */}
+          <div className="screen-gallery-col">
             {images.length > 1 && (
-              <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-thin">
+              <div className="screen-vertical-thumbs">
                 {images.map((img, idx) => (
                   <button
                     key={idx}
                     type="button"
+                    className={`screen-thumb-btn ${idx === selectedImageIdx ? 'active' : ''}`}
                     onClick={() => setSelectedImageIdx(idx)}
-                    className={`relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 border-2 transition ${
-                      selectedImageIdx === idx ? 'border-emerald-600 ring-2 ring-emerald-600/30' : 'border-slate-200 hover:border-slate-300'
-                    }`}
+                    title={`View Photo ${idx + 1}`}
                   >
-                    <img src={img} alt={`${product.title} thumb ${idx}`} className="w-full h-full object-cover object-center" />
+                    <img src={img} alt={`${product.title} thumbnail ${idx + 1}`} loading="lazy" />
                   </button>
                 ))}
               </div>
             )}
+
+            <div
+              ref={imageContainerRef}
+              className="screen-main-img-box"
+              id="screenZoomBox"
+              onMouseMove={handleMouseMove}
+              onMouseLeave={handleMouseLeave}
+              title="Move cursor over piece to zoom"
+              style={{
+                position: 'relative',
+                aspectRatio: '4/5',
+                background: '#f8fafc',
+                borderRadius: 'var(--radius-lg, 12px)',
+                overflow: 'hidden',
+                border: '1px solid var(--color-border, #e8e4dc)',
+                cursor: 'crosshair',
+              }}
+            >
+              <img
+                id="screenMainImg"
+                src={currentImage}
+                alt={product.title}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  objectPosition: 'center',
+                  transform: zoomStyle.transform,
+                  transformOrigin: zoomStyle.transformOrigin,
+                  transition: isZooming ? 'none' : 'transform 0.2s ease-out',
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                }}
+              />
+
+              <div className="screen-gallery-badges" style={{ position: 'absolute', top: '1rem', left: '1rem', display: 'flex', gap: '0.5rem', zIndex: 10 }}>
+                <span className="badge-tag unique">Curated Drop</span>
+                {product.sold ? (
+                  <span className="badge-tag sold">Sold Out</span>
+                ) : (
+                  <span className="badge-tag condition">
+                    {product.condition ? product.condition.split('(')[0].trim() : 'Mint 9.5/10'}
+                  </span>
+                )}
+              </div>
+
+              <div
+                className="screen-zoom-hint"
+                style={{
+                  position: 'absolute',
+                  bottom: '1rem',
+                  right: '1rem',
+                  background: 'rgba(0, 0, 0, 0.65)',
+                  color: '#ffffff',
+                  padding: '0.35rem 0.75rem',
+                  borderRadius: '999px',
+                  fontSize: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  pointerEvents: 'none',
+                  opacity: isZooming ? 0 : 1,
+                  transition: 'opacity 0.2s ease',
+                  zIndex: 10,
+                }}
+              >
+                <ZoomIn className="w-3.5 h-3.5" />
+                <span>Roll over to zoom</span>
+              </div>
+            </div>
           </div>
 
-          {/* Right Column: Garment Information & Purchasing */}
-          <div className="lg:col-span-5 flex flex-col justify-start">
-            {/* SKU & Category Tag */}
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-mono text-slate-400 font-semibold tracking-wider">
+          {/* Right Column: Purchasing & Specifications */}
+          <div className="screen-info-col">
+            <div className="screen-sku-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <span className="screen-sku-code" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>
                 SKU : {product.id.toUpperCase()}
               </span>
-              <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wide bg-emerald-100 px-2.5 py-0.5 rounded-full">
-                {product.category || 'Clothing'}
-              </span>
+              <span className="badge-tag condition">{product.category}</span>
             </div>
 
-            {/* Title */}
-            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 leading-tight mb-3">
+            <h1 className="screen-product-title" style={{ fontFamily: 'var(--font-serif)', fontSize: '2rem', fontWeight: 700, color: '#0b1a13', lineHeight: 1.2, marginBottom: '0.75rem' }}>
               {product.title}
             </h1>
 
-            {/* Price Row */}
-            <div className="flex items-baseline gap-3 mb-6 pb-4 border-b border-slate-200">
-              <span className="text-3xl font-extrabold text-[#0b1a13] tracking-tight">
+            <div className="screen-price-row" style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', paddingBottom: '1rem', borderBottom: '1px solid var(--color-border)', marginBottom: '1.25rem' }}>
+              <span className="screen-price-val" style={{ fontSize: '1.85rem', fontWeight: 800, color: 'var(--color-primary)' }}>
                 ৳ {formatBDT(effectivePrice)}
               </span>
-              <span className="text-xs text-slate-500 font-medium">All import &amp; VAT included</span>
+              <span className="screen-price-note" style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                All Import &amp; VAT Included
+              </span>
             </div>
 
-            {/* Colorways / Editions (ONLY Variant Names on Pills) */}
+            {/* Available Colorways / Editions (Names Only on Pills) */}
             {variants.length > 0 && (
-              <div className="mb-6">
-                <label className="block text-xs font-mono uppercase tracking-wider text-slate-600 font-bold mb-2">
+              <div className="screen-selector-group" style={{ marginBottom: '1.25rem' }}>
+                <span className="screen-selector-title" style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
                   Available Colorways / Editions:
-                </label>
-                <div className="flex flex-wrap gap-2">
+                </span>
+                <div className="variant-chips-group" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                   {variants.map((v) => {
-                    const isSelected = selectedVariantId === v.id;
+                    const vKey = v.id || v.name;
+                    const isSel = selectedVariantId === vKey;
                     return (
                       <button
-                        key={v.id}
+                        key={vKey}
                         type="button"
-                        onClick={() => setSelectedVariantId(v.id)}
-                        className={`text-xs font-semibold px-4 py-1.5 rounded-full border transition-all ${
-                          isSelected
-                            ? 'bg-[#0b1a13] text-white border-[#0b1a13] shadow-md ring-2 ring-emerald-500/30'
-                            : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400 hover:bg-slate-50'
-                        }`}
+                        className={`variant-chip ${isSel ? 'active' : ''}`}
+                        onClick={() => setSelectedVariantId(vKey)}
+                        title={v.name}
+                        style={{
+                          padding: '0.45rem 1rem',
+                          borderRadius: '999px',
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                          border: `1.5px solid ${isSel ? 'var(--color-primary-dark, #0b1a13)' : 'var(--color-border, #e8e4dc)'}`,
+                          background: isSel ? 'var(--color-primary-dark, #0b1a13)' : '#ffffff',
+                          color: isSel ? '#ffffff' : 'var(--color-text-main, #18181b)',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                        }}
                       >
                         {v.name}
                       </button>
@@ -216,23 +337,35 @@ export function ProductDetailModal({
             )}
 
             {/* Size Selector */}
-            <div className="mb-8">
-              <label className="block text-xs font-mono uppercase tracking-wider text-slate-600 font-bold mb-2">
+            <div className="screen-selector-group" style={{ marginBottom: '1.5rem' }}>
+              <span className="screen-selector-title" style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
                 Select Size:
-              </label>
-              <div className="flex flex-wrap gap-2">
+              </span>
+              <div className="size-chips-group" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                 {availableSizes.map((sz) => {
-                  const isSelected = selectedSize === sz;
+                  const isSel = selectedSize === sz;
                   return (
                     <button
                       key={sz}
                       type="button"
+                      className={`size-chip ${isSel ? 'active' : ''}`}
                       onClick={() => setSelectedSize(sz)}
-                      className={`w-11 h-11 rounded-lg text-xs font-bold flex items-center justify-center border transition-all ${
-                        isSelected
-                          ? 'bg-[#0b1a13] text-white border-[#0b1a13] shadow-md ring-2 ring-emerald-500/30'
-                          : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                      }`}
+                      title={`Size ${sz}`}
+                      style={{
+                        width: '44px',
+                        height: '44px',
+                        borderRadius: 'var(--radius-md, 8px)',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: `1.5px solid ${isSel ? 'var(--color-primary-dark, #0b1a13)' : 'var(--color-border, #e8e4dc)'}`,
+                        background: isSel ? 'var(--color-primary-dark, #0b1a13)' : '#ffffff',
+                        color: isSel ? '#ffffff' : 'var(--color-text-main, #18181b)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
                     >
                       {sz}
                     </button>
@@ -241,87 +374,286 @@ export function ProductDetailModal({
               </div>
             </div>
 
-            {/* Dual Action CTAs: Add to Bag & Buy Now */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
-              {/* Add to Bag */}
+            {/* Dual Action CTAs: Add to Bag (no price) & Buy Now (Instant Checkout) */}
+            <div className="screen-actions-bar" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
               <button
                 type="button"
+                className="btn-screen-add-bag"
+                disabled={product.sold}
                 onClick={() => onAddToBag(product, selectedSize, selectedVariant)}
-                className="w-full py-3.5 px-4 rounded-xl bg-[#0b1a13] hover:bg-[#12281e] text-white font-bold text-sm tracking-wide shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 active:scale-98"
+                style={{
+                  padding: '0.9rem 1.25rem',
+                  borderRadius: 'var(--radius-md, 8px)',
+                  background: '#0b1a13',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '0.9rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  cursor: product.sold ? 'not-allowed' : 'pointer',
+                  opacity: product.sold ? 0.6 : 1,
+                  boxShadow: 'var(--shadow-md)',
+                  border: 'none',
+                }}
               >
                 <ShoppingBag className="w-4 h-4" />
-                <span>Add to Bag</span>
+                <span>{product.sold ? 'Drop Claimed' : 'Add to Bag'}</span>
               </button>
 
-              {/* Direct Buy Now */}
               <button
                 type="button"
+                className="btn-screen-buy-now"
+                disabled={product.sold}
                 onClick={() => onBuyNow(product, selectedSize, selectedVariant)}
-                className="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm tracking-wide shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 active:scale-98"
+                style={{
+                  padding: '0.9rem 1.25rem',
+                  borderRadius: 'var(--radius-md, 8px)',
+                  background: 'var(--color-primary, #105036)',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '0.9rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  cursor: product.sold ? 'not-allowed' : 'pointer',
+                  opacity: product.sold ? 0.6 : 1,
+                  boxShadow: 'var(--shadow-md)',
+                  border: 'none',
+                }}
               >
                 <Zap className="w-4 h-4 fill-current" />
-                <span>Buy Now</span>
+                <span>{product.sold ? 'Drop Claimed' : 'Buy Now'}</span>
               </button>
             </div>
 
-            {/* Trust & Guarantee Badges */}
-            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/80 mb-6 space-y-2.5">
-              <div className="flex items-center gap-3 text-xs text-slate-700 font-medium">
-                <Truck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span>Fast Delivery: Dhaka 24-48h • All BD 2-4d</span>
+            {/* Trust Badges Strip */}
+            <div className="screen-trust-badges" style={{ background: 'var(--color-surface, #f5f1e8)', borderRadius: 'var(--radius-md, 8px)', padding: '0.85rem 1rem', marginBottom: '1.5rem', border: '1px solid var(--color-border)', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+              <div className="trust-item" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <svg className="trust-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--color-primary)' }}>
+                  <rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
+                </svg>
+                <div>
+                  <div className="trust-text" style={{ fontSize: '0.75rem', fontWeight: 700 }}>Fast Delivery</div>
+                  <span className="trust-sub" style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)' }}>Dhaka 24-48h</span>
+                </div>
               </div>
-              <div className="flex items-center gap-3 text-xs text-slate-700 font-medium">
-                <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span>Curated Authentic 1-of-1 Verified Piece</span>
+
+              <div className="trust-item" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <svg className="trust-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--color-primary)' }}>
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+                <div>
+                  <div className="trust-text" style={{ fontSize: '0.75rem', fontWeight: 700 }}>1-of-1 Verified</div>
+                  <span className="trust-sub" style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)' }}>Curated Piece</span>
+                </div>
               </div>
-              <div className="flex items-center gap-3 text-xs text-slate-700 font-medium">
-                <RefreshCw className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span>Hassle-Free Support Hotline &amp; WhatsApp Concierge</span>
+
+              <div className="trust-item" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <svg className="trust-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--color-primary)' }}>
+                  <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                </svg>
+                <div>
+                  <div className="trust-text" style={{ fontSize: '0.75rem', fontWeight: 700 }}>Concierge Care</div>
+                  <span className="trust-sub" style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)' }}>WhatsApp Helpline</span>
+                </div>
               </div>
             </div>
 
-            {/* Collapsible Accordions: Description & Measurements */}
-            <div className="border-t border-slate-200 divide-y divide-slate-200">
-              {/* Garment Details & Description */}
-              <div className="py-3.5">
+            {/* Collapsible Accordions (Sailor Structure) */}
+            <div className="screen-accordion-group" style={{ borderTop: '1px solid var(--color-border)' }}>
+              {/* Accordion 1: Garment Details & Description */}
+              <div style={{ borderBottom: '1px solid var(--color-border)', padding: '0.85rem 0' }}>
                 <button
                   type="button"
                   onClick={() => setIsDescOpen(!isDescOpen)}
-                  className="w-full flex items-center justify-between text-left text-xs font-mono uppercase font-bold text-slate-800 tracking-wide"
+                  style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: '0.85rem', fontWeight: 700, color: '#0b1a13', fontFamily: 'var(--font-mono)' }}
                 >
-                  <span>Garment Details &amp; Description</span>
+                  <span>GARMENT DETAILS &amp; DESCRIPTION</span>
                   <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isDescOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {isDescOpen && (
-                  <div className="mt-2 text-xs text-slate-600 leading-relaxed font-sans">
-                    {product.description || 'Authentic imported vintage piece. Hand-inspected with premium fabric composition and preserved original detailing.'}
+                  <div style={{ marginTop: '0.6rem', fontSize: '0.85rem', color: 'var(--color-text-muted)', lineHeight: 1.6 }}>
+                    {cleanDescription || 'Authentic curated vintage streetwear piece. Verified condition, premium textile weave, and signature boxy silhouette.'}
                   </div>
                 )}
               </div>
 
-              {/* Measurements & Sizing Guide */}
-              <div className="py-3.5">
+              {/* Accordion 2: Measurements & Sizing Guide */}
+              <div style={{ borderBottom: '1px solid var(--color-border)', padding: '0.85rem 0' }}>
                 <button
                   type="button"
                   onClick={() => setIsSizingOpen(!isSizingOpen)}
-                  className="w-full flex items-center justify-between text-left text-xs font-mono uppercase font-bold text-slate-800 tracking-wide"
+                  style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: '0.85rem', fontWeight: 700, color: '#0b1a13', fontFamily: 'var(--font-mono)' }}
                 >
-                  <span>Measurements &amp; Sizing Guide</span>
+                  <span>MEASUREMENTS &amp; SIZING GUIDE</span>
                   <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isSizingOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {isSizingOpen && (
-                  <div className="mt-2 text-xs text-slate-600 font-mono space-y-1">
-                    <p>Chest (Pit-to-Pit): {product.chest || '42-46'}"</p>
-                    <p>Length: {product.length || '28'}"</p>
-                    <p>Condition: {product.condition || '9.5/10 (Mint Pre-loved)'}</p>
+                  <div style={{ marginTop: '0.6rem' }}>
+                    <table className="screen-spec-table" style={{ width: '100%', fontSize: '0.85rem', borderCollapse: 'collapse' }}>
+                      <tbody>
+                        <tr style={{ borderBottom: '1px dashed var(--color-border)' }}>
+                          <td style={{ padding: '0.4rem 0', color: 'var(--color-text-muted)' }}>Chest (Pit-to-Pit)</td>
+                          <td style={{ padding: '0.4rem 0', textAlign: 'right', fontWeight: 700, color: '#0b1a13' }}>{product.chest ? `${product.chest}"` : '40"-48" (Relaxed width)'}</td>
+                        </tr>
+                        <tr style={{ borderBottom: '1px dashed var(--color-border)' }}>
+                          <td style={{ padding: '0.4rem 0', color: 'var(--color-text-muted)' }}>Length (Collar-to-Hem)</td>
+                          <td style={{ padding: '0.4rem 0', textAlign: 'right', fontWeight: 700, color: '#0b1a13' }}>{product.length ? `${product.length}"` : '26"-30" (Vintage Boxy Drop)'}</td>
+                        </tr>
+                        <tr style={{ borderBottom: '1px dashed var(--color-border)' }}>
+                          <td style={{ padding: '0.4rem 0', color: 'var(--color-text-muted)' }}>Condition Grade</td>
+                          <td style={{ padding: '0.4rem 0', textAlign: 'right', fontWeight: 700, color: 'var(--color-primary)' }}>{product.condition || '9.5/10 Mint'}</td>
+                        </tr>
+                        <tr>
+                          <td style={{ padding: '0.4rem 0', color: 'var(--color-text-muted)' }}>Category</td>
+                          <td style={{ padding: '0.4rem 0', textAlign: 'right', fontWeight: 700, color: '#0b1a13' }}>{product.category}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Accordion 3: Shipping & Care Guide */}
+              <div style={{ padding: '0.85rem 0' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsShippingOpen(!isShippingOpen)}
+                  style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: '0.85rem', fontWeight: 700, color: '#0b1a13', fontFamily: 'var(--font-mono)' }}
+                >
+                  <span>SHIPPING &amp; CARE GUIDE</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isShippingOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {isShippingOpen && (
+                  <div style={{ marginTop: '0.6rem', fontSize: '0.85rem', color: 'var(--color-text-muted)', lineHeight: 1.6 }}>
+                    <p style={{ marginBottom: '0.5rem' }}>
+                      <strong>Shipping:</strong> Standard delivery within Dhaka takes 24 to 48 hours. Nationwide express delivery takes 2 to 4 business days. Cash on delivery is available with parcel checking.
+                    </p>
+                    <p>
+                      <strong>Care:</strong> Machine wash cold (30°C) inside out on gentle cycle. Line dry in shade to preserve cotton fibres. Do not iron directly on vintage graphics or prints.
+                    </p>
                   </div>
                 )}
               </div>
             </div>
           </div>
         </div>
+
+        {/* 3. Suggested Pieces Section */}
+        {suggestedProducts.length > 0 && (
+          <section className="screen-section-container" style={{ marginTop: '4rem', paddingTop: '2.5rem', borderTop: '1px solid var(--color-border)' }}>
+            <div className="screen-section-header" style={{ marginBottom: '1.5rem' }}>
+              <h3 className="screen-section-title" style={{ fontFamily: 'var(--font-serif)', fontSize: '1.6rem', fontWeight: 700, color: '#0b1a13' }}>
+                Suggested Pieces
+              </h3>
+              <span className="screen-section-sub" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
+                More from {product.category}
+              </span>
+            </div>
+
+            <div className="screen-product-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1.5rem' }}>
+              {suggestedProducts.map((item) => {
+                const itemImg = (item.images && item.images[0]) || item.image || '/assets/images/logo.jpg';
+                return (
+                  <div
+                    key={item.id}
+                    className="screen-card-item"
+                    onClick={() => onSelectProduct(item)}
+                    style={{
+                      background: '#ffffff',
+                      borderRadius: 'var(--radius-md, 8px)',
+                      border: '1px solid var(--color-border, #e8e4dc)',
+                      overflow: 'hidden',
+                      cursor: 'pointer',
+                      transition: 'all 0.25s ease',
+                      boxShadow: 'var(--shadow-sm)',
+                    }}
+                  >
+                    <div className="screen-card-img-wrap" style={{ aspectRatio: '4/5', overflow: 'hidden', background: '#f8fafc' }}>
+                      <img src={itemImg} alt={item.title} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                    <div className="screen-card-body" style={{ padding: '0.85rem' }}>
+                      <span className="screen-card-cat" style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-primary)', textTransform: 'uppercase' }}>
+                        {item.category}
+                      </span>
+                      <h4 className="screen-card-title" style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0b1a13', margin: '0.25rem 0 0.5rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {item.title}
+                      </h4>
+                      <div className="screen-card-price-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span className="screen-card-price" style={{ fontWeight: 800, color: 'var(--color-primary)', fontSize: '0.95rem' }}>
+                          ৳ {formatBDT(item.price)}
+                        </span>
+                        <span className={`screen-card-badge ${item.sold ? 'sold' : ''}`} style={{ fontSize: '0.7rem', fontWeight: 700, color: item.sold ? '#b91c1c' : '#15803d' }}>
+                          {item.sold ? 'Sold Out' : 'Available'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* 4. Customer Recently Viewed Section */}
+        {recentlyViewed.length > 0 && (
+          <section className="screen-section-container" style={{ marginTop: '3rem', paddingTop: '2.5rem', borderTop: '1px solid var(--color-border)' }}>
+            <div className="screen-section-header" style={{ marginBottom: '1.5rem' }}>
+              <h3 className="screen-section-title" style={{ fontFamily: 'var(--font-serif)', fontSize: '1.6rem', fontWeight: 700, color: '#0b1a13' }}>
+                Customer Recently Viewed
+              </h3>
+              <span className="screen-section-sub" style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
+                Your session browsing history
+              </span>
+            </div>
+
+            <div className="screen-product-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1.5rem' }}>
+              {recentlyViewed.map((item) => {
+                const itemImg = (item.images && item.images[0]) || item.image || '/assets/images/logo.jpg';
+                return (
+                  <div
+                    key={item.id}
+                    className="screen-card-item"
+                    onClick={() => onSelectProduct(item)}
+                    style={{
+                      background: '#ffffff',
+                      borderRadius: 'var(--radius-md, 8px)',
+                      border: '1px solid var(--color-border, #e8e4dc)',
+                      overflow: 'hidden',
+                      cursor: 'pointer',
+                      transition: 'all 0.25s ease',
+                      boxShadow: 'var(--shadow-sm)',
+                    }}
+                  >
+                    <div className="screen-card-img-wrap" style={{ aspectRatio: '4/5', overflow: 'hidden', background: '#f8fafc' }}>
+                      <img src={itemImg} alt={item.title} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                    <div className="screen-card-body" style={{ padding: '0.85rem' }}>
+                      <span className="screen-card-cat" style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-primary)', textTransform: 'uppercase' }}>
+                        {item.category}
+                      </span>
+                      <h4 className="screen-card-title" style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0b1a13', margin: '0.25rem 0 0.5rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {item.title}
+                      </h4>
+                      <div className="screen-card-price-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span className="screen-card-price" style={{ fontWeight: 800, color: 'var(--color-primary)', fontSize: '0.95rem' }}>
+                          ৳ {formatBDT(item.price)}
+                        </span>
+                        <span className={`screen-card-badge ${item.sold ? 'sold' : ''}`} style={{ fontSize: '0.7rem', fontWeight: 700, color: item.sold ? '#b91c1c' : '#15803d' }}>
+                          {item.sold ? 'Sold Out' : 'Available'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );
 }
-

@@ -982,11 +982,13 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
         </div>
       </footer>
 
-      {/* 8. Sailor-Style Product Detail Modal (Image 4) */}
+      {/* 8. Full-Screen In-Details Studio (Sailor Zoom, Suggested Pieces & Recently Viewed) */}
       {selectedProduct && (
         <ProductDetailModal
           product={selectedProduct}
+          allProducts={initialProducts}
           onClose={() => setSelectedProduct(null)}
+          onSelectProduct={(prod) => setSelectedProduct(prod)}
           onAddToBag={(prod, sz, variant) => {
             handleAddToBag(prod, sz, variant);
             setSelectedProduct(null);
