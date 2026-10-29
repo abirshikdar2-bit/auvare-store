@@ -214,7 +214,8 @@ async function initApp() {
   if ('scrollRestoration' in history) {
     history.scrollRestoration = 'manual';
   }
-  if (window.location.hash) {
+  const initialProductHash = window.location.hash.startsWith('#product-') ? window.location.hash.replace('#product-', '') : null;
+  if (!initialProductHash && window.location.hash) {
     history.replaceState(null, null, window.location.pathname + window.location.search);
   }
   window.scrollTo(0, 0);
@@ -225,6 +226,12 @@ async function initApp() {
   renderProducts();
   setupEventListeners();
   updateCartUI();
+
+  if (initialProductHash) {
+    setTimeout(() => {
+      openProductDetailScreen(initialProductHash);
+    }, 100);
+  }
 
   // Ensure Home is default active
   const homeLink = document.querySelector('#mainNavLinks .nav-link[data-target="hero"]');
@@ -375,9 +382,9 @@ function renderProducts() {
     }
     if (heroCardStack) {
       heroCardStack.style.cursor = 'pointer';
-      heroCardStack.title = `View ${heroFeatured.title} & Ingredients`;
+      heroCardStack.title = `View ${heroFeatured.title} In-Details`;
       heroCardStack.onclick = () => {
-        openProductDetailModal(heroFeatured.id);
+        openProductDetailScreen(heroFeatured.id);
       };
     }
   }
@@ -449,17 +456,13 @@ function renderProducts() {
       : itemSizes;
 
     return `
-      <article class="product-card ${item.sold ? 'sold-out' : ''}" data-id="${item.id}">
-        <div class="product-image-box" onclick="openProductDetailModal('${item.id}')" title="Click to inspect piece & ingredients">
+      <article class="product-card ${item.sold ? 'sold-out' : ''}" data-id="${item.id}" onclick="openProductDetailScreen('${item.id}')">
+        <div class="product-image-box" onclick="openProductDetailScreen('${item.id}')" title="Click to view full product details">
           <img class="product-card-img" id="cardImg_${item.id}" src="${primaryImg}" alt="${item.title}" loading="lazy" />
           
           <div class="product-badge-group">
             <span class="badge-tag unique">Curated Drop</span>
             ${item.sold ? '<span class="badge-tag sold">SOLD OUT</span>' : '<span class="badge-tag condition">' + (item.condition ? item.condition.split('(')[0].trim() : 'Mint') + '</span>'}
-          </div>
-
-          <div class="product-card-inspect-hint">
-            <span>🔍 Inspect Piece & Ingredients</span>
           </div>
 
           ${hasMultiple ? `
@@ -489,7 +492,7 @@ function renderProducts() {
             <span class="product-measurements">${item.chest ? 'Chest: ' + item.chest : 'All Sizes Available'}</span>
           </div>
 
-          <h3 class="product-title" onclick="openProductDetailModal('${item.id}')" title="Click to view ingredients & specifications">${item.title}</h3>
+          <h3 class="product-title" onclick="openProductDetailScreen('${item.id}')" title="Click to view full product details">${item.title}</h3>
 
           <!-- Variant Selector (Colorways / Editions) -->
           ${hasVariants ? `
@@ -1174,103 +1177,124 @@ function closeModal(modalId) {
 }
 
 // ==========================================
-// Product Details & Ingredients Pop-Up System
+// Full-Screen Dedicated Product In-Details System
 // ==========================================
 
-function getProductIngredients(product) {
-  if (product.fabric && product.fabric.trim()) {
-    return product.fabric.trim();
-  }
-  const cat = (product.category || '').toLowerCase();
-  if (cat.includes('t-shirt') || cat.includes('tee')) {
-    return '100% Premium Ring-Spun Vintage Cotton (240+ GSM Heavyweight Weave) • Single-Stitch Hems';
-  }
-  if (cat.includes('shirt') || cat.includes('polo')) {
-    return '100% Structured Vintage Cotton Twill (185 GSM) • Reinforced Camp Collar & Seams';
-  }
-  if (cat.includes('jacket') || cat.includes('outerwear')) {
-    return 'Heavyweight Weatherproof Cotton Canvas & Military Quilted Satin Lining • Solid Antiqued Brass Hardware';
-  }
-  if (cat.includes('pant') || cat.includes('trouser')) {
-    return '100% Vintage Heavyweight Wale Corduroy / 14oz Raw Cotton Denim • Reinforced Riveted Stress Points';
-  }
-  if (cat.includes('knit') || cat.includes('sweater')) {
-    return '100% Fine-Gauge Lambswool & Cotton Blend • Chunky Ribbed Neck, Cuffs and Hem';
-  }
-  return '100% Hand-Curated Premium Vintage Cotton (240+ GSM Heavyweight Weave) • Authentic Fade Wash';
-}
-
-function openProductDetailModal(productId) {
+function openProductDetailScreen(productId) {
   const product = state.products.find(p => String(p.id) === String(productId));
   if (!product) return;
 
   state.activeDetailProductId = String(productId);
-  renderProductDetailModal(product);
-  openModal('productDetailModal');
+  renderProductDetailScreen(product);
+
+  const screenEl = document.getElementById('productDetailScreen');
+  if (screenEl) {
+    screenEl.classList.add('open');
+    screenEl.setAttribute('aria-hidden', 'false');
+    screenEl.scrollTop = 0;
+  }
   document.body.style.overflow = 'hidden';
-}
-window.openProductDetailModal = openProductDetailModal;
 
-function closeProductDetailModal() {
-  closeModal('productDetailModal');
-  document.body.style.overflow = '';
-  state.activeDetailProductId = null;
-}
-window.closeProductDetailModal = closeProductDetailModal;
-
-function handleDetailModalOverlayClick(e) {
-  if (e.target && e.target.id === 'productDetailModal') {
-    closeProductDetailModal();
+  // Deep linking and browser history navigation
+  if (window.location.hash !== `#product-${productId}`) {
+    history.pushState({ screen: 'product-detail', productId: String(productId) }, '', `#product-${productId}`);
   }
 }
-window.handleDetailModalOverlayClick = handleDetailModalOverlayClick;
+window.openProductDetailScreen = openProductDetailScreen;
+window.openProductDetailModal = openProductDetailScreen; // alias
 
-// Close on Escape key
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    const modal = document.getElementById('productDetailModal');
-    if (modal && modal.classList.contains('open')) {
-      closeProductDetailModal();
+function closeProductDetailScreen(updateHistory = true) {
+  const screenEl = document.getElementById('productDetailScreen');
+  if (screenEl) {
+    screenEl.classList.remove('open');
+    screenEl.setAttribute('aria-hidden', 'true');
+  }
+  document.body.style.overflow = '';
+  state.activeDetailProductId = null;
+
+  if (updateHistory && window.location.hash.startsWith('#product-')) {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  }
+}
+window.closeProductDetailScreen = closeProductDetailScreen;
+window.closeProductDetailModal = closeProductDetailScreen; // alias
+
+// Handle Browser Back / Forward buttons
+window.addEventListener('popstate', () => {
+  const screenEl = document.getElementById('productDetailScreen');
+  if (screenEl && screenEl.classList.contains('open')) {
+    closeProductDetailScreen(false);
+  } else if (window.location.hash.startsWith('#product-')) {
+    const pId = window.location.hash.replace('#product-', '');
+    if (pId) {
+      openProductDetailScreen(pId);
     }
   }
 });
 
-function switchDetailModalImage(imgSrc, btnEl) {
-  const mainImg = document.getElementById('modalDetailMainImg');
-  if (mainImg) {
-    mainImg.src = imgSrc;
+// Close on Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const screenEl = document.getElementById('productDetailScreen');
+    if (screenEl && screenEl.classList.contains('open')) {
+      closeProductDetailScreen();
+    }
   }
-  document.querySelectorAll('.detail-thumb-btn').forEach(btn => btn.classList.remove('active'));
+});
+
+function switchDetailScreenImage(imgSrc, btnEl) {
+  const mainImg = document.getElementById('screenMainImg');
+  if (mainImg) {
+    mainImg.style.transition = 'opacity 0.15s ease';
+    mainImg.style.opacity = '0.5';
+    setTimeout(() => {
+      mainImg.src = imgSrc;
+      mainImg.style.opacity = '1';
+    }, 120);
+  }
+  document.querySelectorAll('.screen-thumb-btn').forEach(btn => btn.classList.remove('active'));
   if (btnEl) btnEl.classList.add('active');
 }
-window.switchDetailModalImage = switchDetailModalImage;
+window.switchDetailScreenImage = switchDetailScreenImage;
+window.switchDetailModalImage = switchDetailScreenImage; // alias
 
-function selectModalVariant(productId, variantId) {
+function selectScreenVariant(productId, variantId) {
   selectCardVariant(productId, variantId);
   const product = state.products.find(p => String(p.id) === String(productId));
   if (product) {
-    renderProductDetailModal(product);
+    renderProductDetailScreen(product);
   }
 }
-window.selectModalVariant = selectModalVariant;
+window.selectScreenVariant = selectScreenVariant;
+window.selectModalVariant = selectScreenVariant; // alias
 
-function selectModalSize(productId, size) {
+function selectScreenSize(productId, size) {
   selectCardSize(productId, size);
   const product = state.products.find(p => String(p.id) === String(productId));
   if (product) {
-    renderProductDetailModal(product);
+    renderProductDetailScreen(product);
   }
 }
-window.selectModalSize = selectModalSize;
+window.selectScreenSize = selectScreenSize;
+window.selectModalSize = selectScreenSize; // alias
 
-function addModalProductToBag(productId) {
+function addScreenProductToBag(productId) {
   addToCart(productId);
-  closeProductDetailModal();
+  closeProductDetailScreen();
+  // Open cart drawer so user sees updated bag
+  if (typeof toggleCart === 'function') {
+    toggleCart();
+  }
 }
-window.addModalProductToBag = addModalProductToBag;
+window.addScreenProductToBag = addScreenProductToBag;
+window.addModalProductToBag = addScreenProductToBag; // alias
 
-function renderProductDetailModal(product) {
-  const container = document.getElementById('productDetailModalBody');
+function renderProductDetailScreen(product) {
+  const container = document.getElementById('productDetailScreenContent');
   if (!container) return;
 
   const images = (Array.isArray(product.images) && product.images.length > 0)
@@ -1292,8 +1316,7 @@ function renderProductDetailModal(product) {
     : itemSizes;
   const currentSelectedSize = state.selectedSizes?.[product.id] || effectiveSizes[0] || 'M';
 
-  // Ingredients and description
-  const fabricIngredients = getProductIngredients(product);
+  // Description cleanup
   const cleanDescription = (product.description || '')
     .replace(/<!--AUVARE_VARIANTS:.*?-->/g, '')
     .replace(/<!--AUVARE_IMAGES:.*?-->/g, '')
@@ -1301,25 +1324,25 @@ function renderProductDetailModal(product) {
     .trim();
 
   container.innerHTML = `
-    <div class="detail-modal-grid">
-      <!-- Left Column: Visual Gallery -->
-      <div class="detail-gallery-box">
-        <div class="detail-main-img-wrap">
-          <img id="modalDetailMainImg" src="${primaryImg}" alt="${product.title}" />
+    <div class="screen-detail-grid">
+      <!-- Left Column: Visual High-Res Gallery -->
+      <div class="screen-gallery-col">
+        <div class="screen-main-img-box">
+          <img id="screenMainImg" src="${primaryImg}" alt="${product.title}" />
           
-          <div class="detail-gallery-badges">
+          <div class="screen-gallery-badges">
             <span class="badge-tag unique">Curated Archive Drop</span>
             ${product.sold ? '<span class="badge-tag sold">SOLD OUT</span>' : '<span class="badge-tag condition">' + (product.condition ? product.condition.split('(')[0].trim() : 'Mint') + '</span>'}
           </div>
         </div>
 
         ${hasMultipleImages ? `
-          <div class="detail-thumbs-strip">
+          <div class="screen-thumbs-strip">
             ${images.map((img, idx) => `
               <button 
                 type="button" 
-                class="detail-thumb-btn ${idx === 0 ? 'active' : ''}" 
-                onclick="switchDetailModalImage('${img}', this)"
+                class="screen-thumb-btn ${idx === 0 ? 'active' : ''}" 
+                onclick="switchDetailScreenImage('${img}', this)"
                 title="Photo ${idx + 1}"
               >
                 <img src="${img}" alt="Thumbnail ${idx + 1}" />
@@ -1329,86 +1352,81 @@ function renderProductDetailModal(product) {
         ` : ''}
       </div>
 
-      <!-- Right Column: Specs, Ingredients & Purchasing -->
-      <div class="detail-info-col">
-        <div class="detail-meta-pill-row">
-          <span class="detail-category-badge">${product.category}</span>
-          <span class="detail-condition-badge">★ ${product.condition || '9.5/10 Mint'}</span>
-          ${hasVariants ? `<span class="detail-category-badge" style="background:#ecfdf5; color:#15803d; border-color:#86efac;">${product.variants.length} Colorways</span>` : ''}
+      <!-- Right Column: In-Details Specifications, Story & Purchasing -->
+      <div class="screen-info-col">
+        <div class="screen-meta-pills">
+          <span class="screen-pill-cat">${product.category}</span>
+          <span class="screen-pill-cond">★ ${product.condition || '9.5/10 Mint'}</span>
+          ${hasVariants ? `<span class="screen-pill-cat" style="background:#ecfdf5; color:#15803d; border-color:#86efac;">${product.variants.length} Colorways</span>` : ''}
         </div>
 
-        <h2 class="detail-product-title">${product.title}</h2>
+        <h1 class="screen-product-title">${product.title}</h1>
 
-        <div class="detail-price-row">
-          <span class="detail-price-main">৳ ${effectivePrice.toLocaleString()}</span>
-          <span class="detail-price-note">• All import duties & taxes included</span>
+        <div class="screen-price-row">
+          <span class="screen-price-val">৳ ${effectivePrice.toLocaleString()}</span>
+          <span class="screen-price-note">• All import duties & taxes included</span>
         </div>
 
-        <!-- Garment Ingredients & Archive Specs Card -->
-        <div class="ingredients-spec-card">
-          <div class="ingredients-card-header">
-            <span>🧵</span>
-            <span>Garment Ingredients & Archive Specs</span>
+        <!-- In-Depth Specifications & Measurements -->
+        <div class="screen-specs-box">
+          <div class="screen-specs-heading">
+            <span>📐</span>
+            <span>Garment Measurements & Piece Specifications</span>
           </div>
 
-          <div class="spec-item">
-            <span class="spec-item-icon">🌱</span>
+          <div class="screen-spec-row">
+            <span class="screen-spec-icon">📏</span>
             <div>
-              <span class="spec-item-label">Fabric & Composition (Ingredients)</span>
-              <span class="spec-item-value">${fabricIngredients}</span>
+              <span class="screen-spec-label">Chest & Pit-to-Pit</span>
+              <span class="screen-spec-value"><strong>${product.chest || '40"-48"'}</strong> (Relaxed Pit-to-Pit width)</span>
             </div>
           </div>
 
-          <div class="spec-item">
-            <span class="spec-item-icon">📐</span>
+          <div class="screen-spec-row">
+            <span class="screen-spec-icon">📐</span>
             <div>
-              <span class="spec-item-label">Dimensions & Measurements</span>
-              <span class="spec-item-value">
-                Chest (Pit-to-Pit): <strong>${product.chest || '40"-48"'}</strong> &nbsp;|&nbsp; 
-                Length (Collar-to-Hem): <strong>${product.length || '26"-30"'}</strong>
-                <br/><span style="font-size:0.75rem; color:#64748b;">Fit Profile: Relaxed Vintage Boxy Streetwear Silhouette</span>
-              </span>
+              <span class="screen-spec-label">Length & Silhouette</span>
+              <span class="screen-spec-value"><strong>${product.length || '26"-30"'}</strong> (Collar-to-Hem length • Vintage Boxy Drop)</span>
             </div>
           </div>
 
-          <div class="spec-item">
-            <span class="spec-item-icon">🏷️</span>
+          <div class="screen-spec-row">
+            <span class="screen-spec-icon">🏷️</span>
             <div>
-              <span class="spec-item-label">Curation & Authenticity Grade</span>
-              <span class="spec-item-value">
-                Grade: <strong>${product.condition || '9.5/10 (Pristine Vintage Patina)'}</strong>
-                <br/><span style="font-size:0.75rem; color:#64748b;">Sanitized, pre-conditioned & verified authentic 1-of-1 piece.</span>
-              </span>
+              <span class="screen-spec-label">Authenticity & Condition Grade</span>
+              <span class="screen-spec-value">Grade: <strong>${product.condition || '9.5/10 Pristine Vintage'}</strong> • Sanitized & verified 1-of-1 archive piece</span>
             </div>
           </div>
 
-          <div class="spec-item">
-            <span class="spec-item-icon">🧼</span>
+          <div class="screen-spec-row">
+            <span class="screen-spec-icon">🗂️</span>
             <div>
-              <span class="spec-item-label">Ingredients Wash & Longevity Care</span>
-              <span class="spec-item-value" style="font-size:0.8rem;">
-                Machine wash cold (30°C) inside out • Gentle cycle with mild detergent • Line dry in shade to preserve cotton fibres • Do not iron directly on print.
-              </span>
+              <span class="screen-spec-label">Archive Collection Category</span>
+              <span class="screen-spec-value"><strong>${product.category}</strong> • Authentic Vintage Streetwear</span>
             </div>
           </div>
 
-          ${cleanDescription ? `
-            <div class="spec-item" style="border-top: 1px dashed #cbd5e1; padding-top: 0.65rem; margin-top: 0.65rem;">
-              <span class="spec-item-icon">📝</span>
-              <div>
-                <span class="spec-item-label">Curation Story & Notes</span>
-                <span class="spec-item-value" style="font-style: italic;">
-                  "${cleanDescription}"
-                </span>
-              </div>
+          <div class="screen-spec-row">
+            <span class="screen-spec-icon">🧼</span>
+            <div>
+              <span class="screen-spec-label">Care & Longevity Instructions</span>
+              <span class="screen-spec-value" style="font-size:0.82rem;">Machine wash cold (30°C) inside out • Gentle cycle • Line dry in shade to preserve cotton fibres</span>
             </div>
-          ` : ''}
+          </div>
         </div>
 
-        <!-- Variant Selector inside Modal -->
+        <!-- Full Curation Story / Description -->
+        ${cleanDescription ? `
+          <div class="screen-description-box">
+            <div class="screen-desc-heading">Archive Notes & Curation Story</div>
+            <div class="screen-desc-body">${cleanDescription}</div>
+          </div>
+        ` : ''}
+
+        <!-- Variant Selector -->
         ${hasVariants ? `
-          <div class="detail-selection-sector">
-            <span class="detail-field-label">Available Editions & Colorways:</span>
+          <div class="screen-selector-group">
+            <span class="screen-selector-title">Available Colorways & Editions:</span>
             <div class="variant-chips-group">
               ${product.variants.map(v => {
                 const vKey = String(v.id || v.name);
@@ -1417,7 +1435,7 @@ function renderProductDetailModal(product) {
                   <button 
                     type="button" 
                     class="variant-chip ${isSel ? 'active' : ''}" 
-                    onclick="selectModalVariant('${product.id}', '${vKey}')"
+                    onclick="selectScreenVariant('${product.id}', '${vKey}')"
                   >
                     ${v.name} ${v.price ? `(৳${parseInt(v.price, 10).toLocaleString()})` : ''}
                   </button>
@@ -1427,15 +1445,15 @@ function renderProductDetailModal(product) {
           </div>
         ` : ''}
 
-        <!-- Size Selection inside Modal -->
-        <div class="detail-selection-sector">
-          <span class="detail-field-label">Select Your Size:</span>
+        <!-- Size Selection -->
+        <div class="screen-selector-group">
+          <span class="screen-selector-title">Select Size:</span>
           <div class="size-chips-group">
             ${effectiveSizes.map(sz => `
               <button 
                 type="button" 
                 class="size-chip ${currentSelectedSize === sz ? 'active' : ''}" 
-                onclick="selectModalSize('${product.id}', '${sz}')"
+                onclick="selectScreenSize('${product.id}', '${sz}')"
                 title="Size ${sz}"
               >
                 ${sz}
@@ -1445,11 +1463,11 @@ function renderProductDetailModal(product) {
         </div>
 
         <!-- Action Buttons -->
-        <div class="detail-action-buttons-grid">
+        <div class="screen-actions-bar">
           <button 
             type="button" 
-            class="btn-detail-add-bag" 
-            onclick="addModalProductToBag('${product.id}')"
+            class="btn-screen-add-bag" 
+            onclick="addScreenProductToBag('${product.id}')"
             ${product.sold ? 'disabled' : ''}
           >
             <span>🛍️</span>
@@ -1458,11 +1476,12 @@ function renderProductDetailModal(product) {
 
           <button 
             type="button" 
-            class="btn-detail-wa" 
+            class="btn-screen-wa" 
             onclick="orderOnWhatsApp('${product.id}')"
+            title="Direct WhatsApp Order"
           >
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-            <span>WhatsApp Order</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            <span>Order on WhatsApp</span>
           </button>
 
           ${product.instagramUrl ? `
@@ -1470,7 +1489,7 @@ function renderProductDetailModal(product) {
               href="${product.instagramUrl}" 
               target="_blank" 
               rel="noopener noreferrer" 
-              class="btn-detail-ig"
+              class="btn-screen-ig"
               title="View on Instagram"
             >
               <span>📸 Instagram ↗</span>
@@ -1481,7 +1500,8 @@ function renderProductDetailModal(product) {
     </div>
   `;
 }
-window.renderProductDetailModal = renderProductDetailModal;
+window.renderProductDetailScreen = renderProductDetailScreen;
+window.renderProductDetailModal = renderProductDetailScreen; // alias
 
 // Handle Adding New Product from Storefront Admin Modal
 async function handleAddNewProduct(event) {
