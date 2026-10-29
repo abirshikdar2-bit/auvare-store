@@ -1437,8 +1437,9 @@ function renderProductDetailScreen(product) {
                     type="button" 
                     class="variant-chip ${isSel ? 'active' : ''}" 
                     onclick="selectScreenVariant('${product.id}', '${vKey}')"
+                    title="${v.name}"
                   >
-                    ${v.name} ${v.price ? `(৳${parseInt(v.price, 10).toLocaleString()})` : ''}
+                    ${v.name}
                   </button>
                 `;
               }).join('')}
