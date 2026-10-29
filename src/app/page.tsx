@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { ShoppingBag, Instagram, Phone, ShieldCheck } from 'lucide-react';
+import { Instagram } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { StorefrontClient } from '@/components/storefront/StorefrontClient';
 import type { Product } from '@/types';
@@ -84,18 +84,18 @@ export default async function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Top Notice Bar */}
-      <div className="bg-brand-dark text-white text-[11px] py-1.5 px-4 text-center font-medium tracking-wide border-b border-white/10 flex items-center justify-center gap-2">
-        <span>🇧🇩 Authentic Curated Vintage &amp; Preloved Drops • Nationwide Cash on Delivery &amp; bKash</span>
+      <div className="bg-[#0b1a13] text-white text-[11px] py-1.5 px-4 text-center font-medium tracking-wide border-b border-white/10 flex items-center justify-center gap-2">
+        <span>Authentic Curated Vintage &amp; Preloved Drops • Nationwide Cash on Delivery &amp; bKash</span>
       </div>
 
       {/* Main Navigation Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+      <header className="bg-white border-b border-stone-200 sticky top-0 z-30 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <img src="/assets/images/logo.jpg" alt="AUVARE Crest" className="w-8 h-8 rounded-full border border-slate-200" />
+            <img src="/assets/images/logo.jpg" alt="AUVARE Crest" className="w-8 h-8 rounded-full border border-stone-200" />
             <div className="flex flex-col">
-              <span className="font-serif font-bold text-lg tracking-wider text-brand-dark leading-none">AUVARE</span>
-              <span className="text-[9px] uppercase tracking-widest text-slate-400 font-semibold mt-0.5">Curated Archive</span>
+              <span className="font-serif font-bold text-lg tracking-wider text-[#0b1a13] leading-none">AUVARE</span>
+              <span className="text-[9px] uppercase tracking-widest text-stone-400 font-semibold mt-0.5">Curated Archive</span>
             </div>
           </Link>
 
@@ -104,7 +104,7 @@ export default async function HomePage() {
               href={siteSettings.instagram_url}
               target="_blank"
               rel="noreferrer"
-              className="text-xs text-slate-600 hover:text-brand-dark flex items-center gap-1 font-semibold transition"
+              className="text-xs text-stone-600 hover:text-stone-900 flex items-center gap-1 font-semibold transition"
             >
               <Instagram className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">{siteSettings.instagram_handle}</span>
@@ -112,7 +112,7 @@ export default async function HomePage() {
 
             <Link
               href="/admin"
-              className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-semibold transition"
+              className="text-xs bg-stone-100 hover:bg-stone-200 text-stone-800 px-3.5 py-1.5 rounded-lg font-semibold transition border border-stone-200"
             >
               Admin Portal ↗
             </Link>
@@ -120,32 +120,12 @@ export default async function HomePage() {
         </div>
       </header>
 
-      {/* Hero Banner */}
-      <section className="bg-gradient-to-b from-slate-100 to-white py-12 px-4 border-b border-slate-200">
-        <div className="max-w-4xl mx-auto text-center">
-          <span className="inline-block bg-brand-soft text-brand-primary text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest mb-3">
-            1-of-1 Archival Vintage Drops
-          </span>
-          <h1 className="text-3xl sm:text-5xl font-serif font-bold text-brand-dark tracking-tight leading-tight">
-            Curated Vintage &amp; Pre-Loved Clothing
-          </h1>
-          <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto mt-3">
-            Hand-selected archival tees, heavy-weight outerwear, and washed denim. Available across sizes S, M, L, XL, and XXL with zero fast-fashion compromises.
-          </p>
-
-          <div className="flex items-center justify-center gap-6 mt-6 text-xs text-slate-500 font-medium">
-            <span className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4 text-emerald-600" /> 100% Authenticity Verified</span>
-            <span className="flex items-center gap-1.5"><Phone className="w-4 h-4 text-emerald-600" /> WhatsApp Direct Concierge</span>
-          </div>
-        </div>
-      </section>
-
-      {/* Dynamic Interactive Catalog Client Component */}
+      {/* Dynamic Interactive Catalog Client Component (Including Hero & Mediasoft Widget) */}
       <StorefrontClient initialProducts={products} siteSettings={siteSettings} />
 
       {/* Footer */}
-      <footer className="mt-auto bg-brand-dark text-white border-t border-slate-800 py-10 px-4">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+      <footer className="mt-auto bg-[#0b1a13] text-white border-t border-stone-800 py-10 px-4">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-stone-400">
           <div className="flex items-center gap-2">
             <span className="font-serif font-bold text-white text-sm">AUVARE</span>
             <span>• Curated Vintage Drops in Bangladesh</span>

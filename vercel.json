@@ -1,8 +1,3 @@
 {
-  "cleanUrls": true,
-  "outputDirectory": ".",
-  "rewrites": [
-    { "source": "/admin/login(.*)", "destination": "/admin.html" },
-    { "source": "/admin", "destination": "/admin.html" }
-  ]
+  "framework": "nextjs"
 }

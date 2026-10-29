@@ -651,7 +651,7 @@ export function AdminPortal() {
                           <img src={p.image} alt={p.title} className="w-full h-full object-cover" />
                           {p.images && p.images.length > 1 && (
                             <span className="absolute bottom-1.5 right-1.5 bg-black/70 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
-                              📷 {p.images.length}
+                              {p.images.length} Photos
                             </span>
                           )}
                         </div>
@@ -664,7 +664,7 @@ export function AdminPortal() {
                         <h4 className="text-xs font-bold text-slate-800 line-clamp-1">{p.title}</h4>
                         {p.variants && p.variants.length > 0 && (
                           <div className="text-[10px] text-slate-500 mt-1">
-                            🎨 {p.variants.length} variant{p.variants.length > 1 ? 's' : ''}
+                            {p.variants.length} variant{p.variants.length > 1 ? 's' : ''}
                           </div>
                         )}
                       </div>
@@ -761,7 +761,7 @@ export function AdminPortal() {
                     type="submit"
                     className="px-4 py-1.5 bg-brand-primary hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm"
                   >
-                    Save Product ✓
+                    Save Product
                   </button>
                 </div>
               </div>
@@ -923,7 +923,7 @@ export function AdminPortal() {
                         </button>
                       </div>
                       <p className="text-[10px] text-slate-400 mt-1">
-                        💡 <em>Tip: You can add 2, 3, 4, 5+ photos. The photo marked with the green <strong>COVER</strong> badge is the main photo shown on the storefront. Click "★ Make Cover" on any photo to set it as main.</em>
+                        <em>Tip: You can add 2, 3, 4, 5+ photos. The photo marked with the green <strong>COVER</strong> badge is the main photo shown on the storefront. Click "Make Cover" on any photo to set it as main.</em>
                       </p>
                     </div>
                   </div>
@@ -1280,7 +1280,7 @@ export function AdminPortal() {
                     type="submit"
                     className="w-full py-3 bg-brand-primary hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition"
                   >
-                    Save Product ✓
+                    Save Product
                   </button>
                 </div>
               </div>
@@ -1491,7 +1491,7 @@ export function AdminPortal() {
                   onClick={() => handleUpdateOrderStatus(activeOrderModal.id, modalStatus)}
                   className="px-4 py-2 bg-brand-primary hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition"
                 >
-                  Save Status ✓
+                  Save Status
                 </button>
               </div>
             </div>
