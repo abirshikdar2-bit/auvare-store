@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans, Playfair_Display, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
+import '../../public/assets/css/style.css';
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
   title: 'AUVARE — Curated Vintage & 1-of-1 Preloved Clothing Drops',
   description: 'Shop curated vintage streetwear, graphic tees, retro outerwear, and washed denim drops in sizes S to XXL with nationwide delivery across Bangladesh.',
   icons: {
-    icon: '/favicon.ico',
+    icon: '/assets/images/logo.jpg',
   },
 };
 
@@ -35,7 +36,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${jakarta.variable} ${playfair.variable} ${mono.variable}`}>
-      <body className="min-h-screen bg-slate-50 flex flex-col font-sans">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="min-h-screen bg-[#faf8f5] text-[#18181b] flex flex-col font-sans">
         {children}
       </body>
     </html>

@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { ShoppingBag, MessageCircle, X, ChevronRight, Check, Copy, Zap, ArrowRight, Truck, ShieldCheck, RefreshCw } from 'lucide-react';
-import type { Product, ProductVariant, GarmentSize } from '@/types';
-import { formatBDT, getCleanWaNumber } from '@/lib/utils';
+import type { Product, GarmentSize, ProductVariant, CartItem } from '@/types';
+import { formatBDT } from '@/lib/utils';
 import { HeroReelsSlider } from './HeroReelsSlider';
 import { ProductDetailModal } from './ProductDetailModal';
 import { MediasoftWidget } from './MediasoftWidget';
+import Link from 'next/link';
 
 interface StorefrontClientProps {
   initialProducts: Product[];
@@ -14,24 +14,20 @@ interface StorefrontClientProps {
 }
 
 export function StorefrontClient({ initialProducts, siteSettings }: StorefrontClientProps) {
-  // Navigation & Category Filter
+  // Catalog filtering states
   const [activeCategory, setActiveCategory] = useState<string>('All');
+  const [activeStatus, setActiveStatus] = useState<string>('all');
+  const [activeSize, setActiveSize] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedSizes, setSelectedSizes] = useState<Record<string, GarmentSize>>({});
+  const [cardImageIndices, setCardImageIndices] = useState<Record<string, number>>({});
 
-  // Active Product Modal (Sailor style zoom screen)
-  const [activeModalProduct, setActiveModalProduct] = useState<Product | null>(null);
+  // Mobile nav state
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
-  // Bag / Cart State
+  // Modal & Drawer states
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isBagOpen, setIsBagOpen] = useState(false);
-  const [bag, setBag] = useState<Array<Product & {
-    cartItemId: string;
-    selectedSize: GarmentSize;
-    selectedVariantName?: string;
-    quantity: number;
-  }>>([]);
-  const [deliveryZone, setDeliveryZone] = useState<'inside' | 'outside'>('inside');
-
-  // Checkout State
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [directCheckoutItem, setDirectCheckoutItem] = useState<{
     product: Product;
@@ -39,77 +35,98 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
     selectedVariant?: ProductVariant;
   } | null>(null);
 
-  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'bkash' | 'nagad' | 'rocket'>('cod');
+  // Bag / Cart state
+  const [bag, setBag] = useState<CartItem[]>([]);
+
+  // Checkout form states
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
   const [customerNotes, setCustomerNotes] = useState('');
+  const [deliveryZone, setDeliveryZone] = useState<'inside' | 'outside'>('inside');
+  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'bkash' | 'nagad' | 'rocket'>('cod');
   const [senderPhone, setSenderPhone] = useState('');
   const [trxId, setTrxId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [orderSuccess, setOrderSuccess] = useState<{ orderId: string; total: number; waText: string } | null>(null);
+  const [orderSuccess, setOrderSuccess] = useState<{
+    orderId: string;
+    total: number;
+    waText: string;
+  } | null>(null);
 
-  // Dynamic Categories from Supabase products
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    initialProducts.forEach((p) => {
-      if (p.category) set.add(p.category);
-    });
-    return ['All', ...Array.from(set)];
-  }, [initialProducts]);
+  const waNumber = siteSettings.whatsapp_number || '01734018155';
+  const cleanWa = waNumber.replace(/[^0-9]/g, '');
 
-  // Filtered Products
+  // Filtered catalog
   const filteredProducts = useMemo(() => {
-    return initialProducts.filter((p) => {
-      if (activeCategory !== 'All' && p.category !== activeCategory) return false;
+    return initialProducts.filter((item) => {
+      if (activeCategory !== 'All' && item.category !== activeCategory) return false;
+      if (activeStatus === 'available' && item.sold) return false;
+      if (activeStatus === 'sold' && !item.sold) return false;
+      if (activeSize !== 'all') {
+        const availableSizes = item.sizes || ['S', 'M', 'L', 'XL', 'XXL'];
+        if (!availableSizes.includes(activeSize as any)) return false;
+      }
       if (searchQuery.trim() !== '') {
         const q = searchQuery.toLowerCase();
-        const matchesTitle = p.title.toLowerCase().includes(q);
-        const matchesCat = p.category.toLowerCase().includes(q);
-        if (!matchesTitle && !matchesCat) return false;
+        const matchTitle = item.title.toLowerCase().includes(q);
+        const matchCat = (item.category || '').toLowerCase().includes(q);
+        if (!matchTitle && !matchCat) return false;
       }
       return true;
     });
-  }, [initialProducts, activeCategory, searchQuery]);
+  }, [initialProducts, activeCategory, activeStatus, activeSize, searchQuery]);
 
-  const waNumber = getCleanWaNumber(siteSettings.whatsapp_number || '01734018155');
-
-  // Add to Bag handler
+  // Handle adding to bag
   const handleAddToBag = (product: Product, size: GarmentSize, variant?: ProductVariant) => {
-    if (product.sold) return;
-
-    const chosenSize = size || (product.sizes?.[0] as GarmentSize) || 'M';
-    const effectivePrice = variant?.price || product.price;
-    const variantName = variant?.name;
-    const cartItemId = variantName ? `${product.id}-${chosenSize}-${variantName}` : `${product.id}-${chosenSize}`;
-
     setBag((prev) => {
-      const existing = prev.find((i) => i.cartItemId === cartItemId);
-      if (existing) {
-        return prev.map((i) => (i.cartItemId === cartItemId ? { ...i, quantity: i.quantity + 1 } : i));
+      const existingIdx = prev.findIndex(
+        (i) => i.id === product.id && i.selectedSize === size && i.selectedVariantName === variant?.name
+      );
+      if (existingIdx > -1) {
+        const next = [...prev];
+        next[existingIdx].quantity += 1;
+        return next;
       }
       return [
         ...prev,
         {
           ...product,
-          price: effectivePrice,
-          cartItemId,
-          selectedSize: chosenSize,
-          selectedVariantName: variantName,
+          price: variant?.price || product.price,
+          selectedSize: size,
+          selectedVariantName: variant?.name,
           quantity: 1,
         },
       ];
     });
-
     setIsBagOpen(true);
   };
 
-  // Direct Buy Now handler (bypasses bag)
+  // Direct Buy Now bypass
   const handleBuyNow = (product: Product, size: GarmentSize, variant?: ProductVariant) => {
-    if (product.sold) return;
+    setSelectedProduct(null);
     setDirectCheckoutItem({ product, selectedSize: size, selectedVariant: variant });
     setIsCheckoutOpen(true);
   };
+
+  // Cart operations
+  const updateQuantity = (idx: number, delta: number) => {
+    setBag((prev) => {
+      const next = [...prev];
+      const newQty = next[idx].quantity + delta;
+      if (newQty <= 0) {
+        return next.filter((_, i) => i !== idx);
+      }
+      next[idx].quantity = newQty;
+      return next;
+    });
+  };
+
+  const removeFromBag = (idx: number) => {
+    setBag((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const bagCount = bag.reduce((sum, item) => sum + item.quantity, 0);
 
   // Calculations
   const checkoutItems = directCheckoutItem
@@ -200,480 +217,1063 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
 
   return (
     <>
-      {/* Hero Section with Reels Slider */}
-      <section className="bg-gradient-to-b from-stone-100 via-stone-50 to-white py-12 md:py-16 px-4 border-b border-stone-200 overflow-hidden">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-          {/* Left Hero Copy */}
-          <div className="lg:col-span-7 flex flex-col items-start text-left">
-            <span className="inline-block bg-stone-200/80 text-stone-800 text-[11px] font-bold px-3.5 py-1.5 rounded-full uppercase tracking-widest mb-4">
-              New Lot Drop Just Landed
-            </span>
-            <h1 className="text-4xl sm:text-6xl font-serif font-bold text-[#0b1a13] tracking-tight leading-[1.15] mb-5">
-              Curated Stuff, <span className="italic font-normal text-emerald-800">Personal Taste.</span>
-            </h1>
-            <p className="text-sm sm:text-base text-stone-600 max-w-xl leading-relaxed mb-8">
-              Hand-picked vintage &amp; pre-loved imported garments. Every piece in our store is an authentic 1-of-1 item—once it's claimed, it's gone forever.
-            </p>
-
-            <div className="flex flex-wrap items-center gap-4">
-              <a
-                href="#catalog"
-                className="px-6 py-3.5 rounded-xl bg-[#0b1a13] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#152e22] transition shadow-md hover:shadow-lg flex items-center gap-2"
-              >
-                <span>Explore Latest Drop</span>
-                <ArrowRight className="w-4 h-4" />
-              </a>
-              <a
-                href={`https://wa.me/${waNumber}?text=Hi%20AUVARE,%20I%20am%20interested%20in%20your%20curated%20vintage%20collection.`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-6 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider transition shadow-md hover:shadow-lg flex items-center gap-2"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span>Chat on WhatsApp</span>
-              </a>
+      {/* 1. Authentic Sticky Header */}
+      <header className="site-header">
+        <div className="container nav-wrapper">
+          {/* Brand Logo */}
+          <Link href="/" className="brand-link" id="brandHomeLink">
+            <img src="/assets/images/logo.jpg" alt="AUVARE Crest" className="brand-crest" />
+            <div className="brand-text-group">
+              <span className="brand-title">AUVARE</span>
+              <span className="brand-sub">Curated • Vintage</span>
             </div>
+          </Link>
 
-            {/* Fast Value Props Ribbon */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-12 pt-8 border-t border-stone-200/80 w-full text-left">
-              <div>
-                <p className="text-xs font-bold text-stone-800">1/2 Days Delivery</p>
-                <p className="text-[11px] text-stone-500">Fastest courier</p>
-              </div>
-              <div>
-                <p className="text-xs font-bold text-stone-800">100% Authentic</p>
-                <p className="text-[11px] text-stone-500">Curated pieces</p>
-              </div>
-              <div>
-                <p className="text-xs font-bold text-stone-800">Hotline &amp; Chat</p>
-                <p className="text-[11px] text-stone-500">9am to 11pm</p>
-              </div>
-              <div>
-                <p className="text-xs font-bold text-stone-800">Flexible Payment</p>
-                <p className="text-[11px] text-stone-500">COD, bKash, Nagad</p>
-              </div>
-            </div>
-          </div>
+          {/* Navigation Links with Active Gliding Highlighting */}
+          <nav>
+            <ul className="nav-links" id="mainNavLinks">
+              <li>
+                <a
+                  href="#hero"
+                  className={`nav-link ${activeCategory === 'All' ? 'active' : ''}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActiveCategory('All');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  title="Home"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    <polyline points="9 22 9 12 15 12 15 22" />
+                  </svg>
+                  <span>Home</span>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#catalog"
+                  className={`nav-link ${activeCategory === 'All' ? 'active' : ''}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActiveCategory('All');
+                    document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  All Drops
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#catalog"
+                  className={`nav-link ${activeCategory === 'T-Shirts' ? 'active' : ''}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActiveCategory('T-Shirts');
+                    document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  T-Shirts
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#catalog"
+                  className={`nav-link ${activeCategory === 'Shirts' ? 'active' : ''}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActiveCategory('Shirts');
+                    document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  Shirts &amp; Polos
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#catalog"
+                  className={`nav-link ${activeCategory === 'Jackets' ? 'active' : ''}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActiveCategory('Jackets');
+                    document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  Jackets
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#catalog"
+                  className={`nav-link ${activeCategory === 'Pants' ? 'active' : ''}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActiveCategory('Pants');
+                    document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  Pants
+                </a>
+              </li>
+              <li>
+                <a
+                  href={siteSettings.instagram_url || 'https://www.instagram.com/auvare_official/'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="nav-link"
+                >
+                  Instagram Feed ↗
+                </a>
+              </li>
+            </ul>
+          </nav>
 
-          {/* Right Hero: Reels-Style Auto-Swipe Slider */}
-          <div className="lg:col-span-5 flex justify-center">
-            <HeroReelsSlider
-              products={initialProducts}
-              onSelectProduct={(prod) => setActiveModalProduct(prod)}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Category Bar & Bag Trigger */}
-      <div className="bg-white border-y border-stone-200 sticky top-16 z-20 py-3 shadow-xs" id="catalog">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
-                  activeCategory === cat
-                    ? 'bg-[#0b1a13] text-white shadow-sm'
-                    : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-3">
-            <input
-              type="text"
-              placeholder="Search vintage drops..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="text-xs px-3.5 py-1.5 border border-stone-300 rounded-full w-full md:w-56 focus:outline-none focus:border-emerald-600 bg-stone-50"
-            />
+          {/* Action Buttons: Shopping Bag & Mobile Hamburger */}
+          <div className="nav-actions">
             <button
-              type="button"
-              onClick={() => {
-                setDirectCheckoutItem(null);
-                setIsBagOpen(true);
-              }}
-              className="relative p-2.5 bg-stone-100 hover:bg-stone-200 rounded-full text-stone-800 transition"
-              aria-label="Open Bag"
+              className="btn-icon"
+              onClick={() => setIsBagOpen(true)}
+              title="View Shopping Bag"
+              aria-label="View Shopping Bag"
             >
-              <ShoppingBag className="w-4 h-4" />
-              {bag.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                  {bag.length}
-                </span>
-              )}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+                <path d="M3 6h18" />
+                <path d="M16 10a4 4 0 0 1-8 0" />
+              </svg>
+              <span id="cartBadge" className="cart-badge">{bagCount}</span>
+            </button>
+
+            <button
+              className="btn-icon mobile-menu-toggle"
+              onClick={() => setIsMobileNavOpen(true)}
+              title="Menu"
+              aria-label="Open Navigation"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Product Catalog Grid */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold font-serif text-slate-900">
-            {activeCategory === 'All' ? 'Latest Curated Drops' : `${activeCategory} Drop`}
-          </h2>
-          <span className="text-xs text-slate-500 font-medium">
-            {filteredProducts.length} authentic piece{filteredProducts.length === 1 ? '' : 's'}
-          </span>
-        </div>
-
-        {filteredProducts.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-xl border border-dashed border-stone-300">
-            <h3 className="text-lg font-bold text-stone-800">No pieces found in this category</h3>
-            <p className="text-xs text-stone-500 mt-1">Check back soon for upcoming lot drops or explore other categories.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {filteredProducts.map((product) => {
-              const displayImage = product.image || product.images?.[0] || '/assets/images/logo.jpg';
-              return (
-                <div
-                  key={product.id}
-                  className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col group"
-                >
-                  {/* Card Image Area (Click opens Sailor zoom modal) */}
-                  <div
-                    className="relative aspect-[4/5] bg-stone-100 overflow-hidden cursor-pointer"
-                    onClick={() => setActiveModalProduct(product)}
-                  >
-                    <img
-                      src={displayImage}
-                      alt={product.title}
-                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-                      loading="lazy"
-                    />
-
-                    {/* Badge */}
-                    <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#0b1a13]/90 text-white backdrop-blur-xs">
-                        {product.category || 'Drop'}
-                      </span>
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white/90 text-stone-800 backdrop-blur-xs">
-                        {product.condition || '9.5/10'}
-                      </span>
-                    </div>
-
-                    {/* Quick view hover pill */}
-                    <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <span className="bg-white/95 text-stone-900 text-xs font-bold px-4 py-2 rounded-full shadow-lg">
-                        Inspect Piece
-                      </span>
-                    </div>
+      {/* 2. Mobile Navigation Drawer */}
+      {isMobileNavOpen && (
+        <>
+          <div className="mobile-nav-overlay active" onClick={() => setIsMobileNavOpen(false)} />
+          <aside className="mobile-nav-drawer active" aria-label="Mobile Navigation">
+            <div className="mobile-nav-header">
+              <div className="mobile-nav-brand">
+                <img src="/assets/images/logo.jpg" alt="AUVARE Logo" className="brand-crest" style={{ width: 36, height: 36 }} />
+                <div>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: '1.15rem', fontWeight: 700, color: '#ffffff', letterSpacing: '0.05em' }}>
+                    AUVARE
                   </div>
+                  <div style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: '#94a3b8' }}>
+                    Curated • Vintage
+                  </div>
+                </div>
+              </div>
+              <button className="mobile-nav-close" onClick={() => setIsMobileNavOpen(false)} aria-label="Close Navigation">
+                ✕
+              </button>
+            </div>
 
-                  {/* Card Content Area */}
-                  <div className="p-4 flex flex-col flex-1 justify-between">
-                    <div>
-                      <h3
-                        className="font-serif font-bold text-sm text-stone-900 leading-snug line-clamp-1 cursor-pointer hover:text-emerald-800 transition"
-                        onClick={() => setActiveModalProduct(product)}
-                      >
-                        {product.title}
-                      </h3>
-                      {(product.chest || product.length) && (
-                        <p className="text-[11px] text-stone-500 font-mono mt-1">
-                          {product.chest ? `Chest: ${product.chest}"` : ''}
-                          {product.chest && product.length ? ' • ' : ''}
-                          {product.length ? `L: ${product.length}"` : ''}
-                        </p>
+            <div className="mobile-nav-body">
+              <div className="mobile-nav-group-title">Browse Drops</div>
+              <ul className="mobile-nav-list">
+                <li>
+                  <a
+                    href="#hero"
+                    className="mobile-nav-item active"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsMobileNavOpen(false);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
+                    <span>Home</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#catalog"
+                    className="mobile-nav-item"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setActiveCategory('All');
+                      setIsMobileNavOpen(false);
+                      document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                  >
+                    <span>All Drops</span>
+                    <span className="mobile-nav-badge">{initialProducts.length}</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#catalog"
+                    className="mobile-nav-item"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setActiveCategory('T-Shirts');
+                      setIsMobileNavOpen(false);
+                      document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                  >
+                    <span>T-Shirts</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#catalog"
+                    className="mobile-nav-item"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setActiveCategory('Shirts');
+                      setIsMobileNavOpen(false);
+                      document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                  >
+                    <span>Shirts &amp; Polos</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#catalog"
+                    className="mobile-nav-item"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setActiveCategory('Jackets');
+                      setIsMobileNavOpen(false);
+                      document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                  >
+                    <span>Jackets</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#catalog"
+                    className="mobile-nav-item"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setActiveCategory('Pants');
+                      setIsMobileNavOpen(false);
+                      document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                  >
+                    <span>Pants</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={siteSettings.instagram_url || 'https://www.instagram.com/auvare_official/'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mobile-nav-item"
+                    onClick={() => setIsMobileNavOpen(false)}
+                  >
+                    <span>Instagram Feed ↗</span>
+                  </a>
+                </li>
+              </ul>
+
+              <div className="mobile-nav-divider" />
+
+              <div className="mobile-nav-group-title">Direct Concierge</div>
+              <a
+                href={`https://wa.me/${cleanWa}?text=Hello%20AUVARE,%20I%20want%20to%20inquire%20about%20your%20drops!`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mobile-nav-wa-btn"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z" />
+                </svg>
+                <span>WhatsApp Concierge</span>
+              </a>
+
+              <Link
+                href="/admin"
+                className="mobile-nav-admin-link"
+                onClick={() => setIsMobileNavOpen(false)}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect width="18" height="18" x="3" y="3" rx="2" />
+                  <path d="M7 7h.01" />
+                  <path d="M17 7h.01" />
+                  <path d="M7 17h.01" />
+                  <path d="M17 17h.01" />
+                </svg>
+                <span>Admin Management Portal ↗</span>
+              </Link>
+            </div>
+          </aside>
+        </>
+      )}
+
+      {/* 3. Authentic Hero Section */}
+      <section className="hero-section" id="hero">
+        <div className="container hero-grid">
+          {/* Left Hero Content */}
+          <div className="hero-content">
+            <div className="hero-tag">
+              <span className="hero-tag-dot" aria-hidden="true" />
+              <span>New Lot Drop Just Landed</span>
+            </div>
+
+            <h1 className="hero-title">
+              Curated Stuff, <span>Personal Taste.</span>
+            </h1>
+
+            <p className="hero-desc">
+              Hand-picked vintage &amp; pre-loved imported garments. Every piece in our store is an authentic 1-of-1 item—once it’s claimed, it’s gone forever.
+            </p>
+
+            <div className="hero-actions">
+              <a
+                href="#catalog"
+                className="btn-primary"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                Explore Latest Drop ↓
+              </a>
+              <a
+                href={`https://wa.me/${cleanWa}?text=Hello%20AUVARE,%20I%20want%20to%20inquire%20about%20your%20drops!`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-wa-cta"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z" />
+                </svg>
+                <span>Chat on WhatsApp</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Right Hero Visual Card: 5s Reels Slider (Image 3: Clean, Full-View, No Progress Line, No Bottom Card) */}
+          <div className="hero-visual">
+            <HeroReelsSlider
+              products={initialProducts}
+              onSelectProduct={(prod) => setSelectedProduct(prod)}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* 4. Value Pillars / Service Guarantees */}
+      <section className="features-bar">
+        <div className="container features-grid">
+          {/* Card 1: 1/2 Days Delivery */}
+          <div className="feature-item">
+            <div className="feature-icon-circle">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m7.5 4.27 9 5.15" />
+                <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+                <path d="m3.3 7 8.7 5 8.7-5" />
+                <path d="M12 22V12" />
+              </svg>
+            </div>
+            <div className="feature-text">
+              <h4>1/2 Days Delivery</h4>
+              <p>fastest delivery</p>
+            </div>
+          </div>
+
+          {/* Card 2: Authorized Product */}
+          <div className="feature-item">
+            <div className="feature-icon-circle">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="8" r="6" />
+                <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" />
+              </svg>
+            </div>
+            <div className="feature-text">
+              <h4>Authorized Product</h4>
+              <p>within 30 days for an exchange</p>
+            </div>
+          </div>
+
+          {/* Card 3: Customer Service Support */}
+          <div className="feature-item">
+            <div className="feature-icon-circle">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                <path d="M8 10h.01" />
+                <path d="M12 10h.01" />
+                <path d="M16 10h.01" />
+              </svg>
+            </div>
+            <div className="feature-text">
+              <h4>Customer Service Support</h4>
+              <p>8am to 10pm</p>
+            </div>
+          </div>
+
+          {/* Card 4: Flexible Payments */}
+          <div className="feature-item">
+            <div className="feature-icon-circle">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="20" height="14" x="2" y="5" rx="2" />
+                <line x1="2" x2="22" y1="10" y2="10" />
+                <path d="m14 15 2 2 4-4" />
+              </svg>
+            </div>
+            <div className="feature-text">
+              <h4>Flexible Payments</h4>
+              <p>pay with multiple credit cards</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. Main Drops Catalog Section */}
+      <main className="catalog-section" id="catalog">
+        <div className="container">
+          <div className="section-head">
+            <div>
+              <h2 className="section-title">Curated Drops &amp; Inventory</h2>
+              <p className="section-subtitle">
+                {filteredProducts.length} authentic piece{filteredProducts.length === 1 ? '' : 's'} available
+              </p>
+            </div>
+          </div>
+
+          {/* Category Pills & Secondary Filters Toolbar */}
+          <div className="filter-bar">
+            <div className="filter-categories">
+              {['All', 'T-Shirts', 'Shirts', 'Jackets', 'Pants'].map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  className={`filter-pill ${activeCategory === cat ? 'active' : ''}`}
+                  onClick={() => setActiveCategory(cat)}
+                >
+                  {cat === 'All' ? 'All Drops' : cat === 'Shirts' ? 'Shirts & Polos' : cat}
+                </button>
+              ))}
+            </div>
+
+            <div className="filter-secondary">
+              <select
+                value={activeStatus}
+                onChange={(e) => setActiveStatus(e.target.value)}
+                className="filter-select"
+                aria-label="Filter by availability status"
+              >
+                <option value="all">All Status</option>
+                <option value="available">In Stock (Available)</option>
+                <option value="sold">Sold Out Drops</option>
+              </select>
+
+              <select
+                value={activeSize}
+                onChange={(e) => setActiveSize(e.target.value)}
+                className="filter-select"
+                aria-label="Filter by size"
+              >
+                <option value="all">All Sizes</option>
+                <option value="S">Size S</option>
+                <option value="M">Size M</option>
+                <option value="L">Size L</option>
+                <option value="XL">Size XL</option>
+                <option value="XXL">Size XXL</option>
+              </select>
+
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by name, size..."
+                  className="form-input"
+                  style={{ padding: '0.45rem 0.85rem', fontSize: '0.85rem', width: '180px' }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Product Cards Grid */}
+          <div className="products-grid">
+            {filteredProducts.length === 0 ? (
+              <div
+                style={{
+                  gridColumn: '1 / -1',
+                  textAlign: 'center',
+                  padding: '4rem 1rem',
+                  background: 'var(--color-surface)',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px dashed var(--color-border)',
+                }}
+              >
+                <p style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>
+                  No drops match your filter
+                </p>
+                <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>
+                  Try selecting a different category, availability status, or size.
+                </p>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => {
+                    setActiveCategory('All');
+                    setActiveStatus('all');
+                    setActiveSize('all');
+                    setSearchQuery('');
+                  }}
+                >
+                  Reset All Filters
+                </button>
+              </div>
+            ) : (
+              filteredProducts.map((item) => {
+                const itemSizes: GarmentSize[] = (item.sizes && item.sizes.length > 0)
+                  ? (item.sizes as GarmentSize[])
+                  : ['S', 'M', 'L', 'XL', 'XXL'];
+                const selectedSize = selectedSizes[item.id] || itemSizes[0] || 'M';
+                const images = item.images && item.images.length > 0 ? item.images : [item.image || '/assets/images/logo.jpg'];
+                const currentImgIdx = cardImageIndices[item.id] || 0;
+                const primaryImg = images[currentImgIdx] || images[0];
+                const hasMultiple = images.length > 1;
+
+                return (
+                  <article
+                    key={item.id}
+                    className={`product-card ${item.sold ? 'sold-out' : ''}`}
+                    onClick={() => setSelectedProduct(item)}
+                  >
+                    <div
+                      className="product-image-box"
+                      title="Click to view full product details"
+                    >
+                      <img
+                        className="product-card-img"
+                        src={primaryImg}
+                        alt={item.title}
+                        loading="lazy"
+                      />
+
+                      <div className="product-badge-group">
+                        <span className="badge-tag unique">Curated Drop</span>
+                        {item.sold ? (
+                          <span className="badge-tag sold">SOLD OUT</span>
+                        ) : (
+                          <span className="badge-tag condition">
+                            {item.condition ? item.condition.split('(')[0].trim() : 'Mint'}
+                          </span>
+                        )}
+                      </div>
+
+                      {hasMultiple && (
+                        <>
+                          <span className="multi-photo-badge">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                              <circle cx="12" cy="13" r="4" />
+                            </svg>
+                            {images.length}
+                          </span>
+                          <div
+                            className="product-card-gallery-dots"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {images.map((_, idx) => (
+                              <button
+                                key={idx}
+                                type="button"
+                                className={`gallery-dot ${idx === currentImgIdx ? 'active' : ''}`}
+                                onClick={() =>
+                                  setCardImageIndices((prev) => ({ ...prev, [item.id]: idx }))
+                                }
+                                title={`Photo ${idx + 1}`}
+                              />
+                            ))}
+                          </div>
+                        </>
                       )}
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
-                      <span className="text-base font-extrabold text-[#0b1a13]">
-                        ৳ {formatBDT(product.price)}
-                      </span>
+                    <div className="product-info">
+                      <div className="product-meta-row">
+                        <span>{item.category}</span>
+                        <span className="product-measurements">
+                          {item.chest ? `Chest: ${item.chest}"` : 'All Sizes Available'}
+                        </span>
+                      </div>
 
-                      <div className="flex items-center gap-1.5">
-                        {/* Direct Buy Now */}
+                      <h3 className="product-title">{item.title}</h3>
+
+                      <div className="product-price-row">
+                        <span className="product-price">৳ {formatBDT(item.price)}</span>
+                        <span className="selected-size-text">Size: {selectedSize}</span>
+                      </div>
+
+                      <div
+                        className="product-sizes-row"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {itemSizes.map((sz) => (
+                          <button
+                            key={sz}
+                            type="button"
+                            className={`size-chip ${selectedSize === sz ? 'active' : ''}`}
+                            onClick={() =>
+                              setSelectedSizes((prev) => ({ ...prev, [item.id]: sz }))
+                            }
+                          >
+                            {sz}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div
+                        className="product-card-actions"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <button
                           type="button"
-                          onClick={() => handleBuyNow(product, (product.sizes?.[0] as GarmentSize) || 'M')}
-                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition flex items-center gap-1"
-                          title="Buy Now"
+                          className="btn-primary"
+                          style={{ flex: 1, padding: '0.65rem 0.75rem', fontSize: '0.8rem' }}
+                          disabled={item.sold}
+                          onClick={() => handleAddToBag(item, selectedSize)}
                         >
-                          <Zap className="w-3 h-3 fill-current" />
-                          <span>Buy Now</span>
+                          {item.sold ? 'Drop Claimed' : 'Add to Bag'}
                         </button>
-
-                        {/* Add to Bag */}
                         <button
                           type="button"
-                          onClick={() => handleAddToBag(product, (product.sizes?.[0] as GarmentSize) || 'M')}
-                          className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-800 transition"
-                          title="Add to Bag"
+                          className="btn-secondary"
+                          style={{ padding: '0.65rem 0.75rem', fontSize: '0.8rem' }}
+                          onClick={() => setSelectedProduct(item)}
+                          title="Quick Inspect Drop"
                         >
-                          <ShoppingBag className="w-4 h-4" />
+                          Inspect
                         </button>
                       </div>
                     </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      {/* Sailor-Style Full Product Detail Modal with Zoom */}
-      {activeModalProduct && (
-        <ProductDetailModal
-          product={activeModalProduct}
-          onClose={() => setActiveModalProduct(null)}
-          onAddToBag={(prod, size, variant) => {
-            handleAddToBag(prod, size, variant);
-            setActiveModalProduct(null);
-          }}
-          onBuyNow={(prod, size, variant) => {
-            handleBuyNow(prod, size, variant);
-            setActiveModalProduct(null);
-          }}
-        />
-      )}
-
-      {/* Sliding Bag Drawer */}
-      {isBagOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
-          <div
-            className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-300"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Drawer Head */}
-            <div className="p-5 border-b border-stone-200 flex items-center justify-between bg-stone-50">
-              <div className="flex items-center gap-2">
-                <ShoppingBag className="w-5 h-5 text-emerald-800" />
-                <h3 className="font-serif font-bold text-base text-stone-900">Your Bag</h3>
-                <span className="text-xs bg-stone-200 text-stone-700 font-bold px-2 py-0.5 rounded-full">
-                  {bag.length}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsBagOpen(false)}
-                className="p-1 rounded-lg text-stone-500 hover:text-stone-900 transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Drawer Items */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-4">
-              {bag.length === 0 ? (
-                <div className="text-center py-20 text-stone-400">
-                  <ShoppingBag className="w-12 h-12 mx-auto stroke-1 text-stone-300 mb-3" />
-                  <p className="text-sm font-semibold text-stone-600">Your bag is empty</p>
-                  <p className="text-xs text-stone-400 mt-1">Explore our vintage drops and claim your piece.</p>
-                </div>
-              ) : (
-                bag.map((item) => (
-                  <div
-                    key={item.cartItemId}
-                    className="flex items-center gap-3.5 p-3 rounded-xl border border-stone-200 bg-stone-50/50"
-                  >
-                    <img
-                      src={item.image || item.images?.[0] || '/assets/images/logo.jpg'}
-                      alt={item.title}
-                      className="w-16 h-16 object-cover rounded-lg border border-stone-200 flex-shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-serif font-bold text-xs text-stone-900 truncate">{item.title}</h4>
-                      <p className="text-[11px] text-stone-500 font-mono mt-0.5">
-                        Size: {item.selectedSize}
-                        {item.selectedVariantName ? ` • ${item.selectedVariantName}` : ''}
-                      </p>
-                      <p className="text-xs font-extrabold text-[#0b1a13] mt-1">
-                        ৳ {formatBDT(item.price)} {item.quantity > 1 ? `x ${item.quantity}` : ''}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setBag((prev) => prev.filter((i) => i.cartItemId !== item.cartItemId))}
-                      className="text-stone-400 hover:text-red-600 p-1 transition"
-                      title="Remove"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Drawer Footer */}
-            {bag.length > 0 && (
-              <div className="p-5 border-t border-stone-200 bg-stone-50 space-y-3">
-                {/* Delivery Zone Toggle */}
-                <div className="flex items-center justify-between text-xs font-semibold text-stone-700 bg-white p-2.5 rounded-xl border border-stone-200">
-                  <span>Delivery Location</span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setDeliveryZone('inside')}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
-                        deliveryZone === 'inside' ? 'bg-[#0b1a13] text-white' : 'text-stone-600 hover:bg-stone-100'
-                      }`}
-                    >
-                      Dhaka (৳70)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDeliveryZone('outside')}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
-                        deliveryZone === 'outside' ? 'bg-[#0b1a13] text-white' : 'text-stone-600 hover:bg-stone-100'
-                      }`}
-                    >
-                      Outside (৳130)
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-xs text-stone-600 font-medium">
-                  <span>Subtotal</span>
-                  <span>৳ {formatBDT(bagSubtotal)}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs text-stone-600 font-medium">
-                  <span>Delivery Charge</span>
-                  <span>৳ {formatBDT(deliveryCharge)}</span>
-                </div>
-                <div className="flex items-center justify-between text-base font-extrabold text-[#0b1a13] pt-2 border-t border-stone-200">
-                  <span>Total Amount</span>
-                  <span>৳ {formatBDT(bagTotal)}</span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsBagOpen(false);
-                    setDirectCheckoutItem(null);
-                    setIsCheckoutOpen(true);
-                  }}
-                  className="w-full py-3.5 rounded-xl bg-[#0b1a13] hover:bg-[#12281e] text-white text-xs font-bold uppercase tracking-wider transition shadow-lg flex items-center justify-center gap-2"
-                >
-                  <span>Proceed to Checkout</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
+                  </article>
+                );
+              })
             )}
           </div>
         </div>
+      </main>
+
+      {/* 6. Instagram Showcase Section */}
+      <section className="instagram-section" id="instagram">
+        <div className="container">
+          <div className="ig-profile-card">
+            <div className="ig-profile-left">
+              <img src="/assets/images/logo.jpg" alt="AUVARE Profile" className="ig-avatar" />
+              <div className="ig-names">
+                <h3>AUVARE</h3>
+                <a
+                  href={siteSettings.instagram_url || 'https://www.instagram.com/auvare_official/'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ig-handle"
+                >
+                  {siteSettings.instagram_handle || '@auvare_official'}
+                </a>
+                <div className="ig-stats-row">
+                  <span><strong>959</strong> posts</span>
+                  <span><strong>1,616</strong> followers</span>
+                  <span><strong>Curated Vintage</strong> • Bangladesh</span>
+                </div>
+              </div>
+            </div>
+
+            <a
+              href={siteSettings.instagram_url || 'https://www.instagram.com/auvare_official/'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+              </svg>
+              Follow on Instagram ↗
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* 7. Authentic Rich Site Footer */}
+      <footer className="site-footer">
+        <div className="container">
+          <div className="footer-grid">
+            <div className="footer-brand">
+              <Link
+                href="/"
+                className="brand-link footer-brand-link"
+                style={{ marginBottom: '1.15rem', display: 'inline-flex', alignItems: 'center', gap: '0.85rem', textDecoration: 'none' }}
+              >
+                <img
+                  src="/assets/images/logo.jpg"
+                  alt="AUVARE Crest"
+                  className="brand-crest"
+                  style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', border: '1.5px solid rgba(255, 255, 255, 0.2)' }}
+                />
+                <div className="brand-text-group">
+                  <span className="brand-title" style={{ color: '#ffffff', fontFamily: 'var(--font-serif)', fontSize: '1.45rem', fontWeight: 700, letterSpacing: '0.12em', lineHeight: 1, display: 'block' }}>
+                    AUVARE
+                  </span>
+                  <span className="brand-sub" style={{ color: '#94a3b8', fontSize: '0.72rem', letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 500, display: 'block', marginTop: '0.25rem' }}>
+                    Curated • Vintage
+                  </span>
+                </div>
+              </Link>
+              <p>
+                We sell curated stuff, personal taste. Worldwide shipping, proudly based in Bangladesh. Every piece is an authentic vintage &amp; pre-loved treasure.
+              </p>
+            </div>
+
+            <div className="footer-col">
+              <h4>Explore Drops</h4>
+              <ul className="footer-links">
+                <li><a href="#catalog" onClick={() => setActiveCategory('Shirts')}>T-Shirts &amp; Polos</a></li>
+                <li><a href="#catalog" onClick={() => setActiveCategory('Jackets')}>Vintage Jackets</a></li>
+                <li><a href="#catalog" onClick={() => setActiveCategory('Pants')}>Pants &amp; Trousers</a></li>
+                <li><a href="#catalog" onClick={() => setActiveCategory('All')}>New Arrivals</a></li>
+              </ul>
+            </div>
+
+            <div className="footer-col">
+              <h4>Customer Care</h4>
+              <ul className="footer-links">
+                <li><a href="#catalog">Size &amp; Measurement Guide</a></li>
+                <li><a href="#catalog">Condition Grading (8/10 to 10/10)</a></li>
+                <li><a href="#catalog">Delivery Policies</a></li>
+                <li><a href="#catalog">1-of-1 Pre-loved Return Rules</a></li>
+              </ul>
+            </div>
+
+            <div className="footer-col">
+              <h4>Stay Connected</h4>
+              <p style={{ fontSize: '0.875rem', color: '#9ca3af', marginBottom: '1rem' }}>
+                Follow our Instagram for flash stories and drop notifications before they hit the site.
+              </p>
+              <a
+                href={siteSettings.instagram_url || 'https://www.instagram.com/auvare_official/'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary"
+                style={{ padding: '0.6rem 1.25rem', fontSize: '0.85rem' }}
+              >
+                {siteSettings.instagram_handle || '@auvare_official'} on IG ↗
+              </a>
+            </div>
+          </div>
+
+          <div className="footer-bottom">
+            <p>© {new Date().getFullYear()} AUVARE. All rights reserved. Curated Vintage &amp; Pre-loved Fashion.</p>
+            <p>Payment Supported: Cash on Delivery • bKash • Nagad • Rocket • Bank Transfer</p>
+            <p style={{ width: '100%', textAlign: 'center', marginTop: '0.5rem', color: '#6b7280', fontSize: '0.8125rem' }}>
+              Developed by Abir Shikdar
+            </p>
+          </div>
+        </div>
+      </footer>
+
+      {/* 8. Sailor-Style Product Detail Modal (Image 4) */}
+      {selectedProduct && (
+        <ProductDetailModal
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+          onAddToBag={(prod, sz, variant) => {
+            handleAddToBag(prod, sz, variant);
+            setSelectedProduct(null);
+          }}
+          onBuyNow={handleBuyNow}
+        />
       )}
 
-      {/* Checkout Modal */}
-      {isCheckoutOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div
-            className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden border border-stone-200 animate-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
+      {/* 9. Shopping Bag Drawer */}
+      <div
+        className={`drawer-overlay ${isBagOpen ? 'active' : ''}`}
+        onClick={() => setIsBagOpen(false)}
+      />
+      <div className={`cart-drawer ${isBagOpen ? 'active' : ''}`}>
+        <div className="drawer-header">
+          <h3>Your Bag ({bagCount})</h3>
+          <button
+            type="button"
+            className="drawer-close"
+            onClick={() => setIsBagOpen(false)}
+            aria-label="Close Bag"
           >
-            <div className="bg-[#0b1a13] text-white p-5 flex items-center justify-between">
-              <div>
-                <h3 className="font-serif font-bold text-base">Complete Your Drop Order</h3>
-                <p className="text-[11px] text-emerald-300">Fast checkout with nationwide Cash on Delivery</p>
-              </div>
+            ✕
+          </button>
+        </div>
+
+        <div className="drawer-body">
+          {bag.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--color-text-muted)' }}>
+              <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>
+                Your bag is empty
+              </p>
+              <p style={{ fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+                Explore our curated drops and claim your 1-of-1 vintage garment!
+              </p>
               <button
                 type="button"
-                onClick={() => setIsCheckoutOpen(false)}
-                className="text-stone-300 hover:text-white p-1 rounded-lg transition"
+                className="btn-primary"
+                onClick={() => setIsBagOpen(false)}
               >
-                <X className="w-5 h-5" />
+                Start Browsing
+              </button>
+            </div>
+          ) : (
+            bag.map((item, idx) => (
+              <div
+                key={`${item.id}_${item.selectedSize}_${item.selectedVariantName || ''}_${idx}`}
+                className="cart-item"
+              >
+                <img
+                  src={item.image || item.images?.[0] || '/assets/images/logo.jpg'}
+                  alt={item.title}
+                  className="cart-item-img"
+                />
+                <div className="cart-item-info">
+                  <div className="cart-item-title">{item.title}</div>
+                  <div className="cart-item-meta">
+                    Size: {item.selectedSize}
+                    {item.selectedVariantName ? ` • ${item.selectedVariantName}` : ''}
+                  </div>
+                  <div className="cart-item-price">৳ {formatBDT(item.price)}</div>
+                  <div className="cart-item-controls">
+                    <button
+                      type="button"
+                      className="qty-btn"
+                      onClick={() => updateQuantity(idx, -1)}
+                    >
+                      -
+                    </button>
+                    <span>{item.quantity}</span>
+                    <button
+                      type="button"
+                      className="qty-btn"
+                      onClick={() => updateQuantity(idx, 1)}
+                    >
+                      +
+                    </button>
+                    <button
+                      type="button"
+                      className="remove-btn"
+                      onClick={() => removeFromBag(idx)}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {bag.length > 0 && (
+          <div className="drawer-footer">
+            {/* Delivery Zone Selector */}
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: '0.4rem' }}>
+                Delivery Destination:
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setDeliveryZone('inside')}
+                  style={{
+                    padding: '0.5rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    borderRadius: 'var(--radius-md)',
+                    border: `1.5px solid ${deliveryZone === 'inside' ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                    background: deliveryZone === 'inside' ? 'var(--color-primary-soft)' : 'white',
+                    color: deliveryZone === 'inside' ? 'var(--color-primary)' : 'var(--color-text-main)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Inside Dhaka (৳70)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeliveryZone('outside')}
+                  style={{
+                    padding: '0.5rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    borderRadius: 'var(--radius-md)',
+                    border: `1.5px solid ${deliveryZone === 'outside' ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                    background: deliveryZone === 'outside' ? 'var(--color-primary-soft)' : 'white',
+                    color: deliveryZone === 'outside' ? 'var(--color-primary)' : 'var(--color-text-main)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Outside Dhaka (৳130)
+                </button>
+              </div>
+            </div>
+
+            <div className="cart-total-row">
+              <span>Subtotal:</span>
+              <span>৳ {formatBDT(bagSubtotal)}</span>
+            </div>
+            <div className="cart-total-row">
+              <span>Delivery Charge:</span>
+              <span>৳ {formatBDT(deliveryCharge)}</span>
+            </div>
+            <div className="cart-total-row final" style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--color-primary)' }}>
+              <span>Total Bill:</span>
+              <span>৳ {formatBDT(bagTotal)}</span>
+            </div>
+
+            <button
+              type="button"
+              className="btn-primary"
+              style={{ width: '100%', marginTop: '0.85rem', padding: '0.85rem' }}
+              onClick={() => {
+                setDirectCheckoutItem(null);
+                setIsBagOpen(false);
+                setIsCheckoutOpen(true);
+              }}
+            >
+              Proceed to Instant Checkout →
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* 10. Direct Checkout Modal */}
+      {isCheckoutOpen && (
+        <div className="modal-overlay active">
+          <div className="modal-content" style={{ maxWidth: '580px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div className="modal-header">
+              <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.25rem', color: 'var(--color-primary)' }}>
+                {directCheckoutItem ? 'Instant Buy Now Checkout' : 'Finalize Your Order'}
+              </h3>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => {
+                  setIsCheckoutOpen(false);
+                  setDirectCheckoutItem(null);
+                }}
+              >
+                ✕
               </button>
             </div>
 
-            <form onSubmit={handleCheckoutSubmit} className="p-6 space-y-4">
-              {/* Order Summary Pill */}
-              <div className="bg-stone-50 p-3 rounded-xl border border-stone-200 text-xs flex items-center justify-between">
-                <span className="text-stone-600 font-medium">
-                  {checkoutItems.length} item{checkoutItems.length === 1 ? '' : 's'} • Total (with delivery):
-                </span>
-                <span className="text-sm font-extrabold text-[#0b1a13]">৳ {formatBDT(bagTotal)}</span>
-              </div>
-
-              {/* Delivery Info */}
-              <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1">Full Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Tanvir Ahmed"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:border-emerald-600 bg-stone-50"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1">Mobile Phone Number *</label>
-                <input
-                  type="tel"
-                  required
-                  placeholder="e.g. 017XXXXXXXX"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:border-emerald-600 bg-stone-50"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1">Delivery Address *</label>
-                <textarea
-                  required
-                  rows={2}
-                  placeholder="House #, Road #, Sector/Area, City"
-                  value={customerAddress}
-                  onChange={(e) => setCustomerAddress(e.target.value)}
-                  className="w-full text-xs px-3.5 py-2 rounded-xl border border-stone-300 focus:outline-none focus:border-emerald-600 bg-stone-50"
-                />
-              </div>
-
-              {/* Delivery Zone */}
-              <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1">Delivery Region</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setDeliveryZone('inside')}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition ${
-                      deliveryZone === 'inside'
-                        ? 'bg-[#0b1a13] text-white border-[#0b1a13]'
-                        : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
-                    }`}
-                  >
-                    Inside Dhaka (৳70)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDeliveryZone('outside')}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition ${
-                      deliveryZone === 'outside'
-                        ? 'bg-[#0b1a13] text-white border-[#0b1a13]'
-                        : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
-                    }`}
-                  >
-                    Outside Dhaka (৳130)
-                  </button>
+            <form onSubmit={handleCheckoutSubmit} style={{ padding: '1.25rem' }}>
+              {/* Order Items Summary */}
+              <div style={{ background: 'var(--color-surface)', borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem', marginBottom: '1rem', border: '1px solid var(--color-border)' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: '0.4rem' }}>
+                  Ordered Items ({checkoutItems.length})
+                </div>
+                {checkoutItems.map((item, idx) => (
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
+                    <span>
+                      {item.title} (Size: {item.selectedSize}) x{item.quantity}
+                    </span>
+                    <span style={{ fontWeight: 700 }}>৳ {formatBDT(item.price * item.quantity)}</span>
+                  </div>
+                ))}
+                <div style={{ borderTop: '1px dashed var(--color-border)', marginTop: '0.5rem', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', fontWeight: 800, color: 'var(--color-primary)' }}>
+                  <span>Total Payable:</span>
+                  <span>৳ {formatBDT(bagTotal)} (incl. delivery)</span>
                 </div>
               </div>
 
-              {/* Payment Methods */}
-              <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1">Payment Method</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {/* Customer Inputs */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                <div>
+                  <label className="form-label">Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="e.g. Tanvir Ahmed"
+                    className="form-input"
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Mobile Number *</label>
+                  <input
+                    type="tel"
+                    required
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    placeholder="017XXXXXXXX"
+                    className="form-input"
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '0.75rem' }}>
+                <label className="form-label">Full Delivery Address *</label>
+                <textarea
+                  required
+                  rows={2}
+                  value={customerAddress}
+                  onChange={(e) => setCustomerAddress(e.target.value)}
+                  placeholder="House, Road, Area, Thana, District"
+                  className="form-input"
+                  style={{ resize: 'vertical' }}
+                />
+              </div>
+
+              {/* Delivery Zone Radio */}
+              <div style={{ marginBottom: '0.75rem' }}>
+                <label className="form-label">Delivery Zone *</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="zone"
+                      checked={deliveryZone === 'inside'}
+                      onChange={() => setDeliveryZone('inside')}
+                    />
+                    Inside Dhaka (৳70)
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="zone"
+                      checked={deliveryZone === 'outside'}
+                      onChange={() => setDeliveryZone('outside')}
+                    />
+                    Outside Dhaka (৳130)
+                  </label>
+                </div>
+              </div>
+
+              {/* Payment Method Selector */}
+              <div style={{ marginBottom: '0.75rem' }}>
+                <label className="form-label">Payment Method *</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.4rem' }}>
                   {(['cod', 'bkash', 'nagad', 'rocket'] as const).map((method) => (
                     <button
                       key={method}
                       type="button"
                       onClick={() => setPaymentMethod(method)}
-                      className={`py-2 px-2 rounded-xl text-xs font-bold uppercase tracking-wider border transition ${
-                        paymentMethod === method
-                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                          : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
-                      }`}
+                      style={{
+                        padding: '0.5rem 0.25rem',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        borderRadius: 'var(--radius-md)',
+                        border: `1.5px solid ${paymentMethod === method ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                        background: paymentMethod === method ? 'var(--color-primary-soft)' : 'white',
+                        color: paymentMethod === method ? 'var(--color-primary)' : 'var(--color-text-main)',
+                        cursor: 'pointer',
+                      }}
                     >
                       {method}
                     </button>
@@ -681,113 +1281,92 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
                 </div>
               </div>
 
-              {/* bKash / Nagad / Rocket Instructions */}
+              {/* MFS instructions if not COD */}
               {paymentMethod !== 'cod' && (
-                <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs space-y-2">
-                  <p className="text-emerald-900 font-bold">
-                    Send ৳{formatBDT(bagTotal)} to our verified {paymentMethod.toUpperCase()} Personal Account:
+                <div style={{ background: '#fef3c7', borderRadius: 'var(--radius-md)', padding: '0.75rem', marginBottom: '0.75rem', fontSize: '0.8rem', border: '1px solid #fde68a', color: '#92400e' }}>
+                  <p style={{ fontWeight: 700, marginBottom: '0.25rem' }}>
+                    Send ৳{formatBDT(bagTotal)} via {paymentMethod.toUpperCase()} (Send Money):
                   </p>
-                  <p className="font-mono font-bold text-emerald-800 text-sm">
-                    {siteSettings[`${paymentMethod}_number`] || '01734018155'}
+                  <p style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#78350f' }}>
+                    {siteSettings[`${paymentMethod}_number`] || siteSettings.bkash_number || '01734018155'}
                   </p>
-                  <div className="grid grid-cols-2 gap-2 pt-1">
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.5rem' }}>
                     <input
-                      type="text"
-                      placeholder="Sender Phone Number *"
-                      required
+                      type="tel"
+                      placeholder="Sender Number"
                       value={senderPhone}
                       onChange={(e) => setSenderPhone(e.target.value)}
-                      className="text-xs px-3 py-1.5 rounded-lg border border-emerald-300 bg-white"
+                      className="form-input"
+                      style={{ fontSize: '0.8rem' }}
                     />
                     <input
                       type="text"
-                      placeholder="Transaction ID (TrxID) *"
-                      required
+                      placeholder="TrxID (Transaction ID)"
                       value={trxId}
                       onChange={(e) => setTrxId(e.target.value)}
-                      className="text-xs px-3 py-1.5 rounded-lg border border-emerald-300 bg-white"
+                      className="form-input"
+                      style={{ fontSize: '0.8rem' }}
                     />
                   </div>
                 </div>
               )}
 
-              {/* Order Notes */}
-              <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1">Special Delivery Note (Optional)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Call before delivery, deliver after 4 PM"
-                  value={customerNotes}
-                  onChange={(e) => setCustomerNotes(e.target.value)}
-                  className="w-full text-xs px-3.5 py-2 rounded-xl border border-stone-300 focus:outline-none focus:border-emerald-600 bg-stone-50"
-                />
-              </div>
-
-              {/* Submit CTA */}
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3.5 rounded-xl bg-[#0b1a13] hover:bg-[#12281e] text-white text-xs font-bold uppercase tracking-wider transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
+                className="btn-primary"
+                style={{ width: '100%', padding: '0.85rem', marginTop: '0.5rem' }}
               >
-                {isSubmitting ? (
-                  <span>Processing Order...</span>
-                ) : (
-                  <>
-                    <span>Confirm &amp; Place Order (৳ {formatBDT(bagTotal)})</span>
-                    <Check className="w-4 h-4" />
-                  </>
-                )}
+                {isSubmitting ? 'Placing Order...' : `Confirm & Place Order (৳${formatBDT(bagTotal)})`}
               </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* Order Success Modal */}
+      {/* 11. Order Success Modal */}
       {orderSuccess && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 text-center border border-stone-200 space-y-4 animate-in zoom-in-95 duration-200">
-            <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
-              <Check className="w-8 h-8 stroke-[2.5]" />
+        <div className="modal-overlay active">
+          <div className="modal-content" style={{ maxWidth: '460px', textAlign: 'center', padding: '2rem 1.5rem' }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--color-primary-soft)', color: 'var(--color-primary)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
             </div>
-
-            <h3 className="font-serif font-bold text-xl text-stone-900">Order Placed Successfully!</h3>
-            <p className="text-xs text-stone-600 font-mono">
-              Order ID: <span className="font-bold text-emerald-700">{orderSuccess.orderId}</span>
+            <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.4rem', color: 'var(--color-primary)', marginBottom: '0.5rem' }}>
+              Order Placed Successfully!
+            </h3>
+            <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
+              Order ID: <strong style={{ color: 'var(--color-text-main)' }}>#{orderSuccess.orderId}</strong>
             </p>
-            <p className="text-xs text-stone-500">
-              Total bill: ৳{formatBDT(orderSuccess.total)}. Our team is preparing your drop for dispatch.
+            <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>
+              Total Payable: <strong style={{ color: 'var(--color-primary)' }}>৳ {formatBDT(orderSuccess.total)}</strong>
             </p>
 
-            <div className="pt-2 space-y-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <a
-                href={`https://wa.me/${waNumber}?text=${orderSuccess.waText}`}
+                href={`https://wa.me/${cleanWa}?text=${orderSuccess.waText}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider transition shadow flex items-center justify-center gap-2"
+                className="btn-primary"
+                style={{ background: '#25D366', borderColor: '#25D366' }}
               >
-                <MessageCircle className="w-4 h-4" />
-                <span>Confirm on WhatsApp Instantly</span>
+                Send Confirmation on WhatsApp ↗
               </a>
-
               <button
                 type="button"
+                className="btn-secondary"
                 onClick={() => setOrderSuccess(null)}
-                className="w-full py-2.5 rounded-xl border border-stone-200 text-stone-700 text-xs font-bold hover:bg-stone-50 transition"
               >
-                Continue Browsing
+                Continue Browsing AUVARE
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Mediasoft BD Multichannel Help Widget (Bottom-Left) */}
-      <MediasoftWidget
-        phone={siteSettings.whatsapp_number || '+8801734018155'}
-        email="auvare.official@gmail.com"
-        whatsappNumber={waNumber}
-      />
+      {/* 12. Mediasoft BD Multichannel Help Widget at Bottom-Left Corner */}
+      <MediasoftWidget phone={siteSettings.whatsapp_number} whatsappNumber={cleanWa} />
     </>
   );
 }

@@ -50,10 +50,16 @@ export interface OrderItem {
   size: GarmentSize | string;
   variantId?: string;
   variantName?: string;
-  unitPrice: number;
+  unitPrice?: number;
   price?: number;
   quantity: number;
   totalPrice?: number;
+}
+
+export interface CartItem extends Product {
+  selectedSize: GarmentSize;
+  selectedVariantName?: string;
+  quantity: number;
 }
 
 export interface Order {

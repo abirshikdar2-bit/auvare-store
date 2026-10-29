@@ -114,3 +114,4 @@ src/
 - [ ] Deploy Next.js build to Vercel production.
 - [ ] Assign production alias `auvare-store.vercel.app`.
 - [ ] Verify live at `https://auvare-store.vercel.app` using Kapture MCP to confirm Next.js headers, SSR catalog, Reels slider, image zoom, and Mediasoft widget.
+
