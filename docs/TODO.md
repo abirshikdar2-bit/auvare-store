@@ -16,6 +16,18 @@ _(no active items in progress)_
 
 ## Done
 
+- `#33` **2026-10-30** Full-Screen In-Details Studio (Sailor Zoom, Suggested Pieces & Recently Viewed):
+  - **Identified User Problem**:
+    - Product clicks opened a floating popup modal over a dark overlay backdrop instead of a dedicated full-screen page view.
+    - Description text leaked internal metadata comments (<!--AUVARE_VARIANTS:...-->).
+    - Missing 'Suggested Pieces' and 'Customer Recently Viewed' sections.
+  - **Implemented Clean Solution**:
+    - Full-Screen Studio Screen: Converted ProductDetailModal to a true 100vw/100vh dedicated screen with top sticky nav bar ('Back to Collection' & close '✕').
+    - Clean Description: Stripped all internal HTML comments from garment descriptions.
+    - Suggested Pieces: Filtered same-category garments into an interactive recommendation grid.
+    - Customer Recently Viewed: Integrated session browsing history.
+    - Production Live on https://auvare-store.vercel.app.
+
 - `#32` **2026-10-30** Enterprise Next.js 15 App Router Production Migration & UX Refinements:
   - **Identified User Specifications & "Big Brother" Architecture**:
     - The client's senior consultant provided a full enterprise specification mandating an audit and migration from legacy static HTML/JS to a native Next.js 15 (App Router), Tailwind CSS, and TypeScript architecture.
