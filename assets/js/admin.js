@@ -18,19 +18,19 @@ window.formatBDT = formatBDT;
 // Default Seed with S, M, L, XL, XXL
 const DEFAULT_SEED = [
   {
-    id: 'auv-1',
-    title: 'Vintage Japanese Minimal Graphic Tee',
-    category: 'T-Shirts',
-    chest: '38"-46"',
-    length: '24"-30"',
+    id: 'auv-20',
+    title: '90s Vintage Outdoor Mountain Parka Jacket',
+    category: 'Jackets',
+    chest: '44"-50"',
+    length: '30"',
     sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-    size: 'M',
-    condition: '9.5/10 (Mint Condition)',
-    price: 999,
-    image: 'assets/images/item1.jpg',
+    size: 'L',
+    condition: '9/10 (Authentic Vintage)',
+    price: 1850,
+    image: 'https://images.unsplash.com/photo-1608256246200-53e635b5b65f?auto=format&fit=crop&w=800&q=80',
     sold: false,
-    instagramUrl: 'https://www.instagram.com/auvare_official/p/De4NPJkDzIY/',
-    description: 'Authentic imported vintage tee with subtle graphics. Soft washed cotton with single-stitch detailing.'
+    instagramUrl: 'https://www.instagram.com/auvare_official/',
+    description: 'Rugged vintage utility parka jacket crafted from heavy-duty weather-resistant shell.'
   },
   {
     id: 'auv-2',

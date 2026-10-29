@@ -11,19 +11,19 @@ window.DEFAULT_BOX_PLACEHOLDER = DEFAULT_BOX_PLACEHOLDER;
 // Default Seed Products with S, M, L, XL, XXL Sizes
 const DEFAULT_PRODUCTS = [
   {
-    id: 'auv-1',
-    title: 'Vintage Japanese Minimal Graphic Tee',
-    category: 'T-Shirts',
-    chest: '38"-46"',
-    length: '24"-30"',
+    id: 'auv-20',
+    title: '90s Vintage Outdoor Mountain Parka Jacket',
+    category: 'Jackets',
+    chest: '44"-50"',
+    length: '30"',
     sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-    size: 'M',
-    condition: '9.5/10 (Mint Condition)',
-    price: 999,
-    image: 'assets/images/item1.jpg',
+    size: 'L',
+    condition: '9/10 (Authentic Vintage)',
+    price: 1850,
+    image: 'https://images.unsplash.com/photo-1608256246200-53e635b5b65f?auto=format&fit=crop&w=800&q=80',
     sold: false,
-    instagramUrl: 'https://www.instagram.com/auvare_official/p/De4NPJkDzIY/',
-    description: 'Authentic imported vintage tee with subtle graphics. Soft washed cotton with single-stitch detailing.'
+    instagramUrl: 'https://www.instagram.com/auvare_official/',
+    description: 'Rugged vintage utility parka jacket crafted from heavy-duty weather-resistant shell.'
   },
   {
     id: 'auv-2',
@@ -367,19 +367,12 @@ function initHeroCarousel(productsList) {
   const card = document.getElementById('heroCarouselCard');
   if (!track || !card) return;
 
-  // Filter valid products to display (sort active/available drops first)
-  const allValid = Array.isArray(productsList) && productsList.length > 0
+  // Filter valid products to display in strict catalog serial order (1st -> 2nd -> 3rd -> 4th...)
+  const items = Array.isArray(productsList) && productsList.length > 0
     ? productsList.filter(p => p && (p.image || (p.images && p.images.length > 0)))
     : [];
 
-  if (allValid.length === 0) return;
-
-  // Sort available pieces first, sold pieces last
-  const items = [...allValid].sort((a, b) => {
-    if (a.sold && !b.sold) return 1;
-    if (!a.sold && b.sold) return -1;
-    return 0;
-  });
+  if (items.length === 0) return;
 
   // Unique signature to avoid rebuilding DOM if products haven't changed
   const currentSig = items.map(p => `${p.id}_${p.price}_${p.sold}`).join('|');
@@ -404,7 +397,7 @@ function initHeroCarousel(productsList) {
   track.style.transform = 'translateX(0%)';
 
   const slidesHtml = items.map((item, idx) => {
-    const imgSrc = (item.images && item.images.length > 0 && item.images[0]) || item.image || 'assets/images/item1.jpg';
+    const imgSrc = (item.images && item.images.length > 0 && item.images[0]) || item.image || 'assets/images/item2.jpg';
     const titleEscaped = (item.title || 'AUVARE Drop').replace(/"/g, '&quot;');
     return `
       <div class="hero-carousel-slide" data-index="${idx}" data-product-id="${item.id}">
@@ -416,7 +409,7 @@ function initHeroCarousel(productsList) {
   const cloneHtml = items.length > 1
     ? (() => {
         const first = items[0];
-        const cloneImg = (first.images && first.images.length > 0 && first.images[0]) || first.image || 'assets/images/item1.jpg';
+        const cloneImg = (first.images && first.images.length > 0 && first.images[0]) || first.image || 'assets/images/item2.jpg';
         const cloneTitle = (first.title || 'AUVARE Drop').replace(/"/g, '&quot;');
         return `
           <div class="hero-carousel-slide clone" data-index="${items.length}" data-product-id="${first.id}">
@@ -1923,7 +1916,7 @@ async function handleAddNewProduct(event) {
   const lengthVal = document.getElementById('newLength')?.value.trim() || '28';
   const condition = document.getElementById('newCondition')?.value.trim() || '9.5/10 (Mint Condition)';
   const price = parseInt(document.getElementById('newPrice')?.value || '0', 10);
-  const image = document.getElementById('newImageUrl')?.value.trim() || 'assets/images/item1.jpg';
+  const image = document.getElementById('newImageUrl')?.value.trim() || 'assets/images/item2.jpg';
 
   if (!title || !price) {
     showToast('Please enter both title and price.', 'error');

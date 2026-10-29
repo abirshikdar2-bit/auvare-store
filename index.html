@@ -14,7 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="assets/css/style.css?v=3.9">
+  <link rel="stylesheet" href="assets/css/style.css?v=4.0">
 
   <script>
     // Force manual scroll restoration so refreshes always start at homepage top
@@ -198,8 +198,8 @@
           <!-- Carousel Slides Viewport & Track -->
           <div class="hero-carousel-viewport">
             <div class="hero-carousel-track" id="heroCarouselTrack">
-              <div class="hero-carousel-slide">
-                <img src="assets/images/item1.jpg" alt="AUVARE Featured Drop" class="hero-card-img" id="heroFeaturedImg">
+              <div class="hero-carousel-slide" data-index="0" data-product-id="auv-20">
+                <img src="https://images.unsplash.com/photo-1608256246200-53e635b5b65f?auto=format&fit=crop&w=800&q=80" alt="90s Vintage Outdoor Mountain Parka Jacket" class="hero-card-img" id="heroFeaturedImg">
               </div>
             </div>
           </div>
@@ -379,7 +379,7 @@
       <!-- Instagram Posts Grid Preview -->
       <div class="ig-grid">
         <a href="https://www.instagram.com/auvare_official/p/De4NPJkDzIY/" target="_blank" class="ig-post-item">
-          <img src="assets/images/item1.jpg" alt="AUVARE Instagram Drop" class="ig-post-img">
+          <img src="https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=800&q=80" alt="AUVARE Instagram Drop" class="ig-post-img">
           <div class="ig-overlay">
             <span>View Post</span>
             <span>Chest 38" • ৳999</span>
@@ -693,7 +693,7 @@
 
           <div class="form-group">
             <label class="form-label">Image URL / Local Photo Path</label>
-            <input type="text" id="newImageUrl" class="form-input" placeholder="assets/images/item1.jpg or web image URL" />
+            <input type="text" id="newImageUrl" class="form-input" placeholder="https://... or photo web image URL" />
             <span style="font-size:0.75rem; color:var(--color-text-muted);">Leave empty to use sample photo.</span>
           </div>
 
@@ -776,10 +776,10 @@
 
   <!-- Supabase JS CDN & Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="assets/js/supabaseClient.js?v=4.2"></script>
+  <script src="assets/js/supabaseClient.js?v=4.3"></script>
 
   <!-- Core App Scripts -->
-  <script src="assets/js/app.js?v=5.0"></script>
+  <script src="assets/js/app.js?v=5.1"></script>
 </body>
 </html>
 

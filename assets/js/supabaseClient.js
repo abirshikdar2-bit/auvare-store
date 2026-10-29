@@ -176,7 +176,7 @@ const SupabaseService = (function() {
           length: product.length || '27"',
           condition: product.condition || '9.5/10 (Mint Condition)',
           price: parseInt(product.price, 10) || 0,
-          image: product.image || (images && images[0]) || 'assets/images/item1.jpg',
+          image: product.image || (images && images[0]) || 'assets/images/item2.jpg',
           images: images,
           variants: variants,
           sold: !!product.sold,
