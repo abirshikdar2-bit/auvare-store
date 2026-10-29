@@ -1294,6 +1294,8 @@ document.addEventListener('keydown', (e) => {
 function switchDetailScreenImage(imgSrc, btnEl) {
   const mainImg = document.getElementById('screenMainImg');
   if (mainImg) {
+    mainImg.style.transform = 'scale(1)';
+    mainImg.style.transformOrigin = 'center center';
     mainImg.style.transition = 'opacity 0.15s ease';
     mainImg.style.opacity = '0.4';
     setTimeout(() => {
@@ -1306,6 +1308,46 @@ function switchDetailScreenImage(imgSrc, btnEl) {
 }
 window.switchDetailScreenImage = switchDetailScreenImage;
 window.switchDetailModalImage = switchDetailScreenImage; // alias
+
+// Interactive Product Studio Zoom Functionality
+function handleProductZoom(e) {
+  const box = e.currentTarget;
+  const img = document.getElementById('screenMainImg');
+  if (!box || !img) return;
+
+  const rect = box.getBoundingClientRect();
+  const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+  const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+
+  img.style.transformOrigin = `${x.toFixed(2)}% ${y.toFixed(2)}%`;
+  img.style.transform = 'scale(2.2)';
+}
+window.handleProductZoom = handleProductZoom;
+
+function handleProductZoomTouch(e) {
+  if (!e.touches || e.touches.length === 0) return;
+  const touch = e.touches[0];
+  const box = e.currentTarget;
+  const img = document.getElementById('screenMainImg');
+  if (!box || !img) return;
+
+  const rect = box.getBoundingClientRect();
+  const x = Math.max(0, Math.min(100, ((touch.clientX - rect.left) / rect.width) * 100));
+  const y = Math.max(0, Math.min(100, ((touch.clientY - rect.top) / rect.height) * 100));
+
+  img.style.transformOrigin = `${x.toFixed(2)}% ${y.toFixed(2)}%`;
+  img.style.transform = 'scale(2)';
+}
+window.handleProductZoomTouch = handleProductZoomTouch;
+
+function handleProductZoomLeave() {
+  const img = document.getElementById('screenMainImg');
+  if (img) {
+    img.style.transformOrigin = 'center center';
+    img.style.transform = 'scale(1)';
+  }
+}
+window.handleProductZoomLeave = handleProductZoomLeave;
 
 function selectScreenVariant(productId, variantId) {
   selectCardVariant(productId, variantId);
@@ -1400,12 +1442,25 @@ function renderProductDetailScreen(product) {
           </div>
         ` : ''}
 
-        <div class="screen-main-img-box">
+        <div 
+          class="screen-main-img-box" 
+          id="screenZoomBox" 
+          onmousemove="handleProductZoom(event)" 
+          onmouseleave="handleProductZoomLeave()" 
+          ontouchmove="handleProductZoomTouch(event)" 
+          ontouchend="handleProductZoomLeave()"
+          title="Move cursor over piece to zoom"
+        >
           <img id="screenMainImg" src="${primaryImg}" alt="${product.title}" />
           
           <div class="screen-gallery-badges">
             <span class="badge-tag unique">Curated Drop</span>
             ${product.sold ? '<span class="badge-tag sold">Sold Out</span>' : '<span class="badge-tag condition">' + (product.condition ? product.condition.split('(')[0].trim() : 'Mint') + '</span>'}
+          </div>
+
+          <div class="screen-zoom-hint">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+            <span>Roll over to zoom</span>
           </div>
         </div>
       </div>
