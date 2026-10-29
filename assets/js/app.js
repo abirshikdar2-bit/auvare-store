@@ -2250,122 +2250,10 @@ function handleMobileCategoryClick(cat) {
 }
 
 /* ==========================================================================
-   AUVARE Floating Multichannel Help Widget Controller
-   - Position: Bottom Left (24px, 24px)
-   - Shifting brand icons: WhatsApp -> Support -> Messenger -> Email -> Call
-   - Animated "Help" pill badge on hover
-   - Clean popup menu with tooltip pills
-   - Customer Support Modal
-   - STRICT ZERO EMOJIS - Clean Authentic SVGs
+   AUVARE Customer Support Modal & Handlers
    ========================================================================== */
 
-let helpWidgetIconTimer = null;
-let currentHelpIconIndex = 0;
-const HELP_SHIFTING_ICONS = [
-  {
-    name: 'WhatsApp',
-    color: '#25D366',
-    svg: `<svg width="27" height="27" viewBox="0 0 24 24" fill="#25D366"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>`
-  },
-  {
-    name: 'Support',
-    color: '#10b981',
-    svg: `<svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>`
-  },
-  {
-    name: 'Messenger',
-    color: '#0084FF',
-    svg: `<svg width="26" height="26" viewBox="0 0 24 24" fill="#0084FF"><path d="M12 2C6.477 2 2 6.145 2 11.258c0 2.91 1.453 5.518 3.727 7.18V22l3.418-1.875c.91.252 1.872.39 2.855.39 5.523 0 10-4.145 10-9.257C22 6.145 17.523 2 12 2zm1.066 12.443l-2.73-2.91-5.328 2.91 5.86-6.22 2.798 2.91 5.26-2.91-5.86 6.22z"/></svg>`
-  },
-  {
-    name: 'Email',
-    color: '#0284c7',
-    svg: `<svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`
-  },
-  {
-    name: 'Call',
-    color: '#16a34a',
-    svg: `<svg width="24" height="24" viewBox="0 0 24 24" fill="#22c55e"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 0 0-1.01.24l-1.57 1.97c-2.83-1.44-5.15-3.75-6.59-6.59l1.97-1.57c.28-.28.36-.67.25-1.02A11.36 11.36 0 0 1 8.57 4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1 0 9.39 7.61 17 17 17 .55 0 1-.45 1-1v-3.62c0-.55-.45-1-1-1z"/></svg>`
-  }
-];
-
-function initAuvareHelpWidget() {
-  const iconBox = document.getElementById('helpWidgetIconBox');
-  if (!iconBox) return;
-
-  // Render initial icons
-  iconBox.innerHTML = HELP_SHIFTING_ICONS.map((item, idx) => `
-    <div class="help-shifting-icon ${idx === 0 ? 'active' : 'entering'}" data-index="${idx}">
-      ${item.svg}
-    </div>
-  `).join('');
-
-  if (helpWidgetIconTimer) clearInterval(helpWidgetIconTimer);
-  helpWidgetIconTimer = setInterval(shiftHelpWidgetIcon, 2500);
-
-  // Close help menu on outside click
-  document.addEventListener('click', (e) => {
-    const widget = document.getElementById('auvareHelpWidget');
-    if (widget && !widget.contains(e.target)) {
-      toggleAuvareHelpWidget(false);
-    }
-  });
-
-  // Close on Escape key
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      toggleAuvareHelpWidget(false);
-      closeAuvareSupportModal();
-    }
-  });
-}
-
-function shiftHelpWidgetIcon() {
-  const iconBox = document.getElementById('helpWidgetIconBox');
-  if (!iconBox) return;
-
-  const icons = iconBox.querySelectorAll('.help-shifting-icon');
-  if (!icons.length) return;
-
-  const currentIcon = icons[currentHelpIconIndex];
-  currentHelpIconIndex = (currentHelpIconIndex + 1) % icons.length;
-  const nextIcon = icons[currentHelpIconIndex];
-
-  if (currentIcon) {
-    currentIcon.classList.remove('active', 'entering');
-    currentIcon.classList.add('exiting');
-  }
-
-  if (nextIcon) {
-    nextIcon.classList.remove('exiting');
-    nextIcon.classList.add('entering');
-    // Force reflow
-    void nextIcon.offsetWidth;
-    nextIcon.classList.remove('entering');
-    nextIcon.classList.add('active');
-  }
-}
-
-function toggleAuvareHelpWidget(forceOpen) {
-  const menu = document.getElementById('helpWidgetMenu');
-  const trigger = document.getElementById('helpWidgetTrigger');
-  if (!menu || !trigger) return;
-
-  const isOpen = typeof forceOpen === 'boolean' ? forceOpen : !menu.classList.contains('open');
-
-  if (isOpen) {
-    menu.classList.add('open');
-    trigger.classList.add('is-open');
-    trigger.setAttribute('aria-expanded', 'true');
-  } else {
-    menu.classList.remove('open');
-    trigger.classList.remove('is-open');
-    trigger.setAttribute('aria-expanded', 'false');
-  }
-}
-
 function openAuvareSupportModal() {
-  toggleAuvareHelpWidget(false);
   const modal = document.getElementById('auvareSupportModal');
   if (modal) {
     modal.classList.add('open');
@@ -2384,7 +2272,10 @@ function closeAuvareSupportModal(e) {
   }
 }
 
-window.toggleAuvareHelpWidget = toggleAuvareHelpWidget;
+function initAuvareHelpWidget() {
+  // Handled cleanly by assets/js/ms_widget.js
+}
+
 window.openAuvareSupportModal = openAuvareSupportModal;
 window.closeAuvareSupportModal = closeAuvareSupportModal;
 window.initAuvareHelpWidget = initAuvareHelpWidget;

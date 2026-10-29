@@ -1123,232 +1123,138 @@ a {
   font-weight: 600;
 }
 
-/* Multichannel Floating Help Widget (Bottom Left - Inspired by Mediasoft) */
-.auvare-help-widget {
+/* ==========================================================================
+   Exact Mediasoft BD Multichannel Floating Widget (Bottom-Right Corner)
+   Reverse-Engineered from https://mediasoftbd.com/
+   ========================================================================== */
+#ms_widget {
   position: fixed;
-  bottom: 24px;
-  left: 24px;
-  z-index: 100000;
+  bottom: 30px;
+  right: 30px;
+  z-index: 999999;
   display: flex;
-  flex-direction: column-reverse;
-  align-items: flex-start;
-  pointer-events: none;
+  flex-direction: column;
+  align-items: flex-end;
+  pointer-events: auto;
   font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
 }
 
-.auvare-help-widget * {
+#ms_widget * {
   box-sizing: border-box;
 }
 
-/* Main Shifting Trigger Button */
-.help-widget-trigger {
-  width: 58px;
-  height: 58px;
-  border-radius: 50%;
-  background: var(--color-primary, #0b1a13);
-  color: #ffffff;
-  border: 2.5px solid #ffffff;
-  box-shadow: 0 10px 25px -4px rgba(11, 26, 19, 0.45), 0 4px 10px -2px rgba(11, 26, 19, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  position: relative;
-  pointer-events: auto;
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  outline: none;
-  padding: 0;
-}
-
-.help-widget-trigger:hover {
-  transform: scale(1.08) translateY(-2px);
-  box-shadow: 0 14px 30px -4px rgba(11, 26, 19, 0.55), 0 6px 14px -2px rgba(11, 26, 19, 0.35);
-}
-
-.help-widget-pulse {
-  position: absolute;
-  inset: -3px;
-  border-radius: 50%;
-  border: 2px solid #10b981;
-  opacity: 0.6;
-  animation: help-pulse-anim 2.5s infinite;
-  pointer-events: none;
-}
-
-@keyframes help-pulse-anim {
-  0% { transform: scale(1); opacity: 0.8; }
-  50% { transform: scale(1.22); opacity: 0; }
-  100% { transform: scale(1); opacity: 0; }
-}
-
-.help-widget-icon-box {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-.help-shifting-icon {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.help-shifting-icon.active {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  pointer-events: auto;
-}
-
-.help-shifting-icon.exiting {
-  opacity: 0;
-  transform: translateY(-8px) scale(0.8);
-  pointer-events: none;
-}
-
-.help-shifting-icon.entering {
-  opacity: 0;
-  transform: translateY(8px) scale(0.8);
-  pointer-events: none;
-}
-
-/* "Help" Tooltip Pill on Hover of Main Trigger */
-.help-trigger-label {
-  position: absolute;
-  left: 70px;
-  background: var(--color-primary, #0b1a13);
-  color: #ffffff;
-  font-size: 0.84rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  padding: 6px 15px;
-  border-radius: 20px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
-  white-space: nowrap;
-  border: 1.5px solid rgba(255, 255, 255, 0.22);
-  opacity: 0;
-  pointer-events: none;
-  transform: translateX(-10px);
-  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.help-widget-trigger:hover .help-trigger-label {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-/* Popup Menu List */
-.help-widget-menu {
-  list-style: none;
-  margin: 0 0 12px 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column-reverse;
-  gap: 10px;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(14px) scale(0.92);
-  transform-origin: bottom left;
-  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.25s ease;
-  pointer-events: none;
-}
-
-.help-widget-menu.open {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0) scale(1);
-  pointer-events: auto;
-}
-
-.help-menu-item {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.help-item-btn {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
+#ms_widget_button_main {
+  width: 64px;
+  height: 64px;
+  border-radius: 64px;
   background: #ffffff;
-  border: 1.5px solid #e2e8f0;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   cursor: pointer;
-  text-decoration: none;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.4s ease, background 0.4s ease, border-radius 0.4s ease, box-shadow 0.3s ease;
+  overflow: hidden;
   position: relative;
-  padding: 0;
-  outline: none;
 }
 
-.help-item-btn:hover {
-  transform: scale(1.1) translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
-  border-color: #cbd5e1;
+#ms_widget_button_main:hover {
+  width: 250px;
+  background: linear-gradient(90deg, rgb(44, 35, 185) 0px, rgb(37, 37, 180) 17%, rgb(0, 212, 255) 100%);
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 6px 16px;
 }
 
-.help-item-btn.btn-wa:hover {
-  border-color: #25D366;
-  background: #f0fdf4;
-}
-
-.help-item-btn.btn-messenger:hover {
-  border-color: #0084FF;
-  background: #eff6ff;
-}
-
-.help-item-btn.btn-email:hover {
-  border-color: #0284c7;
-  background: #f0f9ff;
-}
-
-.help-item-btn.btn-call:hover {
-  border-color: #16a34a;
-  background: #f0fdf4;
-}
-
-.help-item-btn.btn-support:hover {
-  border-color: #0b1a13;
-  background: #f8fafc;
-}
-
-.help-item-btn.btn-minimize:hover {
-  border-color: #ef4444;
-  background: #fef2f2;
-}
-
-/* Tooltip Pill for Menu Items */
-.help-item-tooltip {
-  position: absolute;
-  left: 60px;
-  background: var(--color-primary, #0b1a13);
+#ms_widget_button_main p {
+  display: none;
   color: #ffffff;
-  padding: 6px 13px;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  padding: 0;
+  text-align: center;
   white-space: nowrap;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  opacity: 0;
-  pointer-events: none;
-  transform: translateX(-8px);
-  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.02em;
 }
 
-.help-item-btn:hover .help-item-tooltip {
-  opacity: 1;
-  transform: translateX(0);
+#ms_widget_button_main:hover img {
+  display: none !important;
+}
+
+#ms_widget_button_main:hover p {
+  display: block;
+}
+
+#ms_widget_list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+#ms_widget_list li {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ms_widget_link {
+  text-decoration: none;
+  display: block;
+}
+
+.ms_widget_button {
+  width: 64px;
+  height: 64px;
+  border-radius: 64px;
+  background: #ffffff;
+  box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: width 0.4s ease, background 0.4s ease, border-radius 0.4s ease, box-shadow 0.3s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+.ms_widget_button p {
+  display: none;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.ms_widget_button:hover {
+  width: 250px;
+  background: linear-gradient(90deg, rgb(44, 35, 185) 0px, rgb(37, 37, 180) 17%, rgb(0, 212, 255) 100%);
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 6px 16px;
+}
+
+.ms_widget_button:hover img {
+  display: none !important;
+}
+
+.ms_widget_button:hover p {
+  display: block;
+}
+
+#ms_widget_button_main img,
+.ms_widget_button img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  pointer-events: none;
+  display: block;
 }
 
 /* Support & Customer Care Modal */
@@ -1490,27 +1396,28 @@ a {
 }
 
 @media (max-width: 640px) {
-  .auvare-help-widget {
-    bottom: 18px;
-    left: 18px;
+  #ms_widget {
+    bottom: 20px;
+    right: 20px;
   }
-  .help-widget-trigger {
-    width: 52px;
-    height: 52px;
+  #ms_widget_button_main,
+  .ms_widget_button {
+    width: 56px;
+    height: 56px;
+    border-radius: 56px;
   }
-  .help-item-btn {
-    width: 44px;
-    height: 44px;
+  #ms_widget_button_main:hover,
+  .ms_widget_button:hover {
+    width: 190px;
   }
-  .help-trigger-label {
-    left: 60px;
-    font-size: 0.78rem;
-    padding: 5px 12px;
+  #ms_widget_button_main p,
+  .ms_widget_button p {
+    font-size: 16px;
   }
-  .help-item-tooltip {
-    left: 54px;
-    font-size: 0.75rem;
-    padding: 5px 10px;
+  #ms_widget_button_main img,
+  .ms_widget_button img {
+    width: 42px;
+    height: 42px;
   }
 }
 

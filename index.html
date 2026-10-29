@@ -14,7 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="assets/css/style.css?v=4.3">
+  <link rel="stylesheet" href="assets/css/style.css?v=4.4">
 
   <script>
     // Force manual scroll restoration so refreshes always start at homepage top
@@ -705,129 +705,13 @@
     </div>
   </div>
 
-  <!-- Floating Multichannel Help Widget (Bottom Left) -->
-  <div id="auvareHelpWidget" class="auvare-help-widget">
-    <!-- Popup Menu List (Appears above main button) -->
-    <ul id="helpWidgetMenu" class="help-widget-menu" aria-label="Help and Support Channels">
-      <!-- 1. WhatsApp -->
-      <li class="help-menu-item">
-        <a 
-          id="helpLinkWhatsApp"
-          href="https://wa.me/8801734018155?text=Hi%20AUVARE,%20I%20am%20browsing%20your%20website%20and%20need%20assistance." 
-          target="_blank" 
-          rel="noopener noreferrer"
-          class="help-item-btn btn-wa"
-          title="WhatsApp"
-          aria-label="Chat on WhatsApp"
-        >
-          <svg class="help-item-icon" width="22" height="22" viewBox="0 0 24 24" fill="#25D366">
-            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
-          </svg>
-          <span class="help-item-tooltip">WhatsApp</span>
-        </a>
-      </li>
-
-      <!-- 2. Support -->
-      <li class="help-menu-item">
-        <button 
-          type="button" 
-          class="help-item-btn btn-support" 
-          onclick="openAuvareSupportModal()"
-          title="Customer Support"
-          aria-label="Customer Support Desk"
-        >
-          <svg class="help-item-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0f172a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
-            <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
-          </svg>
-          <span class="help-item-tooltip">Support</span>
-        </button>
-      </li>
-
-      <!-- 3. Messenger -->
-      <li class="help-menu-item">
-        <a 
-          id="helpLinkMessenger"
-          href="https://m.me/auvare_official" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          class="help-item-btn btn-messenger"
-          title="Facebook Messenger"
-          aria-label="Chat on Facebook Messenger"
-        >
-          <svg class="help-item-icon" width="22" height="22" viewBox="0 0 24 24" fill="#0084FF">
-            <path d="M12 2C6.477 2 2 6.145 2 11.258c0 2.91 1.453 5.518 3.727 7.18V22l3.418-1.875c.91.252 1.872.39 2.855.39 5.523 0 10-4.145 10-9.257C22 6.145 17.523 2 12 2zm1.066 12.443l-2.73-2.91-5.328 2.91 5.86-6.22 2.798 2.91 5.26-2.91-5.86 6.22z"/>
-          </svg>
-          <span class="help-item-tooltip">Messenger</span>
-        </a>
-      </li>
-
-      <!-- 4. Email -->
-      <li class="help-menu-item">
-        <a 
-          id="helpLinkEmail"
-          href="mailto:auvare.official@gmail.com?subject=AUVARE%20Store%20Inquiry" 
-          class="help-item-btn btn-email"
-          title="Email Us"
-          aria-label="Send an Email"
-        >
-          <svg class="help-item-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-            <polyline points="22,6 12,13 2,6"></polyline>
-          </svg>
-          <span class="help-item-tooltip">Email</span>
-        </a>
-      </li>
-
-      <!-- 5. Call -->
-      <li class="help-menu-item">
-        <a 
-          id="helpLinkCall"
-          href="tel:+8801734018155" 
-          class="help-item-btn btn-call"
-          title="Call Hotline"
-          aria-label="Direct Phone Call"
-        >
-          <svg class="help-item-icon" width="20" height="20" viewBox="0 0 24 24" fill="#16a34a">
-            <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 0 0-1.01.24l-1.57 1.97c-2.83-1.44-5.15-3.75-6.59-6.59l1.97-1.57c.28-.28.36-.67.25-1.02A11.36 11.36 0 0 1 8.57 4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1 0 9.39 7.61 17 17 17 .55 0 1-.45 1-1v-3.62c0-.55-.45-1-1-1z"/>
-          </svg>
-          <span class="help-item-tooltip">Call</span>
-        </a>
-      </li>
-
-      <!-- 6. Minimize -->
-      <li class="help-menu-item">
-        <button 
-          type="button" 
-          class="help-item-btn btn-minimize" 
-          onclick="toggleAuvareHelpWidget(false)"
-          title="Minimize Menu"
-          aria-label="Minimize Menu"
-        >
-          <svg class="help-item-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-          <span class="help-item-tooltip">Minimize</span>
-        </button>
-      </li>
-    </ul>
-
-    <!-- Main Shifting Trigger Button -->
-    <button 
-      type="button" 
-      id="helpWidgetTrigger" 
-      class="help-widget-trigger"
-      onclick="toggleAuvareHelpWidget()"
-      aria-expanded="false"
-      aria-label="Toggle Help Menu"
-    >
-      <div class="help-widget-pulse"></div>
-      <div id="helpWidgetIconBox" class="help-widget-icon-box">
-        <!-- Official SVGs shift here smoothly via JS -->
-      </div>
-      <span class="help-trigger-label">Help</span>
-    </button>
+  <!-- Exact Mediasoft BD Multichannel Floating Widget (Bottom-Right Corner) -->
+  <div id="ms_widget">
+    <div id="ms_widget_button_main" title="Help">
+      <img id="ms_widget_change_img" width="50" height="50" alt="Help" src="" />
+      <p>Help</p>
+    </div>
+    <ul id="ms_widget_list" style="display: none;"></ul>
   </div>
 
   <!-- Customer Support & Concierge Modal -->
@@ -964,7 +848,9 @@
   <script src="assets/js/supabaseClient.js?v=4.3"></script>
 
   <!-- Core App Scripts -->
-  <script src="assets/js/app.js?v=5.3"></script>
+  <script src="assets/js/app.js?v=5.4"></script>
+  <!-- Mediasoft BD Multichannel Help Widget -->
+  <script src="assets/js/ms_widget.js?v=1.0"></script>
 </body>
 </html>
 
