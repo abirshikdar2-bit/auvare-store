@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="assets/css/admin.css?v=4.1">
+  <link rel="stylesheet" href="assets/css/admin.css?v=4.2">
 </head>
 <body class="auth-gate-active">
 
@@ -455,6 +455,22 @@
                       <label style="display:block; font-size:0.82rem; font-weight:600; margin-bottom:0.35rem;">Length Measurement (Inches)</label>
                       <input type="text" id="editorLength" class="toolbar-input" placeholder="e.g. 26-30" value="26-30" style="padding-left:1rem;" />
                     </div>
+                  </div>
+
+                  <div style="margin-top: 1rem;">
+                    <label style="display:block; font-size:0.82rem; font-weight:600; margin-bottom:0.35rem;">
+                      Fabric & Material Ingredients (Optional)
+                    </label>
+                    <input 
+                      type="text" 
+                      id="editorFabric" 
+                      class="toolbar-input" 
+                      placeholder="e.g. 100% Heavyweight Ring-Spun Vintage Cotton (240 GSM), Single-Stitched" 
+                      style="padding-left:1rem;" 
+                    />
+                    <p style="font-size:0.74rem; color:#64748b; margin:0.35rem 0 0 0;">
+                      Shown on the public pop-up specifications card. If left blank, AUVARE will automatically display authentic curated ingredients for this category.
+                    </p>
                   </div>
                 </div>
 
@@ -1352,7 +1368,7 @@
 
   <!-- Supabase CDN & Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="assets/js/supabaseClient.js?v=4.0"></script>
-  <script src="assets/js/admin.js?v=5.3"></script>
+  <script src="assets/js/supabaseClient.js?v=4.1"></script>
+  <script src="assets/js/admin.js?v=5.4"></script>
 </body>
 </html>

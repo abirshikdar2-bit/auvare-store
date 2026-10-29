@@ -14,7 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="assets/css/style.css?v=3.3">
+  <link rel="stylesheet" href="assets/css/style.css?v=3.4">
 
   <script>
     // Force manual scroll restoration so refreshes always start at homepage top
@@ -470,6 +470,23 @@
     </div>
   </aside>
 
+  <!-- Product Detail & Ingredients Pop-Up Modal -->
+  <div id="productDetailModal" class="modal-overlay" onclick="handleDetailModalOverlayClick(event)">
+    <div class="modal-container product-detail-modal-container">
+      <div class="modal-head product-detail-modal-head">
+        <div class="product-detail-brand-badge">
+          <span class="crest-dot"></span>
+          <span>AUVARE ARCHIVE • SPECIFICATIONS & INGREDIENTS</span>
+        </div>
+        <button type="button" class="btn-close detail-modal-close" onclick="closeProductDetailModal()" aria-label="Close modal">✕</button>
+      </div>
+
+      <div id="productDetailModalBody" class="modal-body product-detail-modal-body">
+        <!-- Rendered dynamically by openProductDetailModal(productId) in app.js -->
+      </div>
+    </div>
+  </div>
+
   <!-- Checkout Modal (Customer Details & Payment Method) -->
   <div id="checkoutModal" class="modal-overlay">
     <div class="modal-container">
@@ -745,10 +762,10 @@
 
   <!-- Supabase JS CDN & Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="assets/js/supabaseClient.js?v=4.0"></script>
+  <script src="assets/js/supabaseClient.js?v=4.1"></script>
 
   <!-- Core App Scripts -->
-  <script src="assets/js/app.js?v=4.3"></script>
+  <script src="assets/js/app.js?v=4.4"></script>
 </body>
 </html>
 

@@ -319,9 +319,9 @@ function selectCardVariant(productId, variantId) {
   state.selectedVariants[productId] = variantId;
 
   // Auto-align selected size if current size isn't in variant's sizes
-  const product = state.products.find(p => String(p.id) === String(productId));
+  const product = state.products.find(p => p.id === productId);
   if (product && Array.isArray(product.variants)) {
-    const variant = product.variants.find(v => String(v.id || v.name) === String(variantId));
+    const variant = product.variants.find(v => v.id === variantId);
     if (variant && Array.isArray(variant.sizes) && variant.sizes.length > 0) {
       const curSize = state.selectedSizes[productId];
       if (!variant.sizes.includes(curSize)) {
@@ -375,16 +375,9 @@ function renderProducts() {
     }
     if (heroCardStack) {
       heroCardStack.style.cursor = 'pointer';
-      heroCardStack.title = `View ${heroFeatured.title}`;
+      heroCardStack.title = `View ${heroFeatured.title} & Ingredients`;
       heroCardStack.onclick = () => {
-        const productEl = document.querySelector(`.product-card[data-id="${heroFeatured.id}"]`);
-        if (productEl) {
-          productEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          productEl.style.boxShadow = '0 0 0 3px var(--color-primary)';
-          setTimeout(() => { productEl.style.boxShadow = ''; }, 2000);
-        } else {
-          document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
-        }
+        openProductDetailModal(heroFeatured.id);
       };
     }
   }
@@ -448,8 +441,8 @@ function renderProducts() {
 
     // Variant calculation
     const hasVariants = Array.isArray(item.variants) && item.variants.length > 0;
-    const selectedVariantId = state.selectedVariants?.[item.id] || (hasVariants ? (item.variants[0].id || item.variants[0].name) : null);
-    const activeVariant = hasVariants ? item.variants.find(v => String(v.id || v.name) === String(selectedVariantId)) : null;
+    const selectedVariantId = state.selectedVariants?.[item.id] || (hasVariants ? item.variants[0].id : null);
+    const activeVariant = hasVariants ? item.variants.find(v => v.id === selectedVariantId) : null;
     const effectivePrice = (activeVariant && activeVariant.price) ? activeVariant.price : item.price;
     const effectiveSizes = (activeVariant && Array.isArray(activeVariant.sizes) && activeVariant.sizes.length > 0)
       ? activeVariant.sizes
@@ -457,12 +450,16 @@ function renderProducts() {
 
     return `
       <article class="product-card ${item.sold ? 'sold-out' : ''}" data-id="${item.id}">
-        <div class="product-image-box">
+        <div class="product-image-box" onclick="openProductDetailModal('${item.id}')" title="Click to inspect piece & ingredients">
           <img class="product-card-img" id="cardImg_${item.id}" src="${primaryImg}" alt="${item.title}" loading="lazy" />
           
           <div class="product-badge-group">
             <span class="badge-tag unique">Curated Drop</span>
             ${item.sold ? '<span class="badge-tag sold">SOLD OUT</span>' : '<span class="badge-tag condition">' + (item.condition ? item.condition.split('(')[0].trim() : 'Mint') + '</span>'}
+          </div>
+
+          <div class="product-card-inspect-hint">
+            <span>🔍 Inspect Piece & Ingredients</span>
           </div>
 
           ${hasMultiple ? `
@@ -475,7 +472,7 @@ function renderProducts() {
           ` : ''}
 
           ${state.isAdmin ? `
-            <div class="admin-card-bar">
+            <div class="admin-card-bar" onclick="event.stopPropagation();">
               <button class="btn-admin-action" onclick="toggleSoldState('${item.id}')" title="Toggle Sold Status">
                 ${item.sold ? '✓ Mark Available' : '✕ Mark Sold'}
               </button>
@@ -492,7 +489,7 @@ function renderProducts() {
             <span class="product-measurements">${item.chest ? 'Chest: ' + item.chest : 'All Sizes Available'}</span>
           </div>
 
-          <h3 class="product-title">${item.title}</h3>
+          <h3 class="product-title" onclick="openProductDetailModal('${item.id}')" title="Click to view ingredients & specifications">${item.title}</h3>
 
           <!-- Variant Selector (Colorways / Editions) -->
           ${hasVariants ? `
@@ -506,7 +503,7 @@ function renderProducts() {
                     <button 
                       type="button" 
                       class="variant-chip ${isSel ? 'active' : ''}" 
-                      onclick="selectCardVariant('${item.id}', '${vKey}')"
+                      onclick="event.stopPropagation(); selectCardVariant('${item.id}', '${vKey}')"
                       title="${v.name}"
                     >
                       ${v.name}
@@ -526,7 +523,7 @@ function renderProducts() {
                   type="button" 
                   class="size-chip ${currentSelectedSize === sz ? 'active' : ''}" 
                   data-size="${sz}"
-                  onclick="selectCardSize('${item.id}', '${sz}')"
+                  onclick="event.stopPropagation(); selectCardSize('${item.id}', '${sz}')"
                   title="Size ${sz}"
                 >
                   ${sz}
@@ -543,7 +540,7 @@ function renderProducts() {
           <div class="product-actions-grid">
             <button 
               class="btn-add-bag" 
-              onclick="addToCart('${item.id}')" 
+              onclick="event.stopPropagation(); addToCart('${item.id}')" 
               ${item.sold ? 'disabled' : ''}
             >
               ${item.sold ? 'Sold Out' : 'Add to Bag'}
@@ -551,7 +548,7 @@ function renderProducts() {
             
             <button 
               class="btn-wa-card" 
-              onclick="orderOnWhatsApp('${item.id}')" 
+              onclick="event.stopPropagation(); orderOnWhatsApp('${item.id}')" 
               title="Order directly on WhatsApp"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
@@ -694,8 +691,8 @@ function addToCart(productId) {
   
   // Variant calculation
   const hasVariants = Array.isArray(product.variants) && product.variants.length > 0;
-  const selectedVariantId = state.selectedVariants?.[productId] || (hasVariants ? (product.variants[0].id || product.variants[0].name) : null);
-  const activeVariant = hasVariants ? product.variants.find(v => String(v.id || v.name) === String(selectedVariantId)) : null;
+  const selectedVariantId = state.selectedVariants?.[productId] || (hasVariants ? product.variants[0].id : null);
+  const activeVariant = hasVariants ? product.variants.find(v => v.id === selectedVariantId) : null;
   const effectivePrice = (activeVariant && activeVariant.price) ? activeVariant.price : product.price;
   const variantName = activeVariant ? activeVariant.name : null;
 
@@ -800,8 +797,8 @@ function orderOnWhatsApp(productId) {
 
   const chosenSize = state.selectedSizes[productId] || (product.sizes ? product.sizes[0] : 'M');
   const hasVariants = Array.isArray(product.variants) && product.variants.length > 0;
-  const selectedVariantId = state.selectedVariants?.[productId] || (hasVariants ? (product.variants[0].id || product.variants[0].name) : null);
-  const activeVariant = hasVariants ? product.variants.find(v => String(v.id || v.name) === String(selectedVariantId)) : null;
+  const selectedVariantId = state.selectedVariants?.[productId] || (hasVariants ? product.variants[0].id : null);
+  const activeVariant = hasVariants ? product.variants.find(v => v.id === selectedVariantId) : null;
   const effectivePrice = (activeVariant && activeVariant.price) ? activeVariant.price : product.price;
   const variantText = activeVariant ? `• Variant: ${activeVariant.name}\n` : '';
 
@@ -1175,6 +1172,316 @@ function openModal(modalId) {
 function closeModal(modalId) {
   document.getElementById(modalId)?.classList.remove('open');
 }
+
+// ==========================================
+// Product Details & Ingredients Pop-Up System
+// ==========================================
+
+function getProductIngredients(product) {
+  if (product.fabric && product.fabric.trim()) {
+    return product.fabric.trim();
+  }
+  const cat = (product.category || '').toLowerCase();
+  if (cat.includes('t-shirt') || cat.includes('tee')) {
+    return '100% Premium Ring-Spun Vintage Cotton (240+ GSM Heavyweight Weave) • Single-Stitch Hems';
+  }
+  if (cat.includes('shirt') || cat.includes('polo')) {
+    return '100% Structured Vintage Cotton Twill (185 GSM) • Reinforced Camp Collar & Seams';
+  }
+  if (cat.includes('jacket') || cat.includes('outerwear')) {
+    return 'Heavyweight Weatherproof Cotton Canvas & Military Quilted Satin Lining • Solid Antiqued Brass Hardware';
+  }
+  if (cat.includes('pant') || cat.includes('trouser')) {
+    return '100% Vintage Heavyweight Wale Corduroy / 14oz Raw Cotton Denim • Reinforced Riveted Stress Points';
+  }
+  if (cat.includes('knit') || cat.includes('sweater')) {
+    return '100% Fine-Gauge Lambswool & Cotton Blend • Chunky Ribbed Neck, Cuffs and Hem';
+  }
+  return '100% Hand-Curated Premium Vintage Cotton (240+ GSM Heavyweight Weave) • Authentic Fade Wash';
+}
+
+function openProductDetailModal(productId) {
+  const product = state.products.find(p => String(p.id) === String(productId));
+  if (!product) return;
+
+  state.activeDetailProductId = String(productId);
+  renderProductDetailModal(product);
+  openModal('productDetailModal');
+  document.body.style.overflow = 'hidden';
+}
+window.openProductDetailModal = openProductDetailModal;
+
+function closeProductDetailModal() {
+  closeModal('productDetailModal');
+  document.body.style.overflow = '';
+  state.activeDetailProductId = null;
+}
+window.closeProductDetailModal = closeProductDetailModal;
+
+function handleDetailModalOverlayClick(e) {
+  if (e.target && e.target.id === 'productDetailModal') {
+    closeProductDetailModal();
+  }
+}
+window.handleDetailModalOverlayClick = handleDetailModalOverlayClick;
+
+// Close on Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const modal = document.getElementById('productDetailModal');
+    if (modal && modal.classList.contains('open')) {
+      closeProductDetailModal();
+    }
+  }
+});
+
+function switchDetailModalImage(imgSrc, btnEl) {
+  const mainImg = document.getElementById('modalDetailMainImg');
+  if (mainImg) {
+    mainImg.src = imgSrc;
+  }
+  document.querySelectorAll('.detail-thumb-btn').forEach(btn => btn.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+}
+window.switchDetailModalImage = switchDetailModalImage;
+
+function selectModalVariant(productId, variantId) {
+  selectCardVariant(productId, variantId);
+  const product = state.products.find(p => String(p.id) === String(productId));
+  if (product) {
+    renderProductDetailModal(product);
+  }
+}
+window.selectModalVariant = selectModalVariant;
+
+function selectModalSize(productId, size) {
+  selectCardSize(productId, size);
+  const product = state.products.find(p => String(p.id) === String(productId));
+  if (product) {
+    renderProductDetailModal(product);
+  }
+}
+window.selectModalSize = selectModalSize;
+
+function addModalProductToBag(productId) {
+  addToCart(productId);
+  closeProductDetailModal();
+}
+window.addModalProductToBag = addModalProductToBag;
+
+function renderProductDetailModal(product) {
+  const container = document.getElementById('productDetailModalBody');
+  if (!container) return;
+
+  const images = (Array.isArray(product.images) && product.images.length > 0)
+    ? product.images
+    : [product.image || DEFAULT_BOX_PLACEHOLDER];
+  const primaryImg = images[0];
+  const hasMultipleImages = images.length > 1;
+
+  // Variant calculation
+  const hasVariants = Array.isArray(product.variants) && product.variants.length > 0;
+  const selectedVariantId = state.selectedVariants?.[product.id] || (hasVariants ? (product.variants[0].id || product.variants[0].name) : null);
+  const activeVariant = hasVariants ? product.variants.find(v => String(v.id || v.name) === String(selectedVariantId)) : null;
+  const effectivePrice = (activeVariant && activeVariant.price) ? activeVariant.price : product.price;
+
+  // Size calculation
+  const itemSizes = Array.isArray(product.sizes) && product.sizes.length > 0 ? product.sizes : ['S', 'M', 'L', 'XL', 'XXL'];
+  const effectiveSizes = (activeVariant && Array.isArray(activeVariant.sizes) && activeVariant.sizes.length > 0)
+    ? activeVariant.sizes
+    : itemSizes;
+  const currentSelectedSize = state.selectedSizes?.[product.id] || effectiveSizes[0] || 'M';
+
+  // Ingredients and description
+  const fabricIngredients = getProductIngredients(product);
+  const cleanDescription = (product.description || '')
+    .replace(/<!--AUVARE_VARIANTS:.*?-->/g, '')
+    .replace(/<!--AUVARE_IMAGES:.*?-->/g, '')
+    .replace(/<!--AUVARE_FABRIC:.*?-->/g, '')
+    .trim();
+
+  container.innerHTML = `
+    <div class="detail-modal-grid">
+      <!-- Left Column: Visual Gallery -->
+      <div class="detail-gallery-box">
+        <div class="detail-main-img-wrap">
+          <img id="modalDetailMainImg" src="${primaryImg}" alt="${product.title}" />
+          
+          <div class="detail-gallery-badges">
+            <span class="badge-tag unique">Curated Archive Drop</span>
+            ${product.sold ? '<span class="badge-tag sold">SOLD OUT</span>' : '<span class="badge-tag condition">' + (product.condition ? product.condition.split('(')[0].trim() : 'Mint') + '</span>'}
+          </div>
+        </div>
+
+        ${hasMultipleImages ? `
+          <div class="detail-thumbs-strip">
+            ${images.map((img, idx) => `
+              <button 
+                type="button" 
+                class="detail-thumb-btn ${idx === 0 ? 'active' : ''}" 
+                onclick="switchDetailModalImage('${img}', this)"
+                title="Photo ${idx + 1}"
+              >
+                <img src="${img}" alt="Thumbnail ${idx + 1}" />
+              </button>
+            `).join('')}
+          </div>
+        ` : ''}
+      </div>
+
+      <!-- Right Column: Specs, Ingredients & Purchasing -->
+      <div class="detail-info-col">
+        <div class="detail-meta-pill-row">
+          <span class="detail-category-badge">${product.category}</span>
+          <span class="detail-condition-badge">★ ${product.condition || '9.5/10 Mint'}</span>
+          ${hasVariants ? `<span class="detail-category-badge" style="background:#ecfdf5; color:#15803d; border-color:#86efac;">${product.variants.length} Colorways</span>` : ''}
+        </div>
+
+        <h2 class="detail-product-title">${product.title}</h2>
+
+        <div class="detail-price-row">
+          <span class="detail-price-main">৳ ${effectivePrice.toLocaleString()}</span>
+          <span class="detail-price-note">• All import duties & taxes included</span>
+        </div>
+
+        <!-- Garment Ingredients & Archive Specs Card -->
+        <div class="ingredients-spec-card">
+          <div class="ingredients-card-header">
+            <span>🧵</span>
+            <span>Garment Ingredients & Archive Specs</span>
+          </div>
+
+          <div class="spec-item">
+            <span class="spec-item-icon">🌱</span>
+            <div>
+              <span class="spec-item-label">Fabric & Composition (Ingredients)</span>
+              <span class="spec-item-value">${fabricIngredients}</span>
+            </div>
+          </div>
+
+          <div class="spec-item">
+            <span class="spec-item-icon">📐</span>
+            <div>
+              <span class="spec-item-label">Dimensions & Measurements</span>
+              <span class="spec-item-value">
+                Chest (Pit-to-Pit): <strong>${product.chest || '40"-48"'}</strong> &nbsp;|&nbsp; 
+                Length (Collar-to-Hem): <strong>${product.length || '26"-30"'}</strong>
+                <br/><span style="font-size:0.75rem; color:#64748b;">Fit Profile: Relaxed Vintage Boxy Streetwear Silhouette</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="spec-item">
+            <span class="spec-item-icon">🏷️</span>
+            <div>
+              <span class="spec-item-label">Curation & Authenticity Grade</span>
+              <span class="spec-item-value">
+                Grade: <strong>${product.condition || '9.5/10 (Pristine Vintage Patina)'}</strong>
+                <br/><span style="font-size:0.75rem; color:#64748b;">Sanitized, pre-conditioned & verified authentic 1-of-1 piece.</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="spec-item">
+            <span class="spec-item-icon">🧼</span>
+            <div>
+              <span class="spec-item-label">Ingredients Wash & Longevity Care</span>
+              <span class="spec-item-value" style="font-size:0.8rem;">
+                Machine wash cold (30°C) inside out • Gentle cycle with mild detergent • Line dry in shade to preserve cotton fibres • Do not iron directly on print.
+              </span>
+            </div>
+          </div>
+
+          ${cleanDescription ? `
+            <div class="spec-item" style="border-top: 1px dashed #cbd5e1; padding-top: 0.65rem; margin-top: 0.65rem;">
+              <span class="spec-item-icon">📝</span>
+              <div>
+                <span class="spec-item-label">Curation Story & Notes</span>
+                <span class="spec-item-value" style="font-style: italic;">
+                  "${cleanDescription}"
+                </span>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+
+        <!-- Variant Selector inside Modal -->
+        ${hasVariants ? `
+          <div class="detail-selection-sector">
+            <span class="detail-field-label">Available Editions & Colorways:</span>
+            <div class="variant-chips-group">
+              ${product.variants.map(v => {
+                const vKey = String(v.id || v.name);
+                const isSel = String(selectedVariantId) === vKey;
+                return `
+                  <button 
+                    type="button" 
+                    class="variant-chip ${isSel ? 'active' : ''}" 
+                    onclick="selectModalVariant('${product.id}', '${vKey}')"
+                  >
+                    ${v.name} ${v.price ? `(৳${parseInt(v.price, 10).toLocaleString()})` : ''}
+                  </button>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- Size Selection inside Modal -->
+        <div class="detail-selection-sector">
+          <span class="detail-field-label">Select Your Size:</span>
+          <div class="size-chips-group">
+            ${effectiveSizes.map(sz => `
+              <button 
+                type="button" 
+                class="size-chip ${currentSelectedSize === sz ? 'active' : ''}" 
+                onclick="selectModalSize('${product.id}', '${sz}')"
+                title="Size ${sz}"
+              >
+                ${sz}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="detail-action-buttons-grid">
+          <button 
+            type="button" 
+            class="btn-detail-add-bag" 
+            onclick="addModalProductToBag('${product.id}')"
+            ${product.sold ? 'disabled' : ''}
+          >
+            <span>🛍️</span>
+            <span>${product.sold ? 'Sold Out' : `Add to Bag (৳ ${effectivePrice.toLocaleString()})`}</span>
+          </button>
+
+          <button 
+            type="button" 
+            class="btn-detail-wa" 
+            onclick="orderOnWhatsApp('${product.id}')"
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            <span>WhatsApp Order</span>
+          </button>
+
+          ${product.instagramUrl ? `
+            <a 
+              href="${product.instagramUrl}" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              class="btn-detail-ig"
+              title="View on Instagram"
+            >
+              <span>📸 Instagram ↗</span>
+            </a>
+          ` : ''}
+        </div>
+      </div>
+    </div>
+  `;
+}
+window.renderProductDetailModal = renderProductDetailModal;
 
 // Handle Adding New Product from Storefront Admin Modal
 async function handleAddNewProduct(event) {

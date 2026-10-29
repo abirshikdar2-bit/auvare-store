@@ -126,13 +126,20 @@ const SupabaseService = (function() {
               }
             }
 
+            let fabric = item.fabric || '';
+            const fabMatch = cleanDesc.match(/<!--AUVARE_FABRIC:(.*?)-->/);
+            if (fabMatch && !fabric) {
+              try { fabric = JSON.parse(fabMatch[1]); } catch(e) {}
+            }
+
             // Clean description of hidden metadata comments for presentation
-            cleanDesc = cleanDesc.replace(/<!--AUVARE_VARIANTS:.*?-->/g, '').replace(/<!--AUVARE_IMAGES:.*?-->/g, '').trim();
+            cleanDesc = cleanDesc.replace(/<!--AUVARE_VARIANTS:.*?-->/g, '').replace(/<!--AUVARE_IMAGES:.*?-->/g, '').replace(/<!--AUVARE_FABRIC:.*?-->/g, '').trim();
 
             return {
               ...item,
               images,
               variants,
+              fabric,
               description: cleanDesc,
               instagramUrl: item.instagram_url || item.instagramUrl || 'https://www.instagram.com/auvare_official/'
             };
@@ -157,14 +164,18 @@ const SupabaseService = (function() {
       try {
         const variants = product.variants || [];
         const images = product.images || (product.image ? [product.image] : []);
+        const fabric = product.fabric || '';
 
-        // Embed variants & images metadata in description as persistent cloud backup
-        let embedDesc = (product.description || '').replace(/<!--AUVARE_VARIANTS:.*?-->/g, '').replace(/<!--AUVARE_IMAGES:.*?-->/g, '').trim();
+        // Embed variants & images & fabric metadata in description as persistent cloud backup
+        let embedDesc = (product.description || '').replace(/<!--AUVARE_VARIANTS:.*?-->/g, '').replace(/<!--AUVARE_IMAGES:.*?-->/g, '').replace(/<!--AUVARE_FABRIC:.*?-->/g, '').trim();
         if (Array.isArray(variants) && variants.length > 0) {
           embedDesc += `\n<!--AUVARE_VARIANTS:${JSON.stringify(variants)}-->`;
         }
         if (Array.isArray(images) && images.length > 1) {
           embedDesc += `\n<!--AUVARE_IMAGES:${JSON.stringify(images)}-->`;
+        }
+        if (fabric && fabric.trim()) {
+          embedDesc += `\n<!--AUVARE_FABRIC:${JSON.stringify(fabric.trim())}-->`;
         }
 
         const payload = {
@@ -216,14 +227,18 @@ const SupabaseService = (function() {
 
         const variants = payload.variants || [];
         const images = payload.images || [];
+        const fabric = payload.fabric || '';
 
-        // Embed variants & images metadata in description as persistent cloud backup
-        let embedDesc = (payload.description || '').replace(/<!--AUVARE_VARIANTS:.*?-->/g, '').replace(/<!--AUVARE_IMAGES:.*?-->/g, '').trim();
+        // Embed variants & images & fabric metadata in description as persistent cloud backup
+        let embedDesc = (payload.description || '').replace(/<!--AUVARE_VARIANTS:.*?-->/g, '').replace(/<!--AUVARE_IMAGES:.*?-->/g, '').replace(/<!--AUVARE_FABRIC:.*?-->/g, '').trim();
         if (Array.isArray(variants) && variants.length > 0) {
           embedDesc += `\n<!--AUVARE_VARIANTS:${JSON.stringify(variants)}-->`;
         }
         if (Array.isArray(images) && images.length > 1) {
           embedDesc += `\n<!--AUVARE_IMAGES:${JSON.stringify(images)}-->`;
+        }
+        if (fabric && fabric.trim()) {
+          embedDesc += `\n<!--AUVARE_FABRIC:${JSON.stringify(fabric.trim())}-->`;
         }
         payload.description = embedDesc;
 

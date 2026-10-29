@@ -1739,6 +1739,8 @@ function openProductEditor(mode = 'add', productId = null) {
     document.getElementById('editorChest').value = (item.chest || '').replace(/["']/g, '');
     document.getElementById('editorLength').value = (item.length || '').replace(/["']/g, '');
     document.getElementById('editorCondition').value = item.condition || '9.5/10 (Mint Condition)';
+    const fabInput = document.getElementById('editorFabric');
+    if (fabInput) fabInput.value = item.fabric || '';
     document.getElementById('editorStatus').value = item.sold ? 'sold' : 'available';
     handleEditorStatusChange(item.sold ? 'sold' : 'available');
 
@@ -1786,6 +1788,8 @@ function openProductEditor(mode = 'add', productId = null) {
     document.getElementById('editorChest').value = '38-46';
     document.getElementById('editorLength').value = '26-30';
     document.getElementById('editorCondition').value = '9.5/10 (Mint Condition)';
+    const newFabInput = document.getElementById('editorFabric');
+    if (newFabInput) newFabInput.value = '';
     document.getElementById('editorStatus').value = 'available';
     handleEditorStatusChange('available');
 
@@ -2361,6 +2365,7 @@ async function handleSaveProductEditor() {
   const chest = (document.getElementById('editorChest').value.trim() || '40') + '"';
   const length = (document.getElementById('editorLength').value.trim() || '28') + '"';
   const condition = document.getElementById('editorCondition').value.trim() || '9.5/10 (Mint Condition)';
+  const fabric = document.getElementById('editorFabric')?.value.trim() || '';
   const sold = document.getElementById('editorStatus').value === 'sold';
   const descRich = document.getElementById('editorDescriptionRich');
   const description = descRich ? descRich.innerHTML.trim() : '';
@@ -2412,6 +2417,7 @@ async function handleSaveProductEditor() {
       item.chest = chest;
       item.length = length;
       item.condition = condition;
+      item.fabric = fabric;
       item.sold = sold;
       item.sizes = selectedSizes;
       item.image = primaryImage;
@@ -2428,7 +2434,7 @@ async function handleSaveProductEditor() {
 
       if (window.SupabaseService) {
         await window.SupabaseService.updateProduct(editId, {
-          title, category, price, chest, length, condition, sold, sizes: selectedSizes, image: primaryImage, images: finalImages, variants, description
+          title, category, price, chest, length, condition, fabric, sold, sizes: selectedSizes, image: primaryImage, images: finalImages, variants, description
         });
       }
       showAdminToast(`Updated "${title}" successfully! (${finalImages.length} photos, ${variants.length} variants)`, 'success');
@@ -2445,6 +2451,7 @@ async function handleSaveProductEditor() {
       chest,
       length,
       condition,
+      fabric,
       image: primaryImage,
       images: finalImages,
       variants,
