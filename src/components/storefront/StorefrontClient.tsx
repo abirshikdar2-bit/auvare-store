@@ -156,7 +156,7 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
     const itemListText = checkoutItems
       .map(
         (c) =>
-          `• ${c.title}${c.selectedVariantName ? ` [${c.selectedVariantName}]` : ''} (Size: ${c.selectedSize}, ৳${c.price} x${c.quantity})`
+          `• ${c.title}${c.selectedVariantName ? ` [${c.selectedVariantName}]` : ''} (Size: ${c.selectedSize}, TK ${c.price} x${c.quantity})`
       )
       .join('\n');
 
@@ -166,12 +166,12 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
         `• Name: ${customerName}\n` +
         `• Phone: ${customerPhone}\n` +
         `• Address: ${customerAddress}\n` +
-        `• Zone: ${deliveryZone === 'inside' ? 'Inside Dhaka (৳70)' : 'Outside Dhaka (৳130)'}\n\n` +
+        `• Zone: ${deliveryZone === 'inside' ? 'Inside Dhaka (TK 70)' : 'Outside Dhaka (TK 130)'}\n\n` +
         `*Ordered Items:*\n${itemListText}\n\n` +
         `*Payment Method:* ${paymentMethod.toUpperCase()}\n` +
         (senderPhone ? `*Sender Phone:* ${senderPhone}\n` : '') +
         (trxId ? `*Transaction ID:* ${trxId}\n` : '') +
-        `*Total Bill:* ৳${bagTotal}\n\n` +
+        `*Total Bill:* TK ${bagTotal}\n\n` +
         `Please confirm drop dispatch!`
     );
 
@@ -801,47 +801,76 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
                       )}
                     </div>
 
-                    <div className="product-info">
-                      <div className="product-meta-row">
-                        <span>{item.category}</span>
-                        <span className="product-measurements">
-                          {item.chest ? `Chest: ${item.chest}"` : 'All Sizes Available'}
-                        </span>
-                      </div>
+                    <div className="product-info" style={{ padding: '0.85rem 1rem 1rem', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                      <h3
+                        className="product-title"
+                        style={{
+                          fontSize: '0.92rem',
+                          fontWeight: 600,
+                          color: '#18181b',
+                          lineHeight: 1.35,
+                          marginBottom: '0.35rem',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          minHeight: '2.4rem',
+                          cursor: 'pointer',
+                        }}
+                        title={item.title}
+                        onClick={() => setSelectedProduct(item)}
+                      >
+                        {item.title}
+                      </h3>
 
-                      <h3 className="product-title">{item.title}</h3>
-
-                      <div className="product-price-row">
-                        <span className="product-price">৳ {formatBDT(item.price)}</span>
-                        <span className="selected-size-text">Size: {selectedSize}</span>
-                      </div>
+                      <div style={{ borderBottom: '1px solid #e7e4dc', margin: '0.2rem 0 0.55rem' }} />
 
                       <div
-                        className="product-sizes-row"
-                        onClick={(e) => e.stopPropagation()}
+                        className="product-price-row"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'flex-start',
+                          marginBottom: '0.85rem',
+                          padding: 0,
+                          border: 'none',
+                        }}
                       >
-                        {itemSizes.map((sz) => (
-                          <button
-                            key={sz}
-                            type="button"
-                            className={`size-chip ${selectedSize === sz ? 'active' : ''}`}
-                            onClick={() =>
-                              setSelectedSizes((prev) => ({ ...prev, [item.id]: sz }))
-                            }
-                          >
-                            {sz}
-                          </button>
-                        ))}
+                        <span
+                          className="product-price"
+                          style={{
+                            fontSize: '1.05rem',
+                            fontWeight: 700,
+                            color: 'var(--color-primary, #105036)',
+                            letterSpacing: '-0.01em',
+                          }}
+                        >
+                          TK {formatBDT(item.price)}
+                        </span>
                       </div>
 
                       <div
                         className="product-card-actions"
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 1fr',
+                          gap: '0.5rem',
+                          marginTop: 'auto',
+                        }}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <button
                           type="button"
                           className="btn-primary"
-                          style={{ flex: 1, padding: '0.65rem 0.75rem', fontSize: '0.8rem' }}
+                          style={{
+                            padding: '0.65rem 0.5rem',
+                            fontSize: '0.82rem',
+                            fontWeight: 600,
+                            borderRadius: '6px',
+                            textAlign: 'center',
+                            justifyContent: 'center',
+                            whiteSpace: 'nowrap',
+                          }}
                           disabled={item.sold}
                           onClick={() => handleAddToBag(item, selectedSize)}
                         >
@@ -850,9 +879,19 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
                         <button
                           type="button"
                           className="btn-secondary"
-                          style={{ padding: '0.65rem 0.75rem', fontSize: '0.8rem' }}
+                          style={{
+                            padding: '0.65rem 0.5rem',
+                            fontSize: '0.82rem',
+                            fontWeight: 600,
+                            borderRadius: '6px',
+                            textAlign: 'center',
+                            justifyContent: 'center',
+                            background: '#ffffff',
+                            border: '1px solid #d1d5db',
+                            color: '#18181b',
+                          }}
                           onClick={() => setSelectedProduct(item)}
-                          title="Quick Inspect Drop"
+                          title="Inspect Product Details"
                         >
                           Inspect
                         </button>
@@ -1049,7 +1088,7 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
                     Size: {item.selectedSize}
                     {item.selectedVariantName ? ` • ${item.selectedVariantName}` : ''}
                   </div>
-                  <div className="cart-item-price">৳ {formatBDT(item.price)}</div>
+                  <div className="cart-item-price">TK {formatBDT(item.price)}</div>
                   <div className="cart-item-controls">
                     <button
                       type="button"
@@ -1102,7 +1141,7 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
                     cursor: 'pointer',
                   }}
                 >
-                  Inside Dhaka (৳70)
+                  Inside Dhaka (TK 70)
                 </button>
                 <button
                   type="button"
@@ -1118,22 +1157,22 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
                     cursor: 'pointer',
                   }}
                 >
-                  Outside Dhaka (৳130)
+                  Outside Dhaka (TK 130)
                 </button>
               </div>
             </div>
 
             <div className="cart-total-row">
               <span>Subtotal:</span>
-              <span>৳ {formatBDT(bagSubtotal)}</span>
+              <span>TK {formatBDT(bagSubtotal)}</span>
             </div>
             <div className="cart-total-row">
               <span>Delivery Charge:</span>
-              <span>৳ {formatBDT(deliveryCharge)}</span>
+              <span>TK {formatBDT(deliveryCharge)}</span>
             </div>
             <div className="cart-total-row final" style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--color-primary)' }}>
               <span>Total Bill:</span>
-              <span>৳ {formatBDT(bagTotal)}</span>
+              <span>TK {formatBDT(bagTotal)}</span>
             </div>
 
             <button
@@ -1183,12 +1222,12 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
                     <span>
                       {item.title} (Size: {item.selectedSize}) x{item.quantity}
                     </span>
-                    <span style={{ fontWeight: 700 }}>৳ {formatBDT(item.price * item.quantity)}</span>
+                    <span style={{ fontWeight: 700 }}>TK {formatBDT(item.price * item.quantity)}</span>
                   </div>
                 ))}
                 <div style={{ borderTop: '1px dashed var(--color-border)', marginTop: '0.5rem', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', fontWeight: 800, color: 'var(--color-primary)' }}>
                   <span>Total Payable:</span>
-                  <span>৳ {formatBDT(bagTotal)} (incl. delivery)</span>
+                  <span>TK {formatBDT(bagTotal)} (incl. delivery)</span>
                 </div>
               </div>
 
@@ -1242,7 +1281,7 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
                       checked={deliveryZone === 'inside'}
                       onChange={() => setDeliveryZone('inside')}
                     />
-                    Inside Dhaka (৳70)
+                    Inside Dhaka (TK 70)
                   </label>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', cursor: 'pointer' }}>
                     <input
@@ -1251,7 +1290,7 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
                       checked={deliveryZone === 'outside'}
                       onChange={() => setDeliveryZone('outside')}
                     />
-                    Outside Dhaka (৳130)
+                    Outside Dhaka (TK 130)
                   </label>
                 </div>
               </div>
@@ -1287,7 +1326,7 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
               {paymentMethod !== 'cod' && (
                 <div style={{ background: '#fef3c7', borderRadius: 'var(--radius-md)', padding: '0.75rem', marginBottom: '0.75rem', fontSize: '0.8rem', border: '1px solid #fde68a', color: '#92400e' }}>
                   <p style={{ fontWeight: 700, marginBottom: '0.25rem' }}>
-                    Send ৳{formatBDT(bagTotal)} via {paymentMethod.toUpperCase()} (Send Money):
+                    Send TK {formatBDT(bagTotal)} via {paymentMethod.toUpperCase()} (Send Money):
                   </p>
                   <p style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#78350f' }}>
                     {siteSettings[`${paymentMethod}_number`] || siteSettings.bkash_number || '01734018155'}
@@ -1319,7 +1358,7 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
                 className="btn-primary"
                 style={{ width: '100%', padding: '0.85rem', marginTop: '0.5rem' }}
               >
-                {isSubmitting ? 'Placing Order...' : `Confirm & Place Order (৳${formatBDT(bagTotal)})`}
+                {isSubmitting ? 'Placing Order...' : `Confirm & Place Order (TK ${formatBDT(bagTotal)})`}
               </button>
             </form>
           </div>
@@ -1342,7 +1381,7 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
               Order ID: <strong style={{ color: 'var(--color-text-main)' }}>#{orderSuccess.orderId}</strong>
             </p>
             <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>
-              Total Payable: <strong style={{ color: 'var(--color-primary)' }}>৳ {formatBDT(orderSuccess.total)}</strong>
+              Total Payable: <strong style={{ color: 'var(--color-primary)' }}>TK {formatBDT(orderSuccess.total)}</strong>
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

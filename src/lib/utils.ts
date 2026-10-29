@@ -6,7 +6,11 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatBDT(amount: number): string {
-  return `৳ ${Math.round(amount).toLocaleString('en-US')}`;
+  return `${Math.round(amount || 0).toLocaleString('en-US')}`;
+}
+
+export function formatTK(amount: number): string {
+  return `TK ${Math.round(amount || 0).toLocaleString('en-US')}`;
 }
 
 export function getCleanWaNumber(phone: string): string {

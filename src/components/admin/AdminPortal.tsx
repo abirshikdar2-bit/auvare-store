@@ -1047,7 +1047,7 @@ export function AdminPortal() {
 
                           <div>
                             <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                              Custom Price (৳ BDT – Optional)
+                              Custom Price (TK BDT – Optional)
                             </label>
                             <input
                               type="number"
@@ -1200,13 +1200,13 @@ export function AdminPortal() {
                   <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-5">
                     <label className="block text-xs font-bold text-slate-800 mb-1">Pricing *</label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">৳</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs">TK</span>
                       <input
                         type="number"
                         required
                         value={editingProduct.price || ''}
                         onChange={e => setEditingProduct(prev => ({ ...prev, price: parseInt(e.target.value || '0', 10) }))}
-                        className="w-full text-sm font-bold pl-7 p-2.5 border rounded-lg focus:outline-none focus:border-brand-primary"
+                        className="w-full text-sm font-bold pl-9 p-2.5 border rounded-lg focus:outline-none focus:border-brand-primary"
                         placeholder="850"
                       />
                     </div>
@@ -1366,7 +1366,7 @@ export function AdminPortal() {
                 <div>
                   <span className="text-slate-500 block text-[10px]">Zone &amp; Notes:</span>
                   <span className="font-semibold text-brand-dark">
-                    {activeOrderModal.deliveryZone === 'inside' ? 'Inside Dhaka (৳70)' : 'Outside Dhaka (৳130)'}
+                    {activeOrderModal.deliveryZone === 'inside' ? 'Inside Dhaka (TK 70)' : 'Outside Dhaka (TK 130)'}
                   </span>
                   {activeOrderModal.notes && (
                     <p className="text-slate-500 italic mt-0.5">"{activeOrderModal.notes}"</p>

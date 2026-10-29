@@ -292,7 +292,7 @@ export function ProductDetailModal({
 
             <div className="screen-price-row" style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', paddingBottom: '1rem', borderBottom: '1px solid var(--color-border)', marginBottom: '1.25rem' }}>
               <span className="screen-price-val" style={{ fontSize: '1.85rem', fontWeight: 800, color: 'var(--color-primary)' }}>
-                ৳ {formatBDT(effectivePrice)}
+                TK {formatBDT(effectivePrice)}
               </span>
               <span className="screen-price-note" style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
                 All Import &amp; VAT Included
@@ -584,7 +584,7 @@ export function ProductDetailModal({
                       </h4>
                       <div className="screen-card-price-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span className="screen-card-price" style={{ fontWeight: 800, color: 'var(--color-primary)', fontSize: '0.95rem' }}>
-                          ৳ {formatBDT(item.price)}
+                          TK {formatBDT(item.price)}
                         </span>
                         <span className={`screen-card-badge ${item.sold ? 'sold' : ''}`} style={{ fontSize: '0.7rem', fontWeight: 700, color: item.sold ? '#b91c1c' : '#15803d' }}>
                           {item.sold ? 'Sold Out' : 'Available'}
@@ -640,7 +640,7 @@ export function ProductDetailModal({
                       </h4>
                       <div className="screen-card-price-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span className="screen-card-price" style={{ fontWeight: 800, color: 'var(--color-primary)', fontSize: '0.95rem' }}>
-                          ৳ {formatBDT(item.price)}
+                          TK {formatBDT(item.price)}
                         </span>
                         <span className={`screen-card-badge ${item.sold ? 'sold' : ''}`} style={{ fontSize: '0.7rem', fontWeight: 700, color: item.sold ? '#b91c1c' : '#15803d' }}>
                           {item.sold ? 'Sold Out' : 'Available'}
