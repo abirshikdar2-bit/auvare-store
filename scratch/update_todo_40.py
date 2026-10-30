@@ -27,3 +27,4 @@ for line in lines:
 with open('docs/TODO.md', 'w', encoding='utf-8') as f:
     f.writelines(new_lines)
 print('Successfully updated docs/TODO.md')
+
