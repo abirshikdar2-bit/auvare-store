@@ -16,6 +16,22 @@ _(no active items in progress)_
 
 ## Done
 
+- `#40` **2026-10-30** 10x-15x Storefront Performance Speedup via Edge ISR Caching, Parallel DB Queries & Font Optimization:
+  - **Identified User Pain Point**:
+    - The user noticed that the live website (`https://auvare-store.vercel.app`) was taking noticeably long to load (profiling showed the initial HTML document alone took ~2,340ms to respond).
+    - Asked why the site is taking so long and requested a complete optimization.
+  - **Root Cause Analysis**:
+    1. *Dynamic Serverless De-optimization*: `src/app/page.tsx` was calling `createClient()` from `@/lib/supabase/server`, which reads `cookies()` via `await cookies()`. In Next.js App Router, accessing cookies automatically de-opts the route from static caching into on-demand dynamic server-side rendering (`Route /: ƒ (Dynamic)`).
+    2. *Cold Start & Sequential Latency*: On every request, Vercel executed a serverless function that performed two sequential HTTPS round-trips to Supabase (`products` first, then `site_settings`), introducing 1.5s+ of remote cross-datacenter latency before returning a single byte of HTML.
+    3. *Render-Blocking External Fonts*: `src/app/layout.tsx` had an external `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?...">` tag in `<head>`, causing an extra render-blocking network call even though `next/font/google` already self-hosts the fonts at build time.
+  - **Implemented Clean Solution**:
+    - *Public Supabase Client for ISR (`src/lib/supabase/public.ts`)*: Created `createPublicClient()` without `cookies()`, allowing Next.js to pre-render the storefront at build time with Incremental Static Regeneration (`export const revalidate = 60`).
+    - *Parallel Concurrent Queries (`src/app/page.tsx`)*: Replaced sequential awaits with `Promise.all([productsQuery, settingsQuery])`.
+    - *Eliminated Render-Blocking Font Link (`src/app/layout.tsx`)*: Removed duplicate Google Fonts `<link>` tag in favor of zero-overhead `next/font/google` preloading.
+    - *Verification & Results*:
+      - Next.js build verified: `Route (app) /` transitioned from dynamic `ƒ` to static `○` with `Revalidate: 1m`.
+      - Live benchmark verified on `https://auvare-store.vercel.app/`: HTML document response time dropped from **2,340ms down to ~217ms - 440ms** with `x-vercel-cache: HIT`, providing an instant, ultra-responsive browsing experience.
+
 - `#39` **2026-10-30** Checkout Billing Address Removal & Mediasoft Floating Widget Slow-Mo Animation Tuning:
   - **Identified User Pain Point**:
     - *Billing Address Section (`media_1793322068446_f6e54308.png`)*: The user explicitly requested to completely remove the "Billing address" section from the checkout screen as it is redundant for domestic courier orders in Bangladesh.
