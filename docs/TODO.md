@@ -16,6 +16,26 @@ _(no active items in progress)_
 
 ## Done
 
+- `#38` **2026-10-30** Full-Screen Shopify / Top Ten Mart Style Checkout Redesign with Mobile Banking & Cart Persistence:
+  - **Identified User Pain Point**:
+    - Previously, clicking "Proceed to Instant Checkout" or "Buy Now" triggered a small pop-up modal dialog (`#checkoutModal`).
+    - The user provided live access to Top Ten Mart Ltd's checkout page (`https://toptenmartltd.com/checkouts/...`) and instructed that AUVARE's checkout must NOT be a popup modal, but a dedicated full-screen layout that is 90% identical to Top Ten / Shopify One-Page Checkout.
+    - Specific requirements included:
+      - Start directly with First Name in Delivery section (skip Country/Region dropdown since AUVARE operates exclusively in Bangladesh).
+      - Right sidebar showing product thumbnail with a circular quantity badge on the top-right corner, garment title, selected size, and formatted BDT price.
+      - Add mobile banking payment options (bKash, Nagad, Rocket) with one-click copy account number button, sender phone, and TrxID inputs alongside Cash on Delivery (COD).
+      - Order summary with gift card/discount code box, subtotal, shipping fee, and grand total in BDT.
+  - **Implemented Clean Solution**:
+    - *Full-Screen Standalone Checkout (`ShopifyCheckoutScreen.tsx` & `/checkout` route)*:
+      - Built a dedicated 2-column layout matching Top Ten Mart / Shopify Plus One-Page Checkout.
+      - Left column: Contact (email/mobile phone), Delivery (First name, Last name, Address, Apartment, City, Postal code, Phone), Shipping method cards (`Inside Dhaka TK 70` vs `Outside Dhaka TK 130`), Payment accordion (COD, bKash, Nagad, Rocket with one-click copy & TrxID), Billing address selection, and high-contrast "Complete order" button.
+      - Right sidebar: Thumbnail with top-right circular quantity pill badge, garment metadata, gift card input with "Apply" button, cost breakdown, and AUVARE authenticity guarantee banner.
+      - Mobile responsive: Collapsible "Show order summary" bar at the top on small screens.
+    - *Seamless In-Store Transition & Cart Persistence*:
+      - Replaced modal overlay in `StorefrontClient.tsx` with full-screen `ShopifyCheckoutScreen`.
+      - Synced cart bag with `localStorage` (`auvare_cart_bag`) and handled browser history state (`#checkout`) so the Back button smoothly returns to the storefront.
+      - Added dedicated `/checkout` route at `src/app/checkout/page.tsx`.
+
 - `#37` **2026-10-30** Shopping Bag Side Drawer Luxury Polish & Mediasoft Floating Widget Refinements (Slow-Mo Smooth Expansion & White Ring Removal):
   - **Identified User Pain Point**:
     - *Shopping Bag Drawer (`media_1793319911355_563bbce0.png`)*:
@@ -448,6 +468,26 @@ immediately. The 2h expiry is only the backstop for when
 nobody notices.
 
 ## Done
+
+- `#38` **2026-10-30** Full-Screen Shopify / Top Ten Mart Style Checkout Redesign with Mobile Banking & Cart Persistence:
+  - **Identified User Pain Point**:
+    - Previously, clicking "Proceed to Instant Checkout" or "Buy Now" triggered a small pop-up modal dialog (`#checkoutModal`).
+    - The user provided live access to Top Ten Mart Ltd's checkout page (`https://toptenmartltd.com/checkouts/...`) and instructed that AUVARE's checkout must NOT be a popup modal, but a dedicated full-screen layout that is 90% identical to Top Ten / Shopify One-Page Checkout.
+    - Specific requirements included:
+      - Start directly with First Name in Delivery section (skip Country/Region dropdown since AUVARE operates exclusively in Bangladesh).
+      - Right sidebar showing product thumbnail with a circular quantity badge on the top-right corner, garment title, selected size, and formatted BDT price.
+      - Add mobile banking payment options (bKash, Nagad, Rocket) with one-click copy account number button, sender phone, and TrxID inputs alongside Cash on Delivery (COD).
+      - Order summary with gift card/discount code box, subtotal, shipping fee, and grand total in BDT.
+  - **Implemented Clean Solution**:
+    - *Full-Screen Standalone Checkout (`ShopifyCheckoutScreen.tsx` & `/checkout` route)*:
+      - Built a dedicated 2-column layout matching Top Ten Mart / Shopify Plus One-Page Checkout.
+      - Left column: Contact (email/mobile phone), Delivery (First name, Last name, Address, Apartment, City, Postal code, Phone), Shipping method cards (`Inside Dhaka TK 70` vs `Outside Dhaka TK 130`), Payment accordion (COD, bKash, Nagad, Rocket with one-click copy & TrxID), Billing address selection, and high-contrast "Complete order" button.
+      - Right sidebar: Thumbnail with top-right circular quantity pill badge, garment metadata, gift card input with "Apply" button, cost breakdown, and AUVARE authenticity guarantee banner.
+      - Mobile responsive: Collapsible "Show order summary" bar at the top on small screens.
+    - *Seamless In-Store Transition & Cart Persistence*:
+      - Replaced modal overlay in `StorefrontClient.tsx` with full-screen `ShopifyCheckoutScreen`.
+      - Synced cart bag with `localStorage` (`auvare_cart_bag`) and handled browser history state (`#checkout`) so the Back button smoothly returns to the storefront.
+      - Added dedicated `/checkout` route at `src/app/checkout/page.tsx`.
 
 - `#37` **2026-10-30** Shopping Bag Side Drawer Luxury Polish & Mediasoft Floating Widget Refinements (Slow-Mo Smooth Expansion & White Ring Removal):
   - **Identified User Pain Point**:

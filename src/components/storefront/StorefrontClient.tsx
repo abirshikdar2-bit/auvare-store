@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { ShopifyCheckoutScreen } from '../checkout/ShopifyCheckoutScreen';
 import type { Product, GarmentSize, ProductVariant, CartItem } from '@/types';
 import { formatBDT } from '@/lib/utils';
 import { HeroReelsSlider } from './HeroReelsSlider';
@@ -37,6 +38,37 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
 
   // Bag / Cart state
   const [bag, setBag] = useState<CartItem[]>([]);
+
+  // Sync bag with localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('auvare_cart_bag');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setBag(parsed);
+        }
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('auvare_cart_bag', JSON.stringify(bag));
+    } catch {}
+  }, [bag]);
+
+  // Handle browser back button when checkout screen is open
+  useEffect(() => {
+    const handlePopState = () => {
+      if (isCheckoutOpen) {
+        setIsCheckoutOpen(false);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isCheckoutOpen]);
+
 
   // Checkout form states
   const [customerName, setCustomerName] = useState('');
@@ -1368,221 +1400,40 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
         )}
       </div>
 
-      {/* 10. Direct Checkout Modal */}
+      {/* 10. Standalone Shopify-Style Checkout Screen (Top Ten 90% Match) */}
       {isCheckoutOpen && (
-        <div className="modal-overlay open active">
-          <div className="modal-content" style={{ maxWidth: '580px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div className="modal-header">
-              <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.25rem', color: 'var(--color-primary)' }}>
-                {directCheckoutItem ? 'Instant Buy Now Checkout' : 'Finalize Your Order'}
-              </h3>
-              <button
-                type="button"
-                className="modal-close"
-                onClick={() => {
-                  setIsCheckoutOpen(false);
-                  setDirectCheckoutItem(null);
-                }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleCheckoutSubmit} style={{ padding: '1.25rem' }}>
-              {/* Order Items Summary */}
-              <div style={{ background: 'var(--color-surface)', borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem', marginBottom: '1rem', border: '1px solid var(--color-border)' }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: '0.4rem' }}>
-                  Ordered Items ({checkoutItems.length})
-                </div>
-                {checkoutItems.map((item, idx) => (
-                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
-                    <span>
-                      {item.title} (Size: {item.selectedSize}) x{item.quantity}
-                    </span>
-                    <span style={{ fontWeight: 700 }}>TK {formatBDT(item.price * item.quantity)}</span>
-                  </div>
-                ))}
-                <div style={{ borderTop: '1px dashed var(--color-border)', marginTop: '0.5rem', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', fontWeight: 800, color: 'var(--color-primary)' }}>
-                  <span>Total Payable:</span>
-                  <span>TK {formatBDT(bagTotal)} (incl. delivery)</span>
-                </div>
-              </div>
-
-              {/* Customer Inputs */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                <div>
-                  <label className="form-label">Full Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="e.g. Tanvir Ahmed"
-                    className="form-input"
-                  />
-                </div>
-                <div>
-                  <label className="form-label">Mobile Number *</label>
-                  <input
-                    type="tel"
-                    required
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                    placeholder="017XXXXXXXX"
-                    className="form-input"
-                  />
-                </div>
-              </div>
-
-              <div style={{ marginBottom: '0.75rem' }}>
-                <label className="form-label">Full Delivery Address *</label>
-                <textarea
-                  required
-                  rows={2}
-                  value={customerAddress}
-                  onChange={(e) => setCustomerAddress(e.target.value)}
-                  placeholder="House, Road, Area, Thana, District"
-                  className="form-input"
-                  style={{ resize: 'vertical' }}
-                />
-              </div>
-
-              {/* Delivery Zone Radio */}
-              <div style={{ marginBottom: '0.75rem' }}>
-                <label className="form-label">Delivery Zone *</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', cursor: 'pointer' }}>
-                    <input
-                      type="radio"
-                      name="zone"
-                      checked={deliveryZone === 'inside'}
-                      onChange={() => setDeliveryZone('inside')}
-                    />
-                    Inside Dhaka (TK 70)
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', cursor: 'pointer' }}>
-                    <input
-                      type="radio"
-                      name="zone"
-                      checked={deliveryZone === 'outside'}
-                      onChange={() => setDeliveryZone('outside')}
-                    />
-                    Outside Dhaka (TK 130)
-                  </label>
-                </div>
-              </div>
-
-              {/* Payment Method Selector */}
-              <div style={{ marginBottom: '0.75rem' }}>
-                <label className="form-label">Payment Method *</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.4rem' }}>
-                  {(['cod', 'bkash', 'nagad', 'rocket'] as const).map((method) => (
-                    <button
-                      key={method}
-                      type="button"
-                      onClick={() => setPaymentMethod(method)}
-                      style={{
-                        padding: '0.5rem 0.25rem',
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        borderRadius: 'var(--radius-md)',
-                        border: `1.5px solid ${paymentMethod === method ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                        background: paymentMethod === method ? 'var(--color-primary-soft)' : 'white',
-                        color: paymentMethod === method ? 'var(--color-primary)' : 'var(--color-text-main)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {method}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* MFS instructions if not COD */}
-              {paymentMethod !== 'cod' && (
-                <div style={{ background: '#fef3c7', borderRadius: 'var(--radius-md)', padding: '0.85rem 1rem', marginBottom: '0.75rem', fontSize: '0.82rem', border: '1px solid #fde68a', color: '#92400e' }}>
-                  <p style={{ fontWeight: 700, marginBottom: '0.35rem' }}>
-                    Send TK {formatBDT(bagTotal)} via {paymentMethod.toUpperCase()} (Send Money):
-                  </p>
-                  {(() => {
-                    const activeMfsNumber = siteSettings[`${paymentMethod}_number`] || siteSettings.bkash_number || '01734018155';
-                    return (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.85)', padding: '0.45rem 0.75rem', borderRadius: '6px', border: '1px solid #fcd34d', marginTop: '0.35rem', marginBottom: '0.5rem' }}>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: '#78350f', letterSpacing: '0.04em' }}>
-                          {activeMfsNumber}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleCopyMfs(activeMfsNumber)}
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.35rem',
-                            background: copiedMfs ? '#15803d' : '#92400e',
-                            color: '#ffffff',
-                            border: 'none',
-                            borderRadius: '5px',
-                            padding: '0.35rem 0.7rem',
-                            fontSize: '0.75rem',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            transition: 'all 0.18s ease',
-                          }}
-                          title={`Click to copy ${paymentMethod.toUpperCase()} number`}
-                        >
-                          {copiedMfs ? (
-                            <>
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="20 6 9 17 4 12" />
-                              </svg>
-                              <span>Copied!</span>
-                            </>
-                          ) : (
-                            <>
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                              </svg>
-                              <span>Copy Number</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    );
-                  })()}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.5rem' }}>
-                    <input
-                      type="tel"
-                      placeholder="Sender Number"
-                      value={senderPhone}
-                      onChange={(e) => setSenderPhone(e.target.value)}
-                      className="form-input"
-                      style={{ fontSize: '0.8rem' }}
-                    />
-                    <input
-                      type="text"
-                      placeholder="TrxID (Transaction ID)"
-                      value={trxId}
-                      onChange={(e) => setTrxId(e.target.value)}
-                      className="form-input"
-                      style={{ fontSize: '0.8rem' }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="btn-primary"
-                style={{ width: '100%', padding: '0.85rem', marginTop: '0.5rem' }}
-              >
-                {isSubmitting ? 'Placing Order...' : `Confirm & Place Order (TK ${formatBDT(bagTotal)})`}
-              </button>
-            </form>
-          </div>
-        </div>
+        <ShopifyCheckoutScreen
+          items={checkoutItems}
+          deliveryZone={deliveryZone}
+          setDeliveryZone={setDeliveryZone}
+          onClose={() => {
+            setIsCheckoutOpen(false);
+            setDirectCheckoutItem(null);
+            setIsBagOpen(true);
+            try {
+              if (window.location.hash === '#checkout') {
+                window.history.pushState(null, '', window.location.pathname);
+              }
+            } catch {}
+          }}
+          onOrderSuccess={(orderData) => {
+            setOrderSuccess(orderData);
+            if (!directCheckoutItem) {
+              setBag([]);
+              try {
+                localStorage.removeItem('auvare_cart_bag');
+              } catch {}
+            }
+            setDirectCheckoutItem(null);
+            setSelectedProduct(null);
+            setIsCheckoutOpen(false);
+            try {
+              if (window.location.hash === '#checkout') {
+                window.history.pushState(null, '', window.location.pathname);
+              }
+            } catch {}
+          }}
+        />
       )}
 
       {/* 11. Order Success Modal */}
