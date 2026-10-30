@@ -16,6 +16,17 @@ _(no active items in progress)_
 
 ## Done
 
+- `#48` **2026-10-31** Supabase Architecture Audit & Realtime Channel Synchronization for Admin Panel:
+  - **Audit Scope**:
+    - Conducted full inspection of database connections across all project modules.
+    - Verified all API routes (`/api/checkout`, `/api/admin/orders`, `/api/admin/products`, `/api/admin/users`, `/api/upload`) query and mutate PostgreSQL tables and Storage in Supabase directly.
+    - Clarified Next.js 15 App Router architecture vs archived `legacy_html`.
+  - **Enhancement Implemented**:
+    - Integrated Supabase Realtime listener in `AdminPortal.tsx` listening to `orders`, `products`, and `auth_users` tables. Orders submitted on the storefront now appear on the admin panel instantly in real-time.
+    - Updated `supabase-schema.sql` and `supabase-contact-info-migration.sql` to ensure all 4 public tables (`orders`, `products`, `auth_users`, `store_contact_info`) are enabled in `supabase_realtime` publication.
+  - **Verification**:
+    - Clean Next.js production build (`npm run build`) in 1.8s.
+
 - `#47` **2026-10-31** Storefront Multichannel Help Menu Supabase Realtime Dynamic Synchronization:
   - **Identified User Requirement**:
     - In the public storefront floating Help Menu (`MediasoftWidget`):

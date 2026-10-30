@@ -57,9 +57,10 @@ UPDATE public.orders
 SET size = COALESCE(items->0->>'size', 'M')
 WHERE size IS NULL AND items IS NOT NULL AND jsonb_array_length(items) > 0;
 
--- Enable Realtime publication for orders, products and store_contact_info
+-- Enable Realtime publication for orders, products, auth_users and store_contact_info
 ALTER PUBLICATION supabase_realtime ADD TABLE public.orders;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.products;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.auth_users;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.store_contact_info;
 
 -- 3. Create Store Contact Information Table

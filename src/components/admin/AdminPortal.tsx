@@ -422,24 +422,39 @@ export function AdminPortal() {
     };
   }, []);
 
-  // When authStatus becomes 'approved', trigger initial load & start polling
+  // When authStatus becomes 'approved', trigger initial load, realtime sync & backup polling
   useEffect(() => {
     if (authStatus !== 'approved') return;
 
     loadData();
 
-    // Auto-polling interval: check for new incoming storefront orders every 7 seconds
+    // 1. Supabase Realtime subscription: instant updates when orders, products, or users change in Supabase
+    const realtimeChannel = supabase
+      .channel('admin_portal_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+        loadData(true);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
+        loadData(true);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'auth_users' }, () => {
+        loadUsersData();
+      })
+      .subscribe();
+
+    // 2. Auto-polling backup interval: check for incoming storefront orders every 7 seconds
     const interval = setInterval(() => {
       loadData(true);
     }, 7000);
 
-    // Also reload fresh data immediately when admin tab gets focused
+    // 3. Also reload fresh data immediately when admin tab gets focused
     const handleFocus = () => {
       loadData(true);
     };
     window.addEventListener('focus', handleFocus);
 
     return () => {
+      supabase.removeChannel(realtimeChannel);
       clearInterval(interval);
       window.removeEventListener('focus', handleFocus);
     };
