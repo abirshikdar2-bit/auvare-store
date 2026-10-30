@@ -16,6 +16,35 @@ _(no active items in progress)_
 
 ## Done
 
+- `#47` **2026-10-31** Storefront Multichannel Help Menu Supabase Realtime Dynamic Synchronization:
+  - **Identified User Requirement**:
+    - In the public storefront floating Help Menu (`MediasoftWidget`):
+      1. **Messenger (`fmsn`)**: Connect to user's Facebook profile/page link: `https://www.facebook.com/share/1JoPNYsMNz/?mibextid=wwXIfr`.
+      2. **Email (`email`)**: Connect to email `abirshikdar2@gmail.com`.
+      3. **Call (`call`)**: Connect to phone number `01734018155` with native `tel:01734018155` dialer trigger for mobile/tablet.
+      4. **WhatsApp (`whatsapp`)**: Keep functional with direct WhatsApp chat.
+      5. **Support (`ticket`)**: Live Concierge Modal with updated phone, email, and messenger channels.
+    - **Dynamic Supabase Integration**:
+      - Connect all contact channels to Supabase `store_contact_info` table.
+      - Ensure that whenever contact information is updated in Supabase, the public storefront immediately updates without delay or manual reload.
+  - **Implemented Clean Solution**:
+    - *Widget Adaptation (`src/components/storefront/MediasoftWidget.tsx`)*:
+      - Extended `MediasoftWidgetProps` with `facebookUrl?: string`, `phone?: string`, `email?: string`, `whatsappNumber?: string`.
+      - Updated `handleItemClick` to route Messenger to `facebookUrl`, Email to `mailto:${email}`, Call to `tel:${phone}`.
+      - Updated internal concierge support modal dialog to display and link to the live phone, email, and messenger links.
+    - *Next.js Server Page (`src/app/page.tsx`)*:
+      - Added queries for `email`, `call_number`/`phone`, and `facebook_url`/`messenger_url` from `store_contact_info` with clean fallbacks.
+    - *Live Client-Side Realtime Synchronization (`src/components/storefront/StorefrontClient.tsx`)*:
+      - Maintained dynamic `currentSettings` state initialized from server `siteSettings`.
+      - Added client-side fetch on mount to bypass any CDN edge cache latency.
+      - Added Supabase Realtime channel subscription listening to `postgres_changes` on `store_contact_info`. When changes occur in Supabase, state updates instantly on the live storefront in real-time.
+    - *Database Schema & Migration (`supabase-schema.sql` & `supabase-contact-info-migration.sql`)*:
+      - Added `email`, `call_number`, `facebook_url` columns to `store_contact_info` table definition.
+      - Created ready-to-run migration script with SQL and enabled Realtime publication on `store_contact_info`.
+  - **Verification**:
+    - Build test passed (`npm run build`) in 2.3s with zero TypeScript errors.
+    - Verified all channel links (WhatsApp, Messenger, Email, Call dialer) and deployed to Vercel production.
+
 - `#46` **2026-10-31** Footer Developer WhatsApp Direct Link ("Developed by Abir Shikdar"):
   - **Identified User Requirement**:
     - The user provided their personal WhatsApp number: `+8801734018155`.

@@ -8,6 +8,7 @@ import { HeroReelsSlider } from './HeroReelsSlider';
 import { ProductDetailModal } from './ProductDetailModal';
 import { MediasoftWidget } from './MediasoftWidget';
 import Link from 'next/link';
+import { createPublicClient } from '@/lib/supabase/public';
 
 interface StorefrontClientProps {
   initialProducts: Product[];
@@ -15,6 +16,70 @@ interface StorefrontClientProps {
 }
 
 export function StorefrontClient({ initialProducts, siteSettings }: StorefrontClientProps) {
+  // Live dynamic settings synchronized with Supabase
+  const [currentSettings, setCurrentSettings] = useState<Record<string, string>>(siteSettings);
+
+  useEffect(() => {
+    const supabase = createPublicClient();
+    async function fetchLiveContactInfo() {
+      try {
+        const { data, error } = await supabase
+          .from('store_contact_info')
+          .select('*')
+          .eq('id', 'main')
+          .maybeSingle();
+
+        if (data && !error) {
+          const row = data as Record<string, any>;
+          setCurrentSettings((prev) => ({
+            ...prev,
+            whatsapp_number: row.whatsapp_number ? row.whatsapp_number.trim() : prev.whatsapp_number,
+            bkash_number: row.bkash_number ? row.bkash_number.trim() : prev.bkash_number,
+            nagad_number: row.nagad_number ? row.nagad_number.trim() : prev.nagad_number,
+            instagram_handle: row.instagram_handle || prev.instagram_handle,
+            instagram_url: row.instagram_url || prev.instagram_url,
+            email: row.email || prev.email || 'abirshikdar2@gmail.com',
+            call_number: row.call_number || row.phone || prev.call_number || '01734018155',
+            facebook_url: row.facebook_url || row.messenger_url || prev.facebook_url || 'https://www.facebook.com/share/1JoPNYsMNz/?mibextid=wwXIfr',
+          }));
+        }
+      } catch (e) {
+        console.warn('Realtime contact info fetch error:', e);
+      }
+    }
+
+    fetchLiveContactInfo();
+
+    // Supabase Realtime channel for instant storefront updates on DB change
+    const channel = supabase
+      .channel('realtime_store_contact_info')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'store_contact_info' },
+        (payload) => {
+          if (payload.new) {
+            const row = payload.new as Record<string, any>;
+            setCurrentSettings((prev) => ({
+              ...prev,
+              whatsapp_number: row.whatsapp_number ? row.whatsapp_number.trim() : prev.whatsapp_number,
+              bkash_number: row.bkash_number ? row.bkash_number.trim() : prev.bkash_number,
+              nagad_number: row.nagad_number ? row.nagad_number.trim() : prev.nagad_number,
+              instagram_handle: row.instagram_handle || prev.instagram_handle,
+              instagram_url: row.instagram_url || prev.instagram_url,
+              email: row.email || prev.email || 'abirshikdar2@gmail.com',
+              call_number: row.call_number || row.phone || prev.call_number || '01734018155',
+              facebook_url: row.facebook_url || row.messenger_url || prev.facebook_url || 'https://www.facebook.com/share/1JoPNYsMNz/?mibextid=wwXIfr',
+            }));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   // Catalog filtering states
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [activeStatus, setActiveStatus] = useState<string>('all');
@@ -107,7 +172,7 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
     }
   };
 
-  const waNumber = siteSettings.whatsapp_number || '01734018155';
+  const waNumber = currentSettings.whatsapp_number || '01734018155';
   const cleanWa = waNumber.replace(/[^0-9]/g, '');
 
   // Filtered catalog
@@ -370,7 +435,7 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
               </li>
               <li>
                 <a
-                  href={siteSettings.instagram_url || 'https://www.instagram.com/auvare_official/'}
+                  href={currentSettings.instagram_url || 'https://www.instagram.com/auvare_official/'}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="nav-link"
@@ -524,7 +589,7 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
                 </li>
                 <li>
                   <a
-                    href={siteSettings.instagram_url || 'https://www.instagram.com/auvare_official/'}
+                    href={currentSettings.instagram_url || 'https://www.instagram.com/auvare_official/'}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="mobile-nav-item"
@@ -967,12 +1032,12 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
               <div className="ig-names">
                 <h3>AUVARE</h3>
                 <a
-                  href={siteSettings.instagram_url || 'https://www.instagram.com/auvare_official/'}
+                  href={currentSettings.instagram_url || 'https://www.instagram.com/auvare_official/'}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="ig-handle"
                 >
-                  {siteSettings.instagram_handle || '@auvare_official'}
+                  {currentSettings.instagram_handle || '@auvare_official'}
                 </a>
                 <div className="ig-stats-row">
                   <span><strong>959</strong> posts</span>
@@ -983,7 +1048,7 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
             </div>
 
             <a
-              href={siteSettings.instagram_url || 'https://www.instagram.com/auvare_official/'}
+              href={currentSettings.instagram_url || 'https://www.instagram.com/auvare_official/'}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-primary"
@@ -1053,13 +1118,13 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
                 Follow our Instagram for flash stories and drop notifications before they hit the site.
               </p>
               <a
-                href={siteSettings.instagram_url || 'https://www.instagram.com/auvare_official/'}
+                href={currentSettings.instagram_url || 'https://www.instagram.com/auvare_official/'}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-primary"
                 style={{ padding: '0.6rem 1.25rem', fontSize: '0.85rem' }}
               >
-                {siteSettings.instagram_handle || '@auvare_official'} on IG ↗
+                {currentSettings.instagram_handle || '@auvare_official'} on IG ↗
               </a>
             </div>
           </div>
@@ -1498,7 +1563,12 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
       )}
 
       {/* 12. Mediasoft BD Multichannel Help Widget at Bottom-Left Corner */}
-      <MediasoftWidget phone={siteSettings.whatsapp_number} whatsappNumber={cleanWa} />
+      <MediasoftWidget 
+        phone={currentSettings.call_number || currentSettings.whatsapp_number || '01734018155'}
+        whatsappNumber={cleanWa}
+        email={currentSettings.email || 'abirshikdar2@gmail.com'}
+        facebookUrl={currentSettings.facebook_url || 'https://www.facebook.com/share/1JoPNYsMNz/?mibextid=wwXIfr'}
+      />
     </>
   );
 }

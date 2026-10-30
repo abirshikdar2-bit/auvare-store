@@ -28,14 +28,17 @@ export default async function HomePage() {
     console.warn('[HomePage] Supabase products error:', prodRes.error);
   }
 
-  const contactData = contactRes.data;
+  const contactData = (contactRes.data || {}) as Record<string, any>;
 
   const siteSettings: Record<string, string> = {
-    whatsapp_number: contactData?.whatsapp_number || '01734018155',
-    bkash_number: contactData?.bkash_number || '01734018155',
-    nagad_number: contactData?.nagad_number || '01734018155',
-    instagram_handle: contactData?.instagram_handle || '@auvare_official',
-    instagram_url: contactData?.instagram_url || 'https://www.instagram.com/auvare_official/',
+    whatsapp_number: contactData.whatsapp_number ? contactData.whatsapp_number.trim() : '01734018155',
+    bkash_number: contactData.bkash_number ? contactData.bkash_number.trim() : '01734018155',
+    nagad_number: contactData.nagad_number ? contactData.nagad_number.trim() : '01734018155',
+    instagram_handle: contactData.instagram_handle || '@auvare_official',
+    instagram_url: contactData.instagram_url || 'https://www.instagram.com/auvare_official/',
+    email: contactData.email || 'abirshikdar2@gmail.com',
+    call_number: contactData.call_number || contactData.phone || '01734018155',
+    facebook_url: contactData.facebook_url || contactData.messenger_url || 'https://www.facebook.com/share/1JoPNYsMNz/?mibextid=wwXIfr',
   };
 
   // Authoritative parsing with embedded variants & multi-image support

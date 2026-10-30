@@ -42,14 +42,16 @@ interface MediasoftWidgetProps {
   onOpenSupportModal?: () => void;
   phone?: string;
   email?: string;
+  facebookUrl?: string;
   whatsappNumber?: string;
 }
 
 export function MediasoftWidget({
   onOpenSupportModal,
-  phone = '+8801734018155',
-  email = 'auvare.official@gmail.com',
-  whatsappNumber = '8801734018155',
+  phone = '01734018155',
+  email = 'abirshikdar2@gmail.com',
+  facebookUrl = 'https://www.facebook.com/share/1JoPNYsMNz/?mibextid=wwXIfr',
+  whatsappNumber = '01734018155',
 }: MediasoftWidgetProps) {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -77,11 +79,14 @@ export function MediasoftWidget({
         setIsSupportModalOpen(true);
       }
     } else if (id === 'fmsn') {
-      window.open('https://m.me/auvare_official', '_blank');
+      const targetFb = facebookUrl || 'https://www.facebook.com/share/1JoPNYsMNz/?mibextid=wwXIfr';
+      window.open(targetFb, '_blank', 'noopener,noreferrer');
     } else if (id === 'email') {
-      window.location.href = `mailto:${email}?subject=AUVARE%20Store%20Inquiry`;
+      const targetEmail = email || 'abirshikdar2@gmail.com';
+      window.location.href = `mailto:${targetEmail}?subject=AUVARE%20Store%20Inquiry`;
     } else if (id === 'call') {
-      window.location.href = `tel:${phone}`;
+      const targetPhone = (phone || '01734018155').trim();
+      window.location.href = `tel:${targetPhone}`;
     } else if (id === 'minimize') {
       setIsOpen(false);
     }
@@ -253,7 +258,7 @@ export function MediasoftWidget({
 
               {/* Messenger */}
               <a
-                href="https://m.me/auvare_official"
+                href={facebookUrl || 'https://www.facebook.com/share/1JoPNYsMNz/?mibextid=wwXIfr'}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3.5 p-3.5 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/50 transition group"
@@ -263,7 +268,7 @@ export function MediasoftWidget({
                 </div>
                 <div>
                   <p className="text-xs font-bold text-slate-800 m-0 group-hover:text-indigo-700">Facebook Messenger</p>
-                  <p className="text-[11px] text-slate-500 m-0">@auvare_official</p>
+                  <p className="text-[11px] text-slate-500 m-0">Direct Concierge Chat</p>
                 </div>
               </a>
             </div>

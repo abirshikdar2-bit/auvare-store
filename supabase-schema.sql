@@ -57,9 +57,10 @@ UPDATE public.orders
 SET size = COALESCE(items->0->>'size', 'M')
 WHERE size IS NULL AND items IS NOT NULL AND jsonb_array_length(items) > 0;
 
--- Enable Realtime publication for orders and products
+-- Enable Realtime publication for orders, products and store_contact_info
 ALTER PUBLICATION supabase_realtime ADD TABLE public.orders;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.products;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.store_contact_info;
 
 -- 3. Create Store Contact Information Table
 CREATE TABLE IF NOT EXISTS public.store_contact_info (
@@ -69,6 +70,9 @@ CREATE TABLE IF NOT EXISTS public.store_contact_info (
     nagad_number TEXT NOT NULL DEFAULT '01700-000000',
     instagram_handle TEXT NOT NULL DEFAULT '@auvare_official',
     instagram_url TEXT NOT NULL DEFAULT 'https://www.instagram.com/auvare_official/',
+    email TEXT DEFAULT 'abirshikdar2@gmail.com',
+    call_number TEXT DEFAULT '01734018155',
+    facebook_url TEXT DEFAULT 'https://www.facebook.com/share/1JoPNYsMNz/?mibextid=wwXIfr',
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
