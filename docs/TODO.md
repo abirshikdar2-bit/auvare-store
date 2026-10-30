@@ -16,6 +16,37 @@ _(no active items in progress)_
 
 ## Done
 
+- `#45` **2026-10-31** Restoration of Original Users Directory Interface, Branded Edit User Modal & Elimination of Browser `confirm()`:
+  - **Identified User Feedback & Pain Points**:
+    - The user tested the Users directory and noted that the interface had deviated from the original legacy design:
+      1. *Revoke vs Edit*: In the original system, there was no "Revoke" button. Approved and blocked users had an "Edit" button that opened a dedicated modal to edit display name, role, and approval status (Approved, Pending Review, Rejected, Blocked).
+      2. *Browser Native Confirm Popup (`auvare-store.vercel.app says: ...`)*: When unblocking a user or taking action, a native browser alert/confirm popup appeared displaying the website URL. The user instructed: "আমরা browser URL use করব না। আমরা আমাদের branded URL/modal use করব।"
+      3. *Layout Matching*: The top section required the original 4-card statistics layout: "Total Registered Users", "Approved Admins", "Pending Approval", and "Active Role", along with the Super Admin restriction notice.
+  - **Implemented Clean Solution**:
+    - *Eliminated Native Browser `confirm()` and `alert()` (`AdminPortal.tsx`)*:
+      - Removed 100% of `window.confirm()` and `window.alert()` calls across all admin actions.
+      - Created `brandedConfirm` state and rendered the luxury AUVARE branded confirmation modal dialog (with brand crest, gold/emerald/red badge accents, item preview, and custom action buttons).
+      - Added sleek toast notification state (`toast`) with auto-dismissal for success and error feedbacks.
+    - *Restored Original 4-Stat Cards & Table Interface (`AdminPortal.tsx`)*:
+      - Card 1: `Total Registered Users` with subtitle "Customers, applicants & staff".
+      - Card 2: `Approved Admins` (emerald green) with subtitle "Active dashboard & inventory access".
+      - Card 3: `Pending Approval` (amber) with subtitle "Awaiting review".
+      - Card 4: `Active Role` (Super Admin) with subtitle "Authenticated database authority".
+      - Added restriction notice if logged-in user is not Super Admin.
+      - Replaced `Revoke` with **`Edit`** button on all approved, blocked, and rejected users.
+      - Preserved `Approve` and `Reject` buttons on pending applicants.
+    - *AUVARE Branded Edit User Modal (`AdminPortal.tsx`)*:
+      - Allows editing `display_name`, `role` (`admin`, `super_admin`, `customer`), and `status` (`approved`, `pending`, `rejected`, `blocked`).
+      - Shows readonly permanent Google OAuth email and user identity preview card.
+      - Displays dynamic status advisory alert box explaining the implications of the selected status.
+    - *AUVARE Branded Reject / Block Decision Modal (`AdminPortal.tsx`)*:
+      - Allows choosing between "Reject (বাতিল করুন)" (permits re-application) and "Permanent Block (স্থায়ীভাবে ব্লক)" (restricts re-application).
+    - *API Support (`src/app/api/admin/users/route.ts`)*:
+      - Updated `PATCH` route to accept `display_name` alongside `role` and `status`.
+  - **Verification**:
+    - Built cleanly with zero TypeScript errors (`npm run build`).
+    - Verified all modal states, zero native `confirm()` triggers, and committed to git and deployed to Vercel.
+
 - `#44` **2026-10-31** Restored Google OAuth Security Auth Gate & Super Admin RBAC Approval System for `/admin`:
   - **Identified User Problem**:
     - The user accessed the Admin Panel URL (`/admin`) from another browser and found that it opened the dashboard directly without any login requirement!

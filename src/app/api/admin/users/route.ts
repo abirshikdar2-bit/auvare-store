@@ -126,11 +126,11 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// 3. PATCH: Super Admin approval, rejection, or unblock of user access requests
+// 3. PATCH: Super Admin approval, rejection, or edit of user profile and permissions
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const { id, status, role } = body;
+    const { id, status, role, display_name } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -154,6 +154,7 @@ export async function PATCH(req: NextRequest) {
     const updatePayload: Record<string, any> = {};
     if (status) updatePayload.status = status;
     if (role) updatePayload.role = role;
+    if (display_name !== undefined) updatePayload.display_name = display_name;
 
     const { data, error } = await supabase
       .from('auth_users')

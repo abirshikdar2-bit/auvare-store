@@ -61,6 +61,39 @@ export function AdminPortal() {
   const [authUsers, setAuthUsers] = useState<any[]>([]);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
 
+  // User Management State (Edit & Reject Modals)
+  const [editingUser, setEditingUser] = useState<any | null>(null);
+  const [editDisplayName, setEditDisplayName] = useState('');
+  const [editRole, setEditRole] = useState<'admin' | 'super_admin' | 'customer'>('admin');
+  const [editStatus, setEditStatus] = useState<'approved' | 'pending' | 'rejected' | 'blocked'>('approved');
+  const [isSavingUser, setIsSavingUser] = useState(false);
+
+  const [rejectingUser, setRejectingUser] = useState<any | null>(null);
+  const [rejectAction, setRejectAction] = useState<'reject' | 'block'>('reject');
+
+  // Reusable AUVARE Branded Confirm Dialog State (Zero native browser confirm())
+  const [brandedConfirm, setBrandedConfirm] = useState<{
+    isOpen: boolean;
+    title: string;
+    metaSub?: string;
+    badgeText?: string;
+    itemName?: string;
+    itemImage?: string;
+    itemMeta?: string;
+    warningText: string;
+    confirmBtnText: string;
+    cancelBtnText?: string;
+    isDestructive?: boolean;
+    onConfirm: () => Promise<void> | void;
+  } | null>(null);
+
+  // Sleek Branded Toast Notification State (Zero native browser alert())
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
   // Fetch Auth Users list for Users Tab
   const loadUsersData = async () => {
     try {
@@ -124,7 +157,7 @@ export function AdminPortal() {
         },
       });
     } catch (err: any) {
-      alert(`Google Sign-In Error: ${err.message || 'OAuth initialization failed'}`);
+      showToast(`Google Sign-In Error: ${err.message || 'OAuth initialization failed'}`, 'error');
       setIsAuthLoading(false);
     }
   };
@@ -158,9 +191,9 @@ export function AdminPortal() {
       }
       setCurrentUserProfile(data.profile);
       setAuthStatus('pending');
-      alert('আপনার অ্যাডমিন রিকোয়েস্ট পুনরায় সুপার অ্যাডমিনের কাছে পাঠানো হয়েছে!');
+      showToast('আপনার অ্যাডমিন রিকোয়েস্ট পুনরায় সুপার অ্যাডমিনের কাছে পাঠানো হয়েছে!', 'success');
     } catch (err: any) {
-      alert(`Error: ${err.message}`);
+      showToast(`Error: ${err.message}`, 'error');
     }
   };
 
@@ -171,50 +204,130 @@ export function AdminPortal() {
     await verifyUserAccess(currentUser);
   };
 
-  // User Actions (Super Admin only)
-  const handleApproveUser = async (userId: string, name: string) => {
-    if (!confirm(`Are you sure you want to approve admin access for ${name}?`)) return;
+  // User Actions (Super Admin only - 100% Branded Modals, Zero Browser confirm())
+  const handleApproveUser = (user: any) => {
+    const name = user.display_name || user.full_name || user.email;
+    setBrandedConfirm({
+      isOpen: true,
+      title: 'Authorize Admin Access?',
+      metaSub: 'STAFF CONTROL • PRIVILEGE ELEVATION',
+      badgeText: 'AUTHORIZE ADMIN',
+      itemName: name,
+      itemImage: user.avatar_url || '/assets/images/logo.jpg',
+      itemMeta: 'Super Admin Authority • Full Catalog & Orders Access',
+      warningText: `Are you sure you want to approve "${name}" as an Admin? They will have full access to manage stock and view customer orders.`,
+      confirmBtnText: 'Approve Admin',
+      cancelBtnText: 'Cancel',
+      isDestructive: false,
+      onConfirm: async () => {
+        try {
+          const res = await fetch('/api/admin/users', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: user.id, status: 'approved', role: 'admin' }),
+          });
+          if (!res.ok) throw new Error('Failed to approve user');
+          showToast(`"${name}" approved as Admin successfully!`, 'success');
+          await loadUsersData();
+        } catch (err: any) {
+          showToast(err.message || 'Approval failed', 'error');
+        }
+      },
+    });
+  };
+
+  const handleOpenRejectModal = (user: any) => {
+    setRejectingUser(user);
+    setRejectAction('reject');
+  };
+
+  const handleExecuteReject = async () => {
+    if (!rejectingUser) return;
+    const name = rejectingUser.display_name || rejectingUser.full_name || rejectingUser.email;
     try {
       const res = await fetch('/api/admin/users', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: userId, status: 'approved' }),
+        body: JSON.stringify({ id: rejectingUser.id, status: rejectAction }),
       });
-      if (!res.ok) throw new Error('Failed to approve');
+      if (!res.ok) throw new Error('Failed to update status');
+      if (rejectAction === 'block') {
+        showToast(`"${name}" permanently blocked from admin access.`, 'info');
+      } else {
+        showToast(`Request for "${name}" rejected and removed from directory.`, 'info');
+      }
+      setRejectingUser(null);
       await loadUsersData();
     } catch (err: any) {
-      alert(err.message);
+      showToast(err.message || 'Action failed', 'error');
     }
   };
 
-  const handleRejectUser = async (userId: string, name: string) => {
-    if (!confirm(`Are you sure you want to reject/revoke admin access for ${name}?`)) return;
+  const handleOpenEditModal = (user: any) => {
+    setEditingUser(user);
+    setEditDisplayName(user.display_name || user.full_name || user.email?.split('@')[0] || '');
+    setEditRole(user.role || 'admin');
+    setEditStatus(user.status || 'approved');
+  };
+
+  const handleSaveUserEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    setIsSavingUser(true);
     try {
       const res = await fetch('/api/admin/users', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: userId, status: 'rejected' }),
+        body: JSON.stringify({
+          id: editingUser.id,
+          display_name: editDisplayName.trim(),
+          role: editRole,
+          status: editStatus,
+        }),
       });
-      if (!res.ok) throw new Error('Failed to reject');
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Failed to update user profile');
+      }
+      showToast(`User details for "${editDisplayName || editingUser.email}" saved successfully!`, 'success');
+      setEditingUser(null);
       await loadUsersData();
     } catch (err: any) {
-      alert(err.message);
+      showToast(err.message || 'Save failed', 'error');
+    } finally {
+      setIsSavingUser(false);
     }
   };
 
-  const handleUnblockUser = async (userId: string, name: string) => {
-    if (!confirm(`Are you sure you want to unblock ${name}?`)) return;
-    try {
-      const res = await fetch('/api/admin/users', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: userId, status: 'approved' }),
-      });
-      if (!res.ok) throw new Error('Failed to unblock');
-      await loadUsersData();
-    } catch (err: any) {
-      alert(err.message);
-    }
+  const handleUnblockUser = (user: any) => {
+    const name = user.display_name || user.full_name || user.email;
+    setBrandedConfirm({
+      isOpen: true,
+      title: 'Unblock User Account?',
+      metaSub: 'STAFF CONTROL • SECURITY CLEAR',
+      badgeText: 'UNBLOCK USER',
+      itemName: name,
+      itemImage: user.avatar_url || '/assets/images/logo.jpg',
+      itemMeta: 'Clear Security Restriction • Restore Sign-In Access',
+      warningText: `Are you sure you want to unblock "${name}"? They will regain permission to sign in and re-request admin dashboard access.`,
+      confirmBtnText: 'Unblock User',
+      cancelBtnText: 'Cancel',
+      isDestructive: false,
+      onConfirm: async () => {
+        try {
+          const res = await fetch('/api/admin/users', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: user.id, status: 'approved' }),
+          });
+          if (!res.ok) throw new Error('Failed to unblock user');
+          showToast(`"${name}" has been unblocked.`, 'success');
+          await loadUsersData();
+        } catch (err: any) {
+          showToast(err.message || 'Failed to unblock', 'error');
+        }
+      },
+    });
   };
 
   // Load live data from Supabase
@@ -465,24 +578,15 @@ export function AdminPortal() {
       }
 
       setIsEditorOpen(false);
+      showToast('Product drop saved successfully!', 'success');
       await loadData();
     } catch (err: any) {
-      alert(`Save Error: ${err.message || 'Failed to save product drop'}`);
+      showToast(`Save Error: ${err.message || 'Failed to save product drop'}`, 'error');
     }
   };
 
-  const handleDeleteProduct = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this garment drop?')) return;
-    try {
-      const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'Delete failed');
-      }
-      await loadData();
-    } catch (err: any) {
-      alert(`Delete Error: ${err.message || 'Failed to delete product drop'}`);
-    }
+  const handleDeleteProduct = (product: Product) => {
+    setDeletingProduct(product);
   };
 
   const handleUpdateOrderStatus = async (orderId: string, status: string) => {
@@ -497,9 +601,10 @@ export function AdminPortal() {
         throw new Error(err.error || 'Status update failed');
       }
       setActiveOrderModal(null);
+      showToast('Order status updated successfully!', 'success');
       await loadData();
     } catch (err: any) {
-      alert(`Status Error: ${err.message || 'Failed to update order status'}`);
+      showToast(`Status Error: ${err.message || 'Failed to update order status'}`, 'error');
     }
   };
 
@@ -1148,49 +1253,49 @@ export function AdminPortal() {
           </div>
         )}
 
-        {/* Tab 4: Users & RBAC Management */}
+        {/* Tab 4: Users & RBAC Directory (Matching original AUVARE Admin Interface) */}
         {activeTab === 'users' && !isEditorOpen && (
           <div className="p-4 sm:p-8 space-y-6 max-w-6xl w-full mx-auto">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-bold font-serif text-slate-900">Admin Users &amp; Access Control</h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Manage team permissions and approve or reject administrative access requests.
-                </p>
+            {/* 4 Summary Stats for Users */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-xs">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Registered Users</span>
+                <p className="text-2xl font-extrabold text-slate-900 mt-1">{authUsers.length}</p>
+                <span className="text-[11px] text-slate-500 block mt-0.5">Customers, applicants &amp; staff</span>
               </div>
-              <button
-                type="button"
-                onClick={() => loadUsersData()}
-                className="self-start sm:self-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 shadow-xs transition"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>Refresh Users</span>
-              </button>
+
+              <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-xs">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Approved Admins</span>
+                <p className="text-2xl font-extrabold text-emerald-700 mt-1">
+                  {authUsers.filter(u => u.status === 'approved' && (u.role === 'admin' || u.role === 'super_admin')).length}
+                </p>
+                <span className="text-[11px] text-slate-500 block mt-0.5">Active dashboard &amp; inventory access</span>
+              </div>
+
+              <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-xs">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Pending Approval</span>
+                <p className="text-2xl font-extrabold text-amber-600 mt-1">
+                  {pendingUsersCount}
+                </p>
+                <span className="text-[11px] text-slate-500 block mt-0.5">Awaiting review</span>
+              </div>
+
+              <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-xs">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Active Role</span>
+                <p className="text-xl font-bold text-emerald-700 mt-1 truncate">
+                  {currentUserProfile?.role === 'super_admin' ? 'Super Admin' : (currentUserProfile?.role === 'admin' ? 'Admin' : 'Super Admin')}
+                </p>
+                <span className="text-[11px] text-slate-500 block mt-0.5">Authenticated database authority</span>
+              </div>
             </div>
 
-            {/* Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-xs">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Accounts</span>
-                <p className="text-2xl font-extrabold text-slate-900 mt-1">{authUsers.length}</p>
-                <span className="text-xs text-slate-500">Google OAuth records</span>
+            {/* Regular Admin Restriction Notice (Visible only if current user is not Super Admin) */}
+            {!(currentUser?.email === 'abirshikdar2@gmail.com' || currentUserProfile?.role === 'super_admin') && (
+              <div className="bg-blue-50 border border-blue-200 text-blue-800 rounded-xl p-3.5 text-xs flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 text-blue-600 shrink-0" />
+                <span><strong>Notice:</strong> Super Admin access is required to modify user permissions or approval status.</span>
               </div>
-              <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-xs">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Active Admins</span>
-                <p className="text-2xl font-extrabold text-emerald-700 mt-1">
-                  {authUsers.filter(u => u.status === 'approved').length}
-                </p>
-                <span className="text-xs text-emerald-600 font-semibold">Authorized to manage store</span>
-              </div>
-              <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-xs">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Pending Approval</span>
-                <p className="text-2xl font-extrabold text-amber-600 mt-1">
-                  {authUsers.filter(u => u.status === 'pending').length}
-                </p>
-                <span className="text-xs text-amber-600 font-semibold">Awaiting Super Admin decision</span>
-              </div>
-            </div>
+            )}
 
             {/* Pending Requests Alert Banner */}
             {pendingUsersCount > 0 && (
@@ -1207,13 +1312,25 @@ export function AdminPortal() {
               </div>
             )}
 
-            {/* Users Table */}
+            {/* Users & Approval Table Card */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
-              <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-                <h3 className="font-bold text-sm text-slate-900">User Directory</h3>
-                <span className="text-xs text-slate-500">
-                  {authUsers.length} user{authUsers.length === 1 ? '' : 's'} registered
-                </span>
+              <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-sm sm:text-base text-slate-900 font-serif">
+                    User Directory &amp; Permissions
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    All authenticated accounts and store administrators logged from Supabase Auth.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => loadUsersData()}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 shadow-xs transition"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Refresh Directory</span>
+                </button>
               </div>
 
               {authUsers.length === 0 ? (
@@ -1225,160 +1342,140 @@ export function AdminPortal() {
                   <table className="w-full text-left text-xs text-slate-700">
                     <thead className="bg-slate-50 border-b border-slate-200 text-[11px] uppercase font-bold text-slate-500 tracking-wider">
                       <tr>
-                        <th className="py-3 px-4">User</th>
+                        <th className="py-3 px-4">User / Email</th>
                         <th className="py-3 px-4">Role</th>
                         <th className="py-3 px-4">Status</th>
-                        <th className="py-3 px-4 hidden md:table-cell">Requested Note</th>
-                        <th className="py-3 px-4 hidden lg:table-cell">Created / Signed In</th>
-                        <th className="py-3 px-4 text-right">Actions</th>
+                        <th className="py-3 px-4 hidden md:table-cell">Joined Date</th>
+                        <th className="py-3 px-4 text-right">Actions &amp; Approval</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {authUsers.map((u) => {
-                        const isSuperAdminUser = u.email === 'abirshikdar2@gmail.com';
+                        const isMaster = u.email?.toLowerCase().trim() === 'abirshikdar2@gmail.com';
                         const isSuperAdminCurrent = currentUser?.email === 'abirshikdar2@gmail.com' || currentUserProfile?.role === 'super_admin';
+                        const displayName = u.display_name || u.full_name || u.email?.split('@')[0] || 'User';
 
                         return (
                           <tr key={u.id} className="hover:bg-slate-50/70 transition">
-                            {/* User column */}
+                            {/* User / Email */}
                             <td className="py-3 px-4">
                               <div className="flex items-center gap-3">
                                 {u.avatar_url ? (
                                   <img
                                     src={u.avatar_url}
-                                    alt={u.full_name || u.email}
-                                    className="w-8 h-8 rounded-full object-cover border border-slate-200"
+                                    alt={displayName}
+                                    className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0"
                                   />
                                 ) : (
-                                  <div className="w-8 h-8 rounded-full bg-slate-800 text-white font-bold flex items-center justify-center text-xs">
-                                    {(u.full_name || u.email)[0].toUpperCase()}
+                                  <div className={`w-8 h-8 rounded-full text-white font-bold flex items-center justify-center text-xs shrink-0 ${
+                                    isMaster ? 'bg-amber-600' : (u.role === 'admin' ? 'bg-emerald-800' : 'bg-slate-800')
+                                  }`}>
+                                    {(displayName[0] || 'U').toUpperCase()}
                                   </div>
                                 )}
-                                <div>
-                                  <p className="font-bold text-slate-900 flex items-center gap-1.5">
-                                    <span>{u.full_name || u.email.split('@')[0]}</span>
-                                    {isSuperAdminUser && (
+                                <div className="leading-tight">
+                                  <div className="font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
+                                    <span>{displayName}</span>
+                                    {isMaster && (
                                       <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.2 rounded border border-amber-300">
                                         Owner
                                       </span>
                                     )}
-                                  </p>
-                                  <p className="text-slate-400 text-[11px]">{u.email}</p>
+                                  </div>
+                                  <span className="text-slate-400 text-[11px] block mt-0.5">{u.email}</span>
                                 </div>
                               </div>
                             </td>
 
-                            {/* Role column */}
+                            {/* Role */}
                             <td className="py-3 px-4">
                               <span className={`inline-block font-semibold px-2 py-0.5 rounded text-[11px] ${
                                 u.role === 'super_admin'
                                   ? 'bg-purple-100 text-purple-800 border border-purple-200'
-                                  : 'bg-slate-100 text-slate-700 border border-slate-200'
+                                  : (u.role === 'admin'
+                                      ? 'bg-sky-50 text-sky-800 border border-sky-200'
+                                      : 'bg-slate-100 text-slate-700 border border-slate-200')
                               }`}>
-                                {u.role === 'super_admin' ? 'Super Admin' : 'Admin'}
+                                {u.role === 'super_admin' ? 'Super Admin' : (u.role === 'admin' ? 'Admin' : 'Customer')}
                               </span>
                             </td>
 
-                            {/* Status column */}
+                            {/* Status */}
                             <td className="py-3 px-4">
                               {u.status === 'approved' && (
-                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                   <span>Approved</span>
                                 </span>
                               )}
                               {u.status === 'pending' && (
-                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full animate-pulse">
-                                  <Clock className="w-3 h-3 text-amber-600" />
-                                  <span>Pending</span>
+                                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full animate-pulse">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                  <span>Pending Review</span>
                                 </span>
                               )}
                               {u.status === 'rejected' && (
-                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">
-                                  <XCircle className="w-3 h-3 text-rose-600" />
+                                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded-full">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                                   <span>Rejected</span>
                                 </span>
                               )}
                               {u.status === 'blocked' && (
-                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-700 bg-slate-100 border border-slate-300 px-2 py-0.5 rounded-full">
-                                  <Ban className="w-3 h-3 text-slate-600" />
+                                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-red-800 bg-red-100 border border-red-200 px-2.5 py-0.5 rounded-full">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
                                   <span>Blocked</span>
                                 </span>
                               )}
                             </td>
 
-                            {/* Request Note */}
-                            <td className="py-3 px-4 text-slate-500 text-[11px] hidden md:table-cell max-w-xs truncate">
-                              {u.request_note || '—'}
+                            {/* Joined Date */}
+                            <td className="py-3 px-4 text-slate-500 text-[11px] hidden md:table-cell">
+                              {u.created_at ? new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
                             </td>
 
-                            {/* Date */}
-                            <td className="py-3 px-4 text-slate-500 text-[11px] hidden lg:table-cell">
-                              <div>
-                                <span>{u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}</span>
-                                {u.last_sign_in_at && (
-                                  <span className="block text-[10px] text-slate-400">
-                                    Last: {new Date(u.last_sign_in_at).toLocaleDateString()}
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-
-                            {/* Actions column */}
+                            {/* Actions & Approval */}
                             <td className="py-3 px-4 text-right">
-                              {isSuperAdminUser ? (
-                                <span className="text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
-                                  Protected
+                              {isMaster ? (
+                                <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200 inline-block">
+                                  Super Admin (Master)
                                 </span>
                               ) : isSuperAdminCurrent ? (
                                 <div className="flex items-center justify-end gap-1.5">
-                                  {u.status === 'pending' && (
+                                  {u.status === 'pending' ? (
                                     <>
                                       <button
                                         type="button"
-                                        onClick={() => handleApproveUser(u.id, u.full_name || u.email)}
+                                        onClick={() => handleApproveUser(u)}
                                         className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold bg-emerald-700 hover:bg-emerald-800 text-white rounded transition shadow-xs"
-                                        title="Approve access"
+                                        title="Approve Request"
                                       >
                                         <CheckCircle2 className="w-3 h-3" />
                                         <span>Approve</span>
                                       </button>
                                       <button
                                         type="button"
-                                        onClick={() => handleRejectUser(u.id, u.full_name || u.email)}
+                                        onClick={() => handleOpenRejectModal(u)}
                                         className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded transition shadow-xs"
-                                        title="Reject access"
+                                        title="Reject Request"
                                       >
                                         <XCircle className="w-3 h-3" />
                                         <span>Reject</span>
                                       </button>
                                     </>
-                                  )}
-                                  {u.status === 'approved' && (
+                                  ) : (
                                     <button
                                       type="button"
-                                      onClick={() => handleRejectUser(u.id, u.full_name || u.email)}
-                                      className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded transition"
-                                      title="Revoke access"
+                                      onClick={() => handleOpenEditModal(u)}
+                                      className="inline-flex items-center gap-1 px-3 py-1 text-[11px] font-bold bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded transition shadow-xs"
+                                      title="Edit User Details & Permissions"
                                     >
-                                      <Ban className="w-3 h-3" />
-                                      <span>Revoke</span>
-                                    </button>
-                                  )}
-                                  {(u.status === 'rejected' || u.status === 'blocked') && (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleUnblockUser(u.id, u.full_name || u.email)}
-                                      className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200 rounded transition"
-                                      title="Approve / Unblock access"
-                                    >
-                                      <CheckCircle2 className="w-3 h-3" />
-                                      <span>Re-Approve</span>
+                                      <Edit className="w-3 h-3" />
+                                      <span>Edit</span>
                                     </button>
                                   )}
                                 </div>
                               ) : (
-                                <span className="text-[11px] text-slate-400 italic">No permission</span>
+                                <span className="text-[11px] text-slate-400 italic">Super Admin Only</span>
                               )}
                             </td>
                           </tr>
@@ -2260,6 +2357,423 @@ export function AdminPortal() {
                 <span>Delete Drop</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: EDIT USER DETAILS & PERMISSIONS ================= */}
+      {editingUser && (
+        <div 
+          className="fixed inset-0 z-50 bg-[#0b1a13]/80 backdrop-blur-xs flex items-center justify-center p-4 antialiased"
+          onClick={(e) => { if (e.target === e.currentTarget) setEditingUser(null); }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="p-4 bg-brand-dark text-white flex items-center justify-between border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <img src="/assets/images/logo.jpg" alt="Logo" className="w-8 h-8 rounded-full border border-amber-400/40" />
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-serif font-bold text-sm tracking-wide text-brand-light">AUVARE</span>
+                    <span className="text-[9px] bg-emerald-950 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.2 rounded-full font-bold">
+                      PERMISSIONS
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">Staff Control &bull; Role &amp; Access Authority</span>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setEditingUser(null)} 
+                className="text-slate-400 hover:text-white p-1 rounded hover:bg-white/10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body / Form */}
+            <form onSubmit={handleSaveUserEdit} className="p-5 space-y-4">
+              {/* User Identity Preview Card */}
+              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  {editingUser.avatar_url ? (
+                    <img 
+                      src={editingUser.avatar_url} 
+                      alt={editingUser.display_name || editingUser.email}
+                      className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0" 
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-slate-800 text-white font-bold flex items-center justify-center text-sm shrink-0">
+                      {((editingUser.display_name || editingUser.full_name || editingUser.email || 'U')[0]).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-bold text-xs text-slate-900 truncate">
+                      {editingUser.display_name || editingUser.full_name || editingUser.email.split('@')[0]}
+                    </h4>
+                    <span className="text-[11px] text-slate-500 font-mono block mt-0.5 truncate">
+                      {editingUser.email}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200">
+                    {editingUser.role === 'super_admin' ? 'Super Admin' : (editingUser.role === 'admin' ? 'Admin' : 'Customer')}
+                  </span>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    {editingUser.status}
+                  </span>
+                </div>
+              </div>
+
+              {/* Form Input 1: User Email (Read-only) */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  User Email <span className="text-[11px] font-normal text-slate-400">(Permanent Google OAuth ID)</span>
+                </label>
+                <input 
+                  type="text" 
+                  value={editingUser.email} 
+                  readOnly 
+                  disabled 
+                  className="w-full text-xs bg-slate-100 border border-slate-200 text-slate-500 rounded-lg px-3 py-2 cursor-not-allowed"
+                />
+              </div>
+
+              {/* Form Input 2: Display Name */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Display Name <span className="text-red-500">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  value={editDisplayName} 
+                  onChange={(e) => setEditDisplayName(e.target.value)}
+                  placeholder="e.g. Md Abir Shikdar"
+                  required
+                  className="w-full text-xs bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-2 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition"
+                />
+              </div>
+
+              {/* Form Input 3 & 4: Role and Status Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    System Role
+                  </label>
+                  <select 
+                    value={editRole} 
+                    onChange={(e: any) => setEditRole(e.target.value)}
+                    className="w-full text-xs bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-2 focus:outline-none focus:border-brand-primary transition"
+                  >
+                    <option value="admin">Admin (অ্যাডমিন)</option>
+                    <option value="super_admin">Super Admin (সুপার অ্যাডমিন)</option>
+                    <option value="customer">Customer (কাস্টমার)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Approval Status
+                  </label>
+                  <select 
+                    value={editStatus} 
+                    onChange={(e: any) => setEditStatus(e.target.value)}
+                    className="w-full text-xs bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-2 focus:outline-none focus:border-brand-primary transition"
+                  >
+                    <option value="approved">Approved (অনুমোদিত)</option>
+                    <option value="pending">Pending Review (অপেক্ষারত)</option>
+                    <option value="rejected">Rejected / Removed (বাতিল)</option>
+                    <option value="blocked">Blocked (স্থায়ীভাবে ব্লক)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Status Advisory Notice Box */}
+              <div className={`p-3 rounded-xl border text-xs leading-relaxed ${
+                editStatus === 'approved' 
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+                  : (editStatus === 'pending'
+                      ? 'bg-amber-50 border-amber-200 text-amber-800'
+                      : (editStatus === 'blocked'
+                          ? 'bg-red-50 border-red-200 text-red-800'
+                          : 'bg-rose-50 border-rose-200 text-rose-800'))
+              }`}>
+                <strong>Status Info: </strong>
+                {editStatus === 'approved' && 'User will be authorized with full admin management rights over stock and orders.'}
+                {editStatus === 'pending' && 'User will be held at the security gate until manually reviewed.'}
+                {editStatus === 'rejected' && 'User request is denied. They may sign in and submit a fresh request later.'}
+                {editStatus === 'blocked' && 'User is permanently restricted from accessing or re-applying for portal access.'}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="pt-3 border-t border-slate-200 flex justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setEditingUser(null)}
+                  className="px-4 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingUser}
+                  className="px-4 py-2 bg-brand-primary hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5"
+                >
+                  {isSavingUser ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Check className="w-3.5 h-3.5" />
+                  )}
+                  <span>Save User Details</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: REJECT OR BLOCK REQUEST ================= */}
+      {rejectingUser && (
+        <div 
+          className="fixed inset-0 z-50 bg-[#0b1a13]/80 backdrop-blur-xs flex items-center justify-center p-4 antialiased"
+          onClick={(e) => { if (e.target === e.currentTarget) setRejectingUser(null); }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="p-4 bg-brand-dark text-white flex items-center justify-between border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <img src="/assets/images/logo.jpg" alt="Logo" className="w-8 h-8 rounded-full border border-red-500/40" />
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-serif font-bold text-sm tracking-wide text-brand-light">AUVARE</span>
+                    <span className="text-[9px] bg-red-950 text-red-300 border border-red-500/30 px-1.5 py-0.2 rounded-full font-bold">
+                      ACCESS CONTROL
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">Staff Authority &bull; Access Decision</span>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setRejectingUser(null)} 
+                className="text-slate-400 hover:text-white p-1 rounded hover:bg-white/10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 space-y-4">
+              <div>
+                <span className="text-[10px] font-extrabold text-red-600 uppercase tracking-wider block">
+                  STAFF CONTROL &bull; DECISION
+                </span>
+                <h3 className="font-serif font-bold text-base text-slate-900 mt-0.5">
+                  Reject or Block Request
+                </h3>
+              </div>
+
+              {/* Target User Info Card */}
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-slate-800 text-white font-bold flex items-center justify-center text-xs shrink-0">
+                  {((rejectingUser.display_name || rejectingUser.full_name || rejectingUser.email || 'U')[0]).toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-bold text-xs text-slate-900 truncate">
+                    {rejectingUser.display_name || rejectingUser.full_name || rejectingUser.email}
+                  </h4>
+                  <span className="text-[11px] text-slate-500 block truncate">{rejectingUser.email}</span>
+                </div>
+              </div>
+
+              {/* Choice Cards */}
+              <div className="space-y-2.5">
+                {/* Option 1: Reject */}
+                <div 
+                  onClick={() => setRejectAction('reject')}
+                  className={`p-3.5 rounded-xl border-2 cursor-pointer transition flex items-start gap-3 ${
+                    rejectAction === 'reject' 
+                      ? 'border-red-500 bg-red-50/50 shadow-xs' 
+                      : 'border-slate-200 bg-white hover:bg-slate-50'
+                  }`}
+                >
+                  <div className={`w-4 h-4 rounded-full border-2 mt-0.5 shrink-0 flex items-center justify-center ${
+                    rejectAction === 'reject' ? 'border-red-600 bg-red-600 text-white' : 'border-slate-300'
+                  }`}>
+                    {rejectAction === 'reject' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-xs text-red-950">Reject Request (বাতিল করুন)</h5>
+                    <p className="text-[11px] text-slate-600 mt-0.5">
+                      User request will be declined. They may sign in again and re-apply in the future.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Option 2: Block */}
+                <div 
+                  onClick={() => setRejectAction('block')}
+                  className={`p-3.5 rounded-xl border-2 cursor-pointer transition flex items-start gap-3 ${
+                    rejectAction === 'block' 
+                      ? 'border-red-700 bg-red-100/60 shadow-xs' 
+                      : 'border-slate-200 bg-white hover:bg-slate-50'
+                  }`}
+                >
+                  <div className={`w-4 h-4 rounded-full border-2 mt-0.5 shrink-0 flex items-center justify-center ${
+                    rejectAction === 'block' ? 'border-red-700 bg-red-700 text-white' : 'border-slate-300'
+                  }`}>
+                    {rejectAction === 'block' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-xs text-red-950">Permanent Block (স্থায়ীভাবে ব্লক)</h5>
+                    <p className="text-[11px] text-slate-600 mt-0.5">
+                      Permanently locks user out. They cannot sign in or submit re-applications. Recommended for unauthorized/spam attempts.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setRejectingUser(null)}
+                className="px-4 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteReject}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold shadow-sm transition"
+              >
+                {rejectAction === 'block' ? 'Block Account' : 'Reject Request'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: AUVARE BRANDED CONFIRMATION (ZERO BROWSER CONFIRM) ================= */}
+      {brandedConfirm && brandedConfirm.isOpen && (
+        <div 
+          className="fixed inset-0 z-50 bg-[#0b1a13]/80 backdrop-blur-xs flex items-center justify-center p-4 antialiased"
+          onClick={(e) => { if (e.target === e.currentTarget) setBrandedConfirm(null); }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="p-4 bg-brand-dark text-white flex items-center justify-between border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <img src="/assets/images/logo.jpg" alt="Logo" className="w-8 h-8 rounded-full border border-amber-400/40" />
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-serif font-bold text-sm tracking-wide text-brand-light">AUVARE</span>
+                    <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold border ${
+                      brandedConfirm.isDestructive 
+                        ? 'bg-red-950/80 text-red-300 border-red-500/30' 
+                        : 'bg-emerald-950/80 text-emerald-300 border-emerald-500/30'
+                    }`}>
+                      {brandedConfirm.badgeText || 'CONFIRMATION'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">Store Manager &bull; Catalog Authority</span>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setBrandedConfirm(null)} 
+                className="text-slate-400 hover:text-white p-1 rounded hover:bg-white/10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 space-y-3.5">
+              {brandedConfirm.metaSub && (
+                <span className={`text-[10px] font-extrabold uppercase tracking-wider block ${
+                  brandedConfirm.isDestructive ? 'text-red-600' : 'text-emerald-700'
+                }`}>
+                  {brandedConfirm.metaSub}
+                </span>
+              )}
+              <h3 className="font-serif font-bold text-base text-slate-900 leading-snug">
+                {brandedConfirm.title}
+              </h3>
+
+              {brandedConfirm.itemName && (
+                <div className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                  {brandedConfirm.itemImage ? (
+                    <img 
+                      src={brandedConfirm.itemImage} 
+                      alt={brandedConfirm.itemName} 
+                      className="w-11 h-11 rounded-lg object-cover border border-slate-200 shrink-0" 
+                    />
+                  ) : (
+                    <div className="w-11 h-11 rounded-lg bg-emerald-800 text-white font-bold flex items-center justify-center text-xs shrink-0">
+                      {brandedConfirm.itemName[0].toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-bold text-xs text-slate-900 truncate">{brandedConfirm.itemName}</h4>
+                    {brandedConfirm.itemMeta && (
+                      <span className="text-[11px] text-slate-500 block truncate">{brandedConfirm.itemMeta}</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <p className="text-xs text-slate-600 leading-relaxed">
+                {brandedConfirm.warningText}
+              </p>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setBrandedConfirm(null)}
+                className="px-4 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 transition"
+              >
+                {brandedConfirm.cancelBtnText || 'Cancel'}
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const action = brandedConfirm.onConfirm;
+                  setBrandedConfirm(null);
+                  if (typeof action === 'function') await action();
+                }}
+                className={`px-4 py-2 text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5 ${
+                  brandedConfirm.isDestructive 
+                    ? 'bg-red-600 hover:bg-red-700' 
+                    : 'bg-emerald-700 hover:bg-emerald-800'
+                }`}
+              >
+                <span>{brandedConfirm.confirmBtnText}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sleek Branded Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-[9999999] animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <div className={`px-4 py-2.5 rounded-xl shadow-xl border text-xs font-semibold flex items-center gap-2 ${
+            toast.type === 'success'
+              ? 'bg-emerald-900 text-emerald-100 border-emerald-700'
+              : (toast.type === 'error'
+                  ? 'bg-rose-950 text-rose-100 border-rose-800'
+                  : 'bg-slate-900 text-slate-100 border-slate-700')
+          }`}>
+            {toast.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
+            {toast.type === 'error' && <XCircle className="w-4 h-4 text-rose-400" />}
+            {toast.type === 'info' && <Clock className="w-4 h-4 text-sky-400" />}
+            <span>{toast.message}</span>
           </div>
         </div>
       )}
