@@ -16,6 +16,19 @@ _(no active items in progress)_
 
 ## Done
 
+- `#35` **2026-10-30** Fix Cart Drawer & Instant Checkout Visibility (Open/Active Class Harmonization & Z-Index Elevation):
+  - **Identified User Problem**:
+    - Clicking "Add to Bag" on homepage product cards did not open the bag drawer.
+    - Inside the Full-Screen In-Details Studio, clicking either "Add to Bag" or "Buy Now" failed to trigger visible modal/drawer responses.
+  - **Root Cause Analysis**:
+    - Class Mismatch: `StorefrontClient.tsx` applied class `.active` to `.cart-drawer`, `.drawer-overlay`, and `.modal-overlay`, but `style.css` only had rules for `.open` (`.cart-drawer.open`, `.modal-overlay.open`). The drawer remained at `transform: translateX(100%)` (hidden off-screen at x=1906px), and the modal remained at `opacity: 0; visibility: hidden`.
+    - Z-Index Collision: Cart drawer (`z-index: 100`) and modals (`z-index: 110`) were positioned below the full-screen studio overlay (`z-index: 99999`).
+  - **Implemented Clean Solution**:
+    - *Dual Class Harmonization (`style.css` & `StorefrontClient.tsx`)*: Added support for both `.open` and `.active` across `.cart-drawer`, `.drawer-overlay`, `.cart-drawer-overlay`, and `.modal-overlay`.
+    - *Z-Index Hierarchy Polish*: Elevated `.cart-drawer-overlay` to `z-index: 100010`, `.cart-drawer` to `z-index: 100015`, and `.modal-overlay` to `z-index: 100020` so checkout and cart always smoothly overlay any full-screen view.
+    - *Live Automated Verification*: Verified in headless browser via Kapture MCP that clicking "Add to Bag" on catalog cards opens `.cart-drawer` into view at `x: 1466`, clicking "Buy Now" in details screen opens `.modal-overlay.open.active` into view at `x: 0`, and clicking "Add to Bag" in details screen adds piece and slides open the cart drawer.
+    - *Production Live*: Built with `npm run build` (exit code 0), deployed to Vercel production and verified live on `https://auvare-store.vercel.app`.
+
 - `#34` **2026-10-30** Clean Minimalist Product Card Layout (Top Ten Mart Inspired, TK Currency, Title Divider & Inspect CTA):
   - **Identified User Problem**:
     - Product cards on homepage catalog were cluttered with category badges, chest/waist measurements, size indicators, and size buttons.
