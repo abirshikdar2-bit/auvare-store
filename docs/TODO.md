@@ -16,6 +16,21 @@ _(no active items in progress)_
 
 ## Done
 
+- `#49` **2026-10-31** Hero Slider 2.5s Swipe Duration & Removal of Hover Tooltip ("Click to view details"):
+  - **Identified User Requirement**:
+    - In the homepage Hero section image slider (`HeroReelsSlider.tsx`):
+      1. Set the auto-swipe duration to exactly 2.5 seconds (আড়াই সেকেন্ড / 2500ms).
+      2. Completely remove the browser tooltip that appeared on mouseover showing "Click to view details for <product title>".
+  - **Implemented Clean Solution**:
+    - *`HeroReelsSlider.tsx`*:
+      - Changed `setInterval` interval from 5000ms to 2500ms.
+      - Removed `title={`Click to view details for ${currentProduct.title}`}` completely.
+      - Removed pause-on-hover freeze so it smoothly advances every 2.5s continuously.
+    - *`StorefrontClient.tsx`*:
+      - Removed residual hover `title` tooltips on product cards.
+  - **Verification**:
+    - Next.js build passed cleanly (`npm run build`) in 1.6s.
+
 - `#48` **2026-10-31** Supabase Architecture Audit & Realtime Channel Synchronization for Admin Panel:
   - **Audit Scope**:
     - Conducted full inspection of database connections across all project modules.

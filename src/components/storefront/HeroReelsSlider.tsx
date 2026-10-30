@@ -10,18 +10,17 @@ interface HeroReelsSliderProps {
 
 export function HeroReelsSlider({ products, onSelectProduct }: HeroReelsSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
 
   // Filter top catalog drops with valid images
   const drops = products.slice(0, 10);
 
   useEffect(() => {
-    if (drops.length <= 1 || isHovered) return;
+    if (drops.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % drops.length);
-    }, 5000);
+    }, 2500); // 2.5 seconds auto swipe duration
     return () => clearInterval(interval);
-  }, [drops.length, isHovered]);
+  }, [drops.length]);
 
   if (drops.length === 0) return null;
 
@@ -30,10 +29,7 @@ export function HeroReelsSlider({ products, onSelectProduct }: HeroReelsSliderPr
   return (
     <div
       className="relative w-full max-w-md mx-auto aspect-[4/5] rounded-2xl overflow-hidden shadow-2xl border border-stone-200/90 bg-white cursor-pointer select-none group transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.18)]"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
       onClick={() => onSelectProduct(currentProduct)}
-      title={`Click to view details for ${currentProduct.title}`}
     >
       {/* Slides Viewport & Track */}
       <div

@@ -870,7 +870,7 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
                   >
                     <div
                       className="product-image-box"
-                      title="Click to view full product details"
+                      
                     >
                       <img
                         className="product-card-img"
@@ -1009,7 +1009,7 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
                             color: '#18181b',
                           }}
                           onClick={() => setSelectedProduct(item)}
-                          title="Inspect Product Details"
+                          
                         >
                           Inspect
                         </button>
