@@ -16,6 +16,27 @@ _(no active items in progress)_
 
 ## Done
 
+- `#41` **2026-10-30** Mediasoft Floating Widget Refinement — Larger & Bolder Icons, Tighter Spacing & Ultra-Smooth Slow-Mo Physics:
+  - **Identified User Pain Point (`media_1793323465553_c7f495f0.png`)**:
+    - *Button Size*: Previous 52px buttons felt a bit too small. User requested them to be slightly larger.
+    - *Spacing*: The gap between stacked buttons was too wide (`gap-3` / 12px). User requested them to be clustered closely together ("গায়ে গায়ে", with just a slight gap between each).
+    - *Icon Boldness*: White graphics within the glossy spheres needed to appear thicker and more prominent.
+    - *Slow-Mo Sliding Animation*: User requested the hover slide-out to the right and mouse-leave slide-in to the left to be noticeably slower, silkier, and ultra-smooth ("খুবই smoothly এবং আরও slow আরও slowভাবে এটা ডান দিকে slide হবে").
+  - **Implemented Clean Solution**:
+    - *Sizing & Spacing (`MediasoftWidget.tsx`, `globals.css`, `style.css`)*:
+      - Increased circular button diameter from 52px to 60px (`height: 60px; width: 60px`).
+      - Adjusted container spacing to a tight `gap-[6px]` (6px gap) so the buttons sit neatly stacked with subtle separation.
+      - Shifted container left anchor to `left-[20px]` matching official Mediasoft layout.
+    - *Bolder Visual Weight*:
+      - Added enhanced drop-shadow and contrast filter to `.ms-widget-icon`: `drop-shadow(0 0 1px rgba(255, 255, 255, 0.75)) contrast(1.15) brightness(1.05)`, making the white glyphs thicker and crisper.
+    - *Ultra-Smooth Slow-Mo Physics*:
+      - Increased expansion duration to `1.5s cubic-bezier(0.2, 0.8, 0.25, 1)` expanding to `250px`.
+      - Retraction on mouse leave gracefully takes `1.35s cubic-bezier(0.2, 0.8, 0.25, 1)`.
+      - Smooth text slide and unveil: `opacity 0.9s ease 0.35s, transform 1.2s cubic-bezier(0.2, 0.8, 0.25, 1) 0.2s` from `translateX(-15px)` to `0` with 19px font.
+  - **Verification & Deployment**:
+    - Successfully verified locally with `npm run build`.
+    - Deployed to Vercel production (`dpl_8wTTGmpWqDc2VzdKSwXsW1TBRbDF`) and mapped to `auvare-store.vercel.app`.
+
 - `#40` **2026-10-30** 10x-15x Storefront Performance Speedup via Edge ISR Caching, Parallel DB Queries & Font Optimization:
   - **Identified User Pain Point**:
     - The user noticed that the live website (`https://auvare-store.vercel.app`) was taking noticeably long to load (profiling showed the initial HTML document alone took ~2,340ms to respond).
