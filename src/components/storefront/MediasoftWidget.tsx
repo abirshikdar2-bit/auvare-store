@@ -92,7 +92,7 @@ export function MediasoftWidget({
       {/* Mediasoft BD Multichannel Floating Widget Container (Bottom-Left) */}
       <div
         id="ms_widget"
-        className="fixed bottom-[30px] left-[30px] z-[999999] flex flex-col items-start font-sans"
+        className="fixed bottom-[30px] left-[20px] z-[999999] flex flex-col items-start font-sans"
         style={{ pointerEvents: 'auto' }}
       >
         {/* Main Floating Shifting Button (Slow-Mo Smooth Expansion) */}
@@ -109,8 +109,8 @@ export function MediasoftWidget({
               id="ms_widget_change_img"
               src={BACKGROUNDS[currentIdx]?.img}
               alt="Help"
-              width={50}
-              height={50}
+              width={60}
+              height={60}
               className="ms-widget-icon"
             />
             <span className="ms-widget-text">
@@ -123,7 +123,7 @@ export function MediasoftWidget({
         {isOpen && (
           <ul
             id="ms_widget_list"
-            className="list-none m-0 p-0 flex flex-col items-start gap-3 animate-in fade-in slide-in-from-bottom-3 duration-300"
+            className="list-none m-0 p-0 flex flex-col items-start gap-[6px] animate-in fade-in duration-300"
           >
             {BACKGROUNDS.map((item) => (
               <li key={item.id} className="list-none m-0 p-0 flex justify-start">
@@ -138,8 +138,8 @@ export function MediasoftWidget({
                     id={item.id}
                     src={item.img}
                     alt={item.text}
-                    width={50}
-                    height={50}
+                    width={60}
+                    height={60}
                     className="ms-widget-icon"
                   />
                   <span className="ms-widget-text">
@@ -162,8 +162,8 @@ export function MediasoftWidget({
                   id="ms_widget_Close"
                   src={CLOSE_PNG}
                   alt="Minimize"
-                  width={50}
-                  height={50}
+                  width={60}
+                  height={60}
                   className="ms-widget-icon"
                 />
                 <span className="ms-widget-text">
