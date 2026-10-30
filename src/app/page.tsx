@@ -1,27 +1,31 @@
 import React from 'react';
-import { createClient } from '@/lib/supabase/server';
+import { createPublicClient } from '@/lib/supabase/public';
 import { StorefrontClient } from '@/components/storefront/StorefrontClient';
 import type { Product } from '@/types';
 
-export const revalidate = 60; // Incremental Static Regeneration every 60 seconds
+// Incremental Static Regeneration: Cache pre-rendered static HTML on Vercel CDN, revalidating every 60s
+export const revalidate = 60;
 
 export default async function HomePage() {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
 
-  // 1. Fetch live products strictly from Supabase
-  const { data: rawProducts, error: prodErr } = await supabase
-    .from('products')
-    .select('*')
-    .order('created_at', { ascending: false });
+  // Fetch live products and site settings concurrently in parallel
+  const [prodRes, settingsRes] = await Promise.all([
+    supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('site_settings')
+      .select('*'),
+  ]);
 
-  if (prodErr) {
-    console.warn('[HomePage] Supabase fetch error:', prodErr);
+  const rawProducts = prodRes.data;
+  if (prodRes.error) {
+    console.warn('[HomePage] Supabase products error:', prodRes.error);
   }
 
-  // 2. Fetch live settings strictly from Supabase
-  const { data: rawSettings } = await supabase
-    .from('site_settings')
-    .select('*');
+  const rawSettings = settingsRes.data;
 
   const siteSettings: Record<string, string> = {
     whatsapp_number: '01734018155',
