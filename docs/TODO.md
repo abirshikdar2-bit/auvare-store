@@ -16,6 +16,18 @@ _(no active items in progress)_
 
 ## Done
 
+- `#36` **2026-10-30** Product Screen Persistence on Add-to-Bag, Clean Button Typography & One-Click MFS Number Copy:
+  - **Identified User Problem**:
+    - When clicking "Add to Bag" inside the product details studio, it was kicking the customer back to the home screen instead of keeping them on the product page.
+    - "Add to Bag" and "Buy Now" buttons had unnecessary bag/zap icons before the label text.
+    - During payment method selection (bKash, Nagad, Rocket), customers had no easy way to copy the MFS account number.
+  - **Implemented Clean Solution**:
+    - *Product View Persistence (`StorefrontClient.tsx`)*: Removed `setSelectedProduct(null)` from `onAddToBag` and `handleBuyNow`. The customer remains firmly inside the product studio, with the bag drawer or checkout modal sliding smoothly over the view. Closing the drawer keeps them on the product.
+    - *Clean Button Typography (`ProductDetailModal.tsx`)*: Removed `<ShoppingBag>` and `<Zap>` SVG icons from "Add to Bag" and "Buy Now", rendering bold luxury typography.
+    - *One-Click MFS Copy Button (`StorefrontClient.tsx`)*: Embedded a dedicated copy button next to active bKash/Nagad/Rocket numbers in checkout with instant clipboard writing and "Copied!" checkmark feedback.
+    - *Automated Verification*: Verified via Kapture MCP that clicking "Add to Bag" adds item and keeps `#productDetailScreen` visible behind the drawer, clicking "Buy Now" opens checkout with "Copy Number", and button labels are pure text.
+    - *Production Live*: Built with `npm run build` (exit code 0), deployed to Vercel production and verified live on `https://auvare-store.vercel.app`.
+
 - `#35` **2026-10-30** Fix Cart Drawer & Instant Checkout Visibility (Open/Active Class Harmonization & Z-Index Elevation):
   - **Identified User Problem**:
     - Clicking "Add to Bag" on homepage product cards did not open the bag drawer.
