@@ -1038,10 +1038,10 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
 
       {/* 9. Shopping Bag Drawer */}
       <div
-        className={`drawer-overlay ${isBagOpen ? 'active' : ''}`}
+        className={`drawer-overlay cart-drawer-overlay ${isBagOpen ? 'open active' : ''}`}
         onClick={() => setIsBagOpen(false)}
       />
-      <div className={`cart-drawer ${isBagOpen ? 'active' : ''}`}>
+      <div className={`cart-drawer ${isBagOpen ? 'open active' : ''}`}>
         <div className="drawer-header">
           <h3>Your Bag ({bagCount})</h3>
           <button
@@ -1193,7 +1193,7 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
 
       {/* 10. Direct Checkout Modal */}
       {isCheckoutOpen && (
-        <div className="modal-overlay active">
+        <div className="modal-overlay open active">
           <div className="modal-content" style={{ maxWidth: '580px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div className="modal-header">
               <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.25rem', color: 'var(--color-primary)' }}>
@@ -1367,7 +1367,7 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
 
       {/* 11. Order Success Modal */}
       {orderSuccess && (
-        <div className="modal-overlay active">
+        <div className="modal-overlay open active">
           <div className="modal-content" style={{ maxWidth: '460px', textAlign: 'center', padding: '2rem 1.5rem' }}>
             <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--color-primary-soft)', color: 'var(--color-primary)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
