@@ -16,6 +16,19 @@ _(no active items in progress)_
 
 ## Done
 
+- `#50` **2026-10-31** Product Detail Modal Image Zoom Tooltip and Overlay Pill Removal:
+  - **Identified User Requirement**:
+    - When viewing a product detail modal, hovering over the garment photo previously showed a native browser tooltip "Move cursor over piece to zoom" and an overlay badge "Roll over to zoom".
+    - User requested to completely eliminate these text labels so no text appears on hover, while maintaining smooth cursor zoom.
+  - **Implemented Clean Solution**:
+    - *`ProductDetailModal.tsx`*:
+      - Removed `title="Move cursor over piece to zoom"` attribute from `screen-main-img-box`.
+      - Removed `screen-zoom-hint` overlay div ("Roll over to zoom") completely.
+      - Removed unused `ZoomIn` icon import.
+      - Preserved smooth interactive coordinate zoom on mousemove with zero distracting text overlays.
+  - **Verification**:
+    - Next.js build passed cleanly (`npm run build`) in 1.7s.
+
 - `#49` **2026-10-31** Hero Slider 2.5s Swipe Duration & Removal of Hover Tooltip ("Click to view details"):
   - **Identified User Requirement**:
     - In the homepage Hero section image slider (`HeroReelsSlider.tsx`):

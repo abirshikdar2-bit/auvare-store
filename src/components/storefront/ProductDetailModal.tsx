@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, MouseEvent } from 'react';
 import type { Product, GarmentSize, ProductVariant } from '@/types';
 import { formatBDT } from '@/lib/utils';
-import { ArrowLeft, X, ChevronDown, ZoomIn } from 'lucide-react';
+import { ArrowLeft, X, ChevronDown } from 'lucide-react';
 
 interface ProductDetailModalProps {
   product: Product;
@@ -212,7 +212,6 @@ export function ProductDetailModal({
               id="screenZoomBox"
               onMouseMove={handleMouseMove}
               onMouseLeave={handleMouseLeave}
-              title="Move cursor over piece to zoom"
               style={{
                 position: 'relative',
                 aspectRatio: '4/5',
@@ -251,29 +250,7 @@ export function ProductDetailModal({
                 )}
               </div>
 
-              <div
-                className="screen-zoom-hint"
-                style={{
-                  position: 'absolute',
-                  bottom: '1rem',
-                  right: '1rem',
-                  background: 'rgba(0, 0, 0, 0.65)',
-                  color: '#ffffff',
-                  padding: '0.35rem 0.75rem',
-                  borderRadius: '999px',
-                  fontSize: '0.75rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  pointerEvents: 'none',
-                  opacity: isZooming ? 0 : 1,
-                  transition: 'opacity 0.2s ease',
-                  zIndex: 10,
-                }}
-              >
-                <ZoomIn className="w-3.5 h-3.5" />
-                <span>Roll over to zoom</span>
-              </div>
+
             </div>
           </div>
 
