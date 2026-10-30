@@ -16,6 +16,19 @@ _(no active items in progress)_
 
 ## Done
 
+- `#39` **2026-10-30** Checkout Billing Address Removal & Mediasoft Floating Widget Slow-Mo Animation Tuning:
+  - **Identified User Pain Point**:
+    - *Billing Address Section (`media_1793322068446_f6e54308.png`)*: The user explicitly requested to completely remove the "Billing address" section from the checkout screen as it is redundant for domestic courier orders in Bangladesh.
+    - *Mediasoft Floating Widget Hover Speed (`media_1793322097790_e75a4144.png`)*: The hover animation on the multi-channel icons was expanding too fast/jerky. The user requested it to be visibly slow-motion (`slow mo`), matching the smooth, measured expansion time on `mediasoftbd.com` where the label ("WhatsApp", "Support", "Messenger", "Email", "Call", "Minimize") takes nearly a full second to smoothly unveil and center.
+  - **Implemented Clean Solution**:
+    - *Billing Address Removal (`ShopifyCheckoutScreen.tsx`)*: Removed the entire "Billing address" radio option card and its corresponding state, streamlining the checkout flow directly from Payment method to the "Complete order" button.
+    - *True Slow-Mo Hover Physics (`MediasoftWidget.tsx`, `style.css`, `globals.css`)*:
+      - Encapsulated slow-mo animations into pure GPU-accelerated CSS classes (`.ms-widget-btn`, `.ms-widget-gradient`, `.ms-widget-icon`, `.ms-widget-text`).
+      - Applied a deliberate `0.95s cubic-bezier(0.22, 1, 0.36, 1)` expansion transition.
+      - Tuned text fade and slide transition: `opacity 0.7s ease 0.25s, transform 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.15s` starting from `translateX(-10px)` to `0`.
+      - Tuned icon fade and scale: `opacity 0.35s ease, transform 0.6s ease`.
+      - On mouse leave, smoothly contracts back to 52px over `0.8s`.
+
 - `#38` **2026-10-30** Full-Screen Shopify / Top Ten Mart Style Checkout Redesign with Mobile Banking & Cart Persistence:
   - **Identified User Pain Point**:
     - Previously, clicking "Proceed to Instant Checkout" or "Buy Now" triggered a small pop-up modal dialog (`#checkoutModal`).
@@ -468,6 +481,19 @@ immediately. The 2h expiry is only the backstop for when
 nobody notices.
 
 ## Done
+
+- `#39` **2026-10-30** Checkout Billing Address Removal & Mediasoft Floating Widget Slow-Mo Animation Tuning:
+  - **Identified User Pain Point**:
+    - *Billing Address Section (`media_1793322068446_f6e54308.png`)*: The user explicitly requested to completely remove the "Billing address" section from the checkout screen as it is redundant for domestic courier orders in Bangladesh.
+    - *Mediasoft Floating Widget Hover Speed (`media_1793322097790_e75a4144.png`)*: The hover animation on the multi-channel icons was expanding too fast/jerky. The user requested it to be visibly slow-motion (`slow mo`), matching the smooth, measured expansion time on `mediasoftbd.com` where the label ("WhatsApp", "Support", "Messenger", "Email", "Call", "Minimize") takes nearly a full second to smoothly unveil and center.
+  - **Implemented Clean Solution**:
+    - *Billing Address Removal (`ShopifyCheckoutScreen.tsx`)*: Removed the entire "Billing address" radio option card and its corresponding state, streamlining the checkout flow directly from Payment method to the "Complete order" button.
+    - *True Slow-Mo Hover Physics (`MediasoftWidget.tsx`, `style.css`, `globals.css`)*:
+      - Encapsulated slow-mo animations into pure GPU-accelerated CSS classes (`.ms-widget-btn`, `.ms-widget-gradient`, `.ms-widget-icon`, `.ms-widget-text`).
+      - Applied a deliberate `0.95s cubic-bezier(0.22, 1, 0.36, 1)` expansion transition.
+      - Tuned text fade and slide transition: `opacity 0.7s ease 0.25s, transform 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.15s` starting from `translateX(-10px)` to `0`.
+      - Tuned icon fade and scale: `opacity 0.35s ease, transform 0.6s ease`.
+      - On mouse leave, smoothly contracts back to 52px over `0.8s`.
 
 - `#38` **2026-10-30** Full-Screen Shopify / Top Ten Mart Style Checkout Redesign with Mobile Banking & Cart Persistence:
   - **Identified User Pain Point**:

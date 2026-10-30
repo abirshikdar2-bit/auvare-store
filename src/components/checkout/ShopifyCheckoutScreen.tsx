@@ -39,8 +39,6 @@ export function ShopifyCheckoutScreen({
   const [trxId, setTrxId] = useState('');
   const [copiedMfs, setCopiedMfs] = useState(false);
 
-  // Billing address state
-  const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
 
   // Discount code state
   const [discountCode, setDiscountCode] = useState('');
@@ -682,33 +680,6 @@ export function ShopifyCheckoutScreen({
               </div>
             </div>
 
-            {/* 5. Billing Address Section */}
-            <div>
-              <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-2.5">Billing address</h2>
-              <div className="border border-gray-200 rounded-lg overflow-hidden divide-y divide-gray-200">
-                <label className="flex items-center gap-3 p-3.5 cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="billing_address"
-                    checked={billingSameAsShipping}
-                    onChange={() => setBillingSameAsShipping(true)}
-                    className="w-4 h-4 text-[#105036] focus:ring-[#105036] border-gray-300"
-                  />
-                  <span className="text-xs sm:text-sm font-medium text-gray-900">Same as shipping address</span>
-                </label>
-                <label className="flex items-center gap-3 p-3.5 cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="billing_address"
-                    checked={!billingSameAsShipping}
-                    onChange={() => setBillingSameAsShipping(false)}
-                    className="w-4 h-4 text-[#105036] focus:ring-[#105036] border-gray-300"
-                  />
-                  <span className="text-xs sm:text-sm font-medium text-gray-900">Use a different billing address</span>
-                </label>
-              </div>
-            </div>
-
             {/* 6. Complete Order Button */}
             <div>
               <button
@@ -842,3 +813,4 @@ export function ShopifyCheckoutScreen({
     </div>
   );
 }
+

@@ -95,47 +95,25 @@ export function MediasoftWidget({
         className="fixed bottom-[30px] left-[30px] z-[999999] flex flex-col items-start font-sans"
         style={{ pointerEvents: 'auto' }}
       >
-        {/* Main Floating Shifting Button (No white border ring, smooth slow-mo expansion) */}
+        {/* Main Floating Shifting Button (Slow-Mo Smooth Expansion) */}
         {!isOpen && (
           <button
             type="button"
             id="ms_widget_button_main"
             title="Help"
             onClick={() => setIsOpen(true)}
-            className="h-[52px] w-[52px] rounded-full bg-transparent p-0 border-0 outline-none flex items-center justify-center cursor-pointer overflow-hidden relative group"
-            style={{
-              transition: 'width 0.65s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease',
-              filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.18))',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.width = '240px';
-              e.currentTarget.style.boxShadow = '0 8px 24px rgba(37,37,180,0.35)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.width = '52px';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
+            className="ms-widget-btn"
           >
-            {/* Gradient background overlay fading in on hover */}
-            <div
-              className="absolute inset-0 w-full h-full rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-              style={{
-                background: 'linear-gradient(90deg, rgb(44,35,185) 0%, rgb(37,37,180) 17%, rgb(0,212,255) 100%)',
-              }}
-            />
-            {/* 3D Sphere Icon (fades out smoothly on hover) */}
+            <div className="ms-widget-gradient" />
             <img
               id="ms_widget_change_img"
               src={BACKGROUNDS[currentIdx]?.img}
               alt="Help"
               width={50}
               height={50}
-              className="w-[50px] h-[50px] object-contain transition-opacity duration-300 group-hover:opacity-0 relative z-10 select-none pointer-events-none"
+              className="ms-widget-icon"
             />
-            {/* Centered label smoothly revealed on slow-mo hover */}
-            <span
-              className="absolute inset-0 flex items-center justify-center text-white text-[18px] font-bold tracking-wide whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-400 delay-150 z-20 select-none pointer-events-none"
-            >
+            <span className="ms-widget-text">
               Help
             </span>
           </button>
@@ -153,37 +131,18 @@ export function MediasoftWidget({
                   type="button"
                   title={item.text}
                   onClick={() => handleItemClick(item.id)}
-                  className="h-[52px] w-[52px] rounded-full bg-transparent p-0 border-0 outline-none flex items-center justify-center cursor-pointer overflow-hidden relative group"
-                  style={{
-                    transition: 'width 0.65s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease',
-                    filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.18))',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.width = '240px';
-                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(37,37,180,0.35)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.width = '52px';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
+                  className="ms-widget-btn"
                 >
-                  <div
-                    className="absolute inset-0 w-full h-full rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                    style={{
-                      background: 'linear-gradient(90deg, rgb(44,35,185) 0%, rgb(37,37,180) 17%, rgb(0,212,255) 100%)',
-                    }}
-                  />
+                  <div className="ms-widget-gradient" />
                   <img
                     id={item.id}
                     src={item.img}
                     alt={item.text}
                     width={50}
                     height={50}
-                    className="w-[50px] h-[50px] object-contain transition-opacity duration-300 group-hover:opacity-0 relative z-10 select-none pointer-events-none"
+                    className="ms-widget-icon"
                   />
-                  <span
-                    className="absolute inset-0 flex items-center justify-center text-white text-[18px] font-bold tracking-wide whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-400 delay-150 z-20 select-none pointer-events-none"
-                  >
+                  <span className="ms-widget-text">
                     {item.text}
                   </span>
                 </button>
@@ -196,37 +155,18 @@ export function MediasoftWidget({
                 type="button"
                 title="Minimize"
                 onClick={() => handleItemClick('minimize')}
-                className="h-[52px] w-[52px] rounded-full bg-transparent p-0 border-0 outline-none flex items-center justify-center cursor-pointer overflow-hidden relative group"
-                style={{
-                  transition: 'width 0.65s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease',
-                  filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.18))',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.width = '240px';
-                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(37,37,180,0.35)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.width = '52px';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
+                className="ms-widget-btn"
               >
-                <div
-                  className="absolute inset-0 w-full h-full rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                  style={{
-                    background: 'linear-gradient(90deg, rgb(44,35,185) 0%, rgb(37,37,180) 17%, rgb(0,212,255) 100%)',
-                  }}
-                />
+                <div className="ms-widget-gradient" />
                 <img
                   id="ms_widget_Close"
                   src={CLOSE_PNG}
                   alt="Minimize"
                   width={50}
                   height={50}
-                  className="w-[50px] h-[50px] object-contain transition-opacity duration-300 group-hover:opacity-0 relative z-10 select-none pointer-events-none"
+                  className="ms-widget-icon"
                 />
-                <span
-                  className="absolute inset-0 flex items-center justify-center text-white text-[18px] font-bold tracking-wide whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-400 delay-150 z-20 select-none pointer-events-none"
-                >
+                <span className="ms-widget-text">
                   Minimize
                 </span>
               </button>
