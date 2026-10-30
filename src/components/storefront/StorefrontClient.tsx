@@ -1067,8 +1067,28 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
           <div className="footer-bottom">
             <p>© {new Date().getFullYear()} AUVARE. All rights reserved. Curated Vintage &amp; Pre-loved Fashion.</p>
             <p>Payment Supported: Cash on Delivery • bKash • Nagad • Rocket • Bank Transfer</p>
-            <p style={{ width: '100%', textAlign: 'center', marginTop: '0.5rem', color: '#6b7280', fontSize: '0.8125rem' }}>
-              Developed by Abir Shikdar
+            <p style={{ width: '100%', textAlign: 'center', marginTop: '0.65rem', fontSize: '0.8125rem' }}>
+              <a
+                href="https://wa.me/8801734018155"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Connect with Developer on WhatsApp"
+                style={{
+                  color: '#6b7280',
+                  textDecoration: 'none',
+                  transition: 'color 0.25s ease',
+                  cursor: 'pointer',
+                  display: 'inline-block',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#25D366';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#6b7280';
+                }}
+              >
+                Developed by <span style={{ fontWeight: 600, borderBottom: '1px dotted rgba(156,163,175,0.6)' }}>Abir Shikdar</span>
+              </a>
             </p>
           </div>
         </div>

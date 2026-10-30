@@ -16,6 +16,20 @@ _(no active items in progress)_
 
 ## Done
 
+- `#46` **2026-10-31** Footer Developer WhatsApp Direct Link ("Developed by Abir Shikdar"):
+  - **Identified User Requirement**:
+    - The user provided their personal WhatsApp number: `+8801734018155`.
+    - Instructed to attach this WhatsApp direct link to "Developed by Abir Shikdar" in the storefront footer without exposing or displaying the raw phone number on screen.
+    - Clicking on the text must instantly navigate to their WhatsApp chat (`https://wa.me/8801734018155`).
+  - **Implemented Clean Solution**:
+    - *Storefront Footer (`src/components/storefront/StorefrontClient.tsx` & `legacy_html/index.html`)*:
+      - Wrapped the text inside an accessible anchor link pointing to `https://wa.me/8801734018155` with `target="_blank"` and `rel="noopener noreferrer"`.
+      - Added smooth interactive hover state transitioning to official WhatsApp green `#25D366` with subtle underline.
+      - Hidden phone number completely from the displayed DOM text; only shows "Developed by Abir Shikdar".
+  - **Verification**:
+    - Build test passed (`npm run build`) in 1.7s.
+    - Tested link targets and deployed to Vercel production.
+
 - `#45` **2026-10-31** Restoration of Original Users Directory Interface, Branded Edit User Modal & Elimination of Browser `confirm()`:
   - **Identified User Feedback & Pain Points**:
     - The user tested the Users directory and noted that the interface had deviated from the original legacy design:
