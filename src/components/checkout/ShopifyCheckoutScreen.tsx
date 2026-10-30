@@ -82,31 +82,34 @@ export function ShopifyCheckoutScreen({
       return;
     }
 
-    if (!lastName.trim() && !firstName.trim()) {
-      setErrorMessage('Please provide your name.');
+    const customerName = `${firstName.trim()} ${lastName.trim()}`.trim();
+    if (!customerName) {
+      setErrorMessage('অনুগ্রহ করে আপনার নাম লিখুন (Please provide your name).');
+      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
       return;
     }
 
     if (!address1.trim()) {
-      setErrorMessage('Please enter your delivery address.');
+      setErrorMessage('অনুগ্রহ করে আপনার ডেলিভারি ঠিকানা লিখুন (Please enter your delivery address).');
+      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
       return;
     }
 
     const contactPhone = phone.trim() || (contactEmailOrPhone.match(/^[0-9+]+$/) ? contactEmailOrPhone.trim() : '');
-    if (!contactPhone) {
-      setErrorMessage('Please enter a valid mobile phone number for delivery.');
+    if (!contactPhone || contactPhone.length < 9) {
+      setErrorMessage('অনুগ্রহ করে একটি সঠিক মোবাইল নম্বর লিখুন (Please enter a valid phone number).');
+      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
       return;
     }
 
     if (paymentMethod !== 'cod' && !senderPhone.trim()) {
-      setErrorMessage(`Please enter your ${paymentMethod.toUpperCase()} sender phone number.`);
+      setErrorMessage(`অনুগ্রহ করে আপনার ${paymentMethod.toUpperCase()} সেন্ডার নম্বরটি লিখুন.`);
       return;
     }
 
     setErrorMessage('');
     setIsSubmitting(true);
 
-    const customerName = `${firstName.trim()} ${lastName.trim()}`.trim() || 'Valued Customer';
     const customerPhone = contactPhone;
     const fullDeliveryAddress = [
       address1.trim(),
@@ -117,29 +120,7 @@ export function ShopifyCheckoutScreen({
       .filter(Boolean)
       .join(', ');
 
-    const orderId = `AUV-${Math.floor(100000 + Math.random() * 900000)}`;
-
-    const itemListText = items
-      .map(
-        (c) =>
-          `• ${c.title}${c.selectedVariantName ? ` [${c.selectedVariantName}]` : ''} (Size: ${c.selectedSize}, TK ${c.price} x${c.quantity})`
-      )
-      .join('\n');
-
-    const waText = encodeURIComponent(
-      `*NEW ORDER CONFIRMED!* [Order #${orderId}]\n\n` +
-        `*Customer Details:*\n` +
-        `• Name: ${customerName}\n` +
-        `• Phone: ${customerPhone}\n` +
-        `• Address: ${fullDeliveryAddress}\n` +
-        `• Zone: ${deliveryZone === 'inside' ? 'Inside Dhaka (TK 70)' : 'Outside Dhaka (TK 130)'}\n\n` +
-        `*Ordered Items:*\n${itemListText}\n\n` +
-        `*Payment Method:* ${paymentMethod.toUpperCase()}\n` +
-        (senderPhone ? `*Sender Phone:* ${senderPhone}\n` : '') +
-        (trxId ? `*Transaction ID:* ${trxId}\n` : '') +
-        `*Total Bill:* TK ${total}\n\n` +
-        `Please confirm drop dispatch!`
-    );
+    const fallbackOrderId = `AUV-${Math.floor(100000 + Math.random() * 900000)}`;
 
     try {
       const res = await fetch('/api/checkout', {
@@ -155,22 +136,49 @@ export function ShopifyCheckoutScreen({
           paymentSenderNumber: senderPhone || null,
           transactionId: trxId || null,
           items: items.map((item) => ({
-            productId: item.id,
-            size: item.selectedSize,
-            variantId: item.variants?.find((v) => v.name === item.selectedVariantName)?.id,
-            quantity: item.quantity,
+            productId: String(item.id),
+            title: item.title,
+            price: item.price,
+            size: item.selectedSize || 'M',
+            variantId: item.variants?.find((v) => v.name === item.selectedVariantName)?.id || null,
+            quantity: item.quantity || 1,
           })),
         }),
       });
 
+      const resData = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to place order');
+        throw new Error(resData.error || 'Failed to place order');
       }
 
-      onOrderSuccess({ orderId, total, waText });
+      const confirmedOrderId = resData.orderId || resData.order?.order_id || fallbackOrderId;
+
+      const itemListText = items
+        .map(
+          (c) =>
+            `• ${c.title}${c.selectedVariantName ? ` [${c.selectedVariantName}]` : ''} (Size: ${c.selectedSize}, TK ${c.price} x${c.quantity})`
+        )
+        .join('\n');
+
+      const waText = encodeURIComponent(
+        `*NEW ORDER CONFIRMED!* [Order #${confirmedOrderId}]\n\n` +
+          `*Customer Details:*\n` +
+          `• Name: ${customerName}\n` +
+          `• Phone: ${customerPhone}\n` +
+          `• Address: ${fullDeliveryAddress}\n` +
+          `• Zone: ${deliveryZone === 'inside' ? 'Inside Dhaka (TK 70)' : 'Outside Dhaka (TK 130)'}\n\n` +
+          `*Ordered Items:*\n${itemListText}\n\n` +
+          `*Payment Method:* ${paymentMethod.toUpperCase()}\n` +
+          (senderPhone ? `*Sender Phone:* ${senderPhone}\n` : '') +
+          (trxId ? `*Transaction ID:* ${trxId}\n` : '') +
+          `*Total Bill:* TK ${total}\n\n` +
+          `Please confirm drop dispatch!`
+      );
+
+      onOrderSuccess({ orderId: confirmedOrderId, total, waText });
     } catch (err: any) {
       setErrorMessage(err.message || 'Error processing your order. Please try again.');
+      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
     } finally {
       setIsSubmitting(false);
     }
@@ -280,9 +288,9 @@ export function ShopifyCheckoutScreen({
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row">
         {/* Left Column: Form & Payment (approx 58%) */}
         <div className="w-full lg:w-[58%] px-4 sm:px-8 lg:px-12 py-8 bg-white">
-          <form onSubmit={handleSubmit} className="max-w-[580px] ml-auto mr-auto lg:mr-0 space-y-7">
+          <form onSubmit={handleSubmit} noValidate className="max-w-[580px] ml-auto mr-auto lg:mr-0 space-y-7">
             {errorMessage && (
-              <div className="p-3.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+              <div className="p-3.5 rounded-lg bg-rose-50 border border-rose-300 text-rose-800 text-xs font-semibold shadow-xs">
                 {errorMessage}
               </div>
             )}
@@ -296,7 +304,6 @@ export function ShopifyCheckoutScreen({
               <div className="space-y-2">
                 <input
                   type="text"
-                  required
                   placeholder="Email or mobile phone number"
                   value={contactEmailOrPhone}
                   onChange={(e) => setContactEmailOrPhone(e.target.value)}
@@ -322,15 +329,14 @@ export function ShopifyCheckoutScreen({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <input
                     type="text"
-                    placeholder="First name (optional)"
+                    placeholder="Full name or First name"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     className="w-full px-3.5 py-3 rounded-lg border border-gray-300 text-sm focus:border-[#105036] focus:ring-1 focus:ring-[#105036] outline-none transition-all placeholder:text-gray-400"
                   />
                   <input
                     type="text"
-                    required
-                    placeholder="Last name"
+                    placeholder="Last name (optional)"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     className="w-full px-3.5 py-3 rounded-lg border border-gray-300 text-sm focus:border-[#105036] focus:ring-1 focus:ring-[#105036] outline-none transition-all placeholder:text-gray-400"
@@ -340,8 +346,7 @@ export function ShopifyCheckoutScreen({
                 {/* Street Address */}
                 <input
                   type="text"
-                  required
-                  placeholder="Address (House, Road, Area)"
+                  placeholder="Address (House, Road, Area, Thana)"
                   value={address1}
                   onChange={(e) => setAddress1(e.target.value)}
                   className="w-full px-3.5 py-3 rounded-lg border border-gray-300 text-sm focus:border-[#105036] focus:ring-1 focus:ring-[#105036] outline-none transition-all placeholder:text-gray-400"
@@ -360,8 +365,7 @@ export function ShopifyCheckoutScreen({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <input
                     type="text"
-                    required
-                    placeholder="City (e.g. Dhaka)"
+                    placeholder="City / District (e.g. Dhaka)"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     className="w-full px-3.5 py-3 rounded-lg border border-gray-300 text-sm focus:border-[#105036] focus:ring-1 focus:ring-[#105036] outline-none transition-all placeholder:text-gray-400"
@@ -378,8 +382,7 @@ export function ShopifyCheckoutScreen({
                 {/* Phone */}
                 <input
                   type="tel"
-                  required
-                  placeholder="Phone (for courier delivery)"
+                  placeholder="Phone number (for courier delivery)"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full px-3.5 py-3 rounded-lg border border-gray-300 text-sm focus:border-[#105036] focus:ring-1 focus:ring-[#105036] outline-none transition-all placeholder:text-gray-400"

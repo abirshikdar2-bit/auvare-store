@@ -54,12 +54,13 @@ export function AdminPortal() {
   const [variantFormStatus, setVariantFormStatus] = useState<'available' | 'sold'>('available');
 
   // Load live data from Supabase
-  const loadData = async () => {
-    setIsLoading(true);
+  const loadData = async (silent = false) => {
+    if (!silent) setIsLoading(true);
     try {
+      const ts = Date.now();
       const [prodRes, ordRes] = await Promise.all([
-        fetch('/api/admin/products').then((r) => r.json()).catch(() => null),
-        fetch('/api/admin/orders').then((r) => r.json()).catch(() => null),
+        fetch(`/api/admin/products?t=${ts}`, { cache: 'no-store' }).then((r) => r.json()).catch(() => null),
+        fetch(`/api/admin/orders?t=${ts}`, { cache: 'no-store' }).then((r) => r.json()).catch(() => null),
       ]);
 
       if (prodRes && prodRes.success && Array.isArray(prodRes.products)) {
@@ -82,7 +83,7 @@ export function AdminPortal() {
     } catch (e) {
       console.warn('Error loading Supabase data:', e);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
@@ -92,6 +93,22 @@ export function AdminPortal() {
       const saved = localStorage.getItem('auvare_variant_presets_v2');
       if (saved) setVariantPresets(JSON.parse(saved));
     } catch {}
+
+    // Auto-polling interval: check for new incoming storefront orders every 7 seconds
+    const interval = setInterval(() => {
+      loadData(true);
+    }, 7000);
+
+    // Also reload fresh data immediately when admin tab gets focused
+    const handleFocus = () => {
+      loadData(true);
+    };
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   const savePresets = (list: string[]) => {
@@ -443,7 +460,7 @@ export function AdminPortal() {
 
             <button
               type="button"
-              onClick={loadData}
+              onClick={() => loadData()}
               disabled={isLoading}
               className="p-2 border rounded-lg text-slate-600 hover:bg-slate-100 transition"
               title="Refresh live data"
@@ -508,7 +525,7 @@ export function AdminPortal() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={loadData}
+                  onClick={() => loadData()}
                   className="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 flex items-center gap-1.5 shadow-xs"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />

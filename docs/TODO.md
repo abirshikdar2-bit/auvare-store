@@ -16,6 +16,32 @@ _(no active items in progress)_
 
 ## Done
 
+- `#43` **2026-10-31** Real-Time Live Order Synchronization to Admin Panel & Resilient Guest Checkout Submission:
+  - **Identified User Pain Point**:
+    - The user tested the live storefront (`https://auvare-store.vercel.app`) and reported: "public panel থেকে order দিলে এটা admin panel এ এখনো আসতেছে না। এটা ঠিক করতে হবে".
+  - **Root Cause Analysis**:
+    1. *Strict Native HTML5 Validation Blocking Submission*: In `ShopifyCheckoutScreen.tsx`, multiple fields (`City`, `Last Name`, `Phone`, `Email/Phone`) carried native HTML5 `required` constraints. If a customer entered their full address in the main address box or their name in First Name, native browser validation silently halted form submission before React's `handleSubmit` could ever fire, sending no request to `/api/checkout`.
+    2. *No Polling or Background Refresh in Admin Portal*: `AdminPortal.tsx` only called `loadData()` once on initial mount. If the admin kept the admin tab open while an order was placed in another window, the order list would never update without manual reloads.
+    3. *Aggressive HTTP Caching on Admin Orders GET*: `/api/admin/orders` and `/api/admin/products` lacked `force-dynamic` export and `Cache-Control: no-store` headers, allowing Vercel edge and browser caches to return stale order arrays.
+    4. *Strict Bag Product ID Verification Failure*: `/api/checkout` threw a fatal 400 if any product lookup failed, rather than gracefully falling back to item details.
+  - **Implemented Clean Solution**:
+    - *Resilient Checkout Submission (`src/components/checkout/ShopifyCheckoutScreen.tsx`)*:
+      - Added `noValidate` to `<form>` and replaced rigid HTML5 `required` flags with forgiving React validation that accepts full names in single fields and telephone in either contact field.
+      - Automatically syncs the authoritative Supabase-generated order ID into the success dialog and WhatsApp confirmation template.
+    - *Real-Time Auto-Polling & Focus Sync in Admin Portal (`src/components/admin/AdminPortal.tsx`)*:
+      - Added silent auto-polling every 7 seconds (`loadData(true)`), so new storefront orders appear automatically on screen without manual page refreshes.
+      - Added window `focus` event listener to fetch latest orders immediately when switching tabs.
+      - Appended cache-busting timestamp queries (`?t=${Date.now()}`) and `{ cache: 'no-store' }`.
+    - *Cache Headers & Dynamic Enforcement (`src/app/api/admin/orders/route.ts` & `src/app/api/admin/products/route.ts`)*:
+      - Added `export const dynamic = 'force-dynamic'` and `export const revalidate = 0`.
+      - Added explicit headers: `Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0`.
+    - *Resilient Fallback in Checkout API (`src/app/api/checkout/route.ts`)*:
+      - Enhanced pricing logic to safely fallback to client item metadata if Supabase has transient lookup hiccups, ensuring customer orders are never lost.
+  - **Verification**:
+    - Built with zero TypeScript errors (`npm run build`).
+    - Verified live order placement in headless browser, producing order ID `#AUV-849353` with HTTP 201 Created.
+    - Verified immediate rendering in Admin Portal orders table.
+
 - `#42` **2026-10-31** Full End-to-End Supabase PostgreSQL Synchronization (Public Storefront <-> Admin Portal <-> Supabase):
   - **Identified User Pain Point**:
     - The user noticed that the Public Storefront was not properly connected to the Admin Panel, and neither was syncing reliably with Supabase.

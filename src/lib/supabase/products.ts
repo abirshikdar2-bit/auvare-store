@@ -221,3 +221,4 @@ export function parseSupabaseOrder(row: any): Order {
     date: row.created_at ? new Date(row.created_at).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB'),
   };
 }
+

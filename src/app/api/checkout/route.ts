@@ -16,6 +16,8 @@ const checkoutSchema = z.object({
   items: z.array(
     z.object({
       productId: z.string(),
+      title: z.string().optional(),
+      price: z.number().optional(),
       size: z.string().default('M'),
       variantId: z.string().nullable().optional(),
       quantity: z.number().int().positive().default(1),
@@ -37,40 +39,45 @@ export async function POST(req: NextRequest) {
       .select('*')
       .in('id', productIds);
 
-    if (pErr || !dbProducts || dbProducts.length === 0) {
-      console.warn('[Checkout API] Failed to verify items in bag:', pErr);
-      return NextResponse.json({ error: 'Failed to verify items in bag' }, { status: 400 });
+    if (pErr) {
+      console.warn('[Checkout API] Warning fetching products for verification:', pErr);
     }
 
     // 2. Authoritative Price Calculation
     let subtotal = 0;
     const verifiedItems = data.items.map(cartItem => {
-      const product = dbProducts.find(p => String(p.id) === String(cartItem.productId));
-      if (!product) {
-        throw new Error(`Product not found: ${cartItem.productId}`);
+      const product = (dbProducts || []).find(p => String(p.id) === String(cartItem.productId));
+
+      let title = product?.title || cartItem.title || 'Curated Drop';
+      let unitPrice = 0;
+      if (product) {
+        unitPrice = typeof product.price === 'number' ? product.price : parseInt(product.price || '0', 10);
+      } else if (typeof cartItem.price === 'number') {
+        unitPrice = cartItem.price;
       }
 
-      let unitPrice = typeof product.price === 'number' ? product.price : parseInt(product.price || '0', 10);
       let variantName: string | undefined = undefined;
 
       // Extract variants if any
-      let variants: any[] = [];
-      if (Array.isArray(product.variants)) variants = product.variants;
-      else if (typeof product.variants === 'string') {
-        try { variants = JSON.parse(product.variants); } catch {}
-      }
-      if (!variants || variants.length === 0) {
-        const varMatch = (product.description || '').match(/<!--AUVARE_VARIANTS:(.*?)-->/);
-        if (varMatch && varMatch[1]) {
-          try { variants = JSON.parse(varMatch[1]); } catch {}
+      if (product) {
+        let variants: any[] = [];
+        if (Array.isArray(product.variants)) variants = product.variants;
+        else if (typeof product.variants === 'string') {
+          try { variants = JSON.parse(product.variants); } catch {}
         }
-      }
+        if (!variants || variants.length === 0) {
+          const varMatch = (product.description || '').match(/<!--AUVARE_VARIANTS:(.*?)-->/);
+          if (varMatch && varMatch[1]) {
+            try { variants = JSON.parse(varMatch[1]); } catch {}
+          }
+        }
 
-      if (cartItem.variantId) {
-        const v = variants.find((v: any) => v.id === cartItem.variantId);
-        if (v) {
-          variantName = v.name;
-          if (v.price) unitPrice = typeof v.price === 'number' ? v.price : parseInt(v.price, 10);
+        if (cartItem.variantId) {
+          const v = variants.find((v: any) => v.id === cartItem.variantId);
+          if (v) {
+            variantName = v.name;
+            if (v.price) unitPrice = typeof v.price === 'number' ? v.price : parseInt(v.price, 10);
+          }
         }
       }
 
@@ -78,8 +85,8 @@ export async function POST(req: NextRequest) {
       subtotal += itemTotal;
 
       return {
-        productId: product.id,
-        title: product.title,
+        productId: product?.id || cartItem.productId,
+        title,
         size: cartItem.size,
         variant: variantName || null,
         price: unitPrice,

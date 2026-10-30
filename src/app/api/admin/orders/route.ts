@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { parseSupabaseOrder } from '@/lib/supabase/products';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Global server in-memory status overrides for instant sync across admin sessions
 declare global {
   var __auvare_order_statuses: Record<string, string> | undefined;
@@ -32,7 +35,16 @@ export async function GET() {
       return parsed;
     });
 
-    return NextResponse.json({ success: true, orders });
+    return NextResponse.json(
+      { success: true, orders },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
+      }
+    );
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

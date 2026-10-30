@@ -4,6 +4,9 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { parseSupabaseProduct, formatProductForSupabase } from '@/lib/supabase/products';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const createProductSchema = z.object({
   id: z.string().optional(),
   title: z.string().min(2, 'Title is required'),
@@ -40,7 +43,16 @@ export async function GET() {
     if (error) throw error;
 
     const products = (data || []).map(parseSupabaseProduct);
-    return NextResponse.json({ success: true, products });
+    return NextResponse.json(
+      { success: true, products },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
+      }
+    );
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
