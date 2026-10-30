@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, MouseEvent } from 'react';
 import type { Product, GarmentSize, ProductVariant } from '@/types';
 import { formatBDT } from '@/lib/utils';
-import { ArrowLeft, X, ShoppingBag, Zap, ChevronDown, ZoomIn } from 'lucide-react';
+import { ArrowLeft, X, ChevronDown, ZoomIn } from 'lucide-react';
 
 interface ProductDetailModalProps {
   product: Product;
@@ -374,7 +374,7 @@ export function ProductDetailModal({
               </div>
             </div>
 
-            {/* Dual Action CTAs: Add to Bag (no price) & Buy Now (Instant Checkout) */}
+            {/* Dual Action CTAs: Add to Bag (no price, no icon) & Buy Now (Instant Checkout, no icon) */}
             <div className="screen-actions-bar" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
               <button
                 type="button"
@@ -387,18 +387,17 @@ export function ProductDetailModal({
                   background: '#0b1a13',
                   color: '#ffffff',
                   fontWeight: 700,
-                  fontSize: '0.9rem',
+                  fontSize: '0.95rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.5rem',
+                  textAlign: 'center',
                   cursor: product.sold ? 'not-allowed' : 'pointer',
                   opacity: product.sold ? 0.6 : 1,
                   boxShadow: 'var(--shadow-md)',
                   border: 'none',
                 }}
               >
-                <ShoppingBag className="w-4 h-4" />
                 <span>{product.sold ? 'Drop Claimed' : 'Add to Bag'}</span>
               </button>
 
@@ -413,18 +412,17 @@ export function ProductDetailModal({
                   background: 'var(--color-primary, #105036)',
                   color: '#ffffff',
                   fontWeight: 700,
-                  fontSize: '0.9rem',
+                  fontSize: '0.95rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.5rem',
+                  textAlign: 'center',
                   cursor: product.sold ? 'not-allowed' : 'pointer',
                   opacity: product.sold ? 0.6 : 1,
                   boxShadow: 'var(--shadow-md)',
                   border: 'none',
                 }}
               >
-                <Zap className="w-4 h-4 fill-current" />
                 <span>{product.sold ? 'Drop Claimed' : 'Buy Now'}</span>
               </button>
             </div>

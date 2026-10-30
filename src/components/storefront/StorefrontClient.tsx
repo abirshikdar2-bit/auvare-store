@@ -53,6 +53,27 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
     total: number;
     waText: string;
   } | null>(null);
+  const [copiedMfs, setCopiedMfs] = useState(false);
+
+  const handleCopyMfs = (num: string) => {
+    if (!num) return;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(num);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = num;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      setCopiedMfs(true);
+      setTimeout(() => setCopiedMfs(false), 2200);
+    } catch {
+      // Fallback
+    }
+  };
 
   const waNumber = siteSettings.whatsapp_number || '01734018155';
   const cleanWa = waNumber.replace(/[^0-9]/g, '');
@@ -104,7 +125,6 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
 
   // Direct Buy Now bypass
   const handleBuyNow = (product: Product, size: GarmentSize, variant?: ProductVariant) => {
-    setSelectedProduct(null);
     setDirectCheckoutItem({ product, selectedSize: size, selectedVariant: variant });
     setIsCheckoutOpen(true);
   };
@@ -207,6 +227,7 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
         setBag([]);
       }
       setDirectCheckoutItem(null);
+      setSelectedProduct(null);
       setIsCheckoutOpen(false);
     } catch (err: any) {
       alert(err.message || 'Error creating order');
@@ -1030,7 +1051,6 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
           onSelectProduct={(prod) => setSelectedProduct(prod)}
           onAddToBag={(prod, sz, variant) => {
             handleAddToBag(prod, sz, variant);
-            setSelectedProduct(null);
           }}
           onBuyNow={handleBuyNow}
         />
@@ -1324,13 +1344,56 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
 
               {/* MFS instructions if not COD */}
               {paymentMethod !== 'cod' && (
-                <div style={{ background: '#fef3c7', borderRadius: 'var(--radius-md)', padding: '0.75rem', marginBottom: '0.75rem', fontSize: '0.8rem', border: '1px solid #fde68a', color: '#92400e' }}>
-                  <p style={{ fontWeight: 700, marginBottom: '0.25rem' }}>
+                <div style={{ background: '#fef3c7', borderRadius: 'var(--radius-md)', padding: '0.85rem 1rem', marginBottom: '0.75rem', fontSize: '0.82rem', border: '1px solid #fde68a', color: '#92400e' }}>
+                  <p style={{ fontWeight: 700, marginBottom: '0.35rem' }}>
                     Send TK {formatBDT(bagTotal)} via {paymentMethod.toUpperCase()} (Send Money):
                   </p>
-                  <p style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#78350f' }}>
-                    {siteSettings[`${paymentMethod}_number`] || siteSettings.bkash_number || '01734018155'}
-                  </p>
+                  {(() => {
+                    const activeMfsNumber = siteSettings[`${paymentMethod}_number`] || siteSettings.bkash_number || '01734018155';
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.85)', padding: '0.45rem 0.75rem', borderRadius: '6px', border: '1px solid #fcd34d', marginTop: '0.35rem', marginBottom: '0.5rem' }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: '#78350f', letterSpacing: '0.04em' }}>
+                          {activeMfsNumber}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyMfs(activeMfsNumber)}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                            background: copiedMfs ? '#15803d' : '#92400e',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '5px',
+                            padding: '0.35rem 0.7rem',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            transition: 'all 0.18s ease',
+                          }}
+                          title={`Click to copy ${paymentMethod.toUpperCase()} number`}
+                        >
+                          {copiedMfs ? (
+                            <>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                              <span>Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                              </svg>
+                              <span>Copy Number</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })()}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.5rem' }}>
                     <input
                       type="tel"
