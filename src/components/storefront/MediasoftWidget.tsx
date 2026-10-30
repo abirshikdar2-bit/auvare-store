@@ -60,7 +60,7 @@ export function MediasoftWidget({
     if (isOpen) return;
     const interval = setInterval(() => {
       setCurrentIdx((prev) => (prev + 1) % BACKGROUNDS.length);
-    }, 2000);
+    }, 3500);
     return () => clearInterval(interval);
   }, [isOpen]);
 
@@ -95,30 +95,49 @@ export function MediasoftWidget({
         className="fixed bottom-[30px] left-[30px] z-[999999] flex flex-col items-start font-sans"
         style={{ pointerEvents: 'auto' }}
       >
-        {/* Main Floating Shifting Button */}
+        {/* Main Floating Shifting Button (No white border ring, smooth slow-mo expansion) */}
         {!isOpen && (
           <button
             type="button"
             id="ms_widget_button_main"
             title="Help"
             onClick={() => setIsOpen(true)}
-            className="w-[64px] h-[64px] rounded-full bg-white flex justify-center items-center cursor-pointer overflow-hidden relative shadow-[0_3px_6px_rgba(0,0,0,0.16),0_3px_6px_rgba(0,0,0,0.23)] group transition-all duration-400 ease-in-out hover:w-[250px] hover:shadow-[0_6px_16px_rgba(0,0,0,0.25)]"
+            className="h-[52px] w-[52px] rounded-full bg-transparent p-0 border-0 outline-none flex items-center justify-center cursor-pointer overflow-hidden relative group"
             style={{
-              transition: 'width 0.4s ease, background 0.4s ease, border-radius 0.4s ease, box-shadow 0.3s ease',
+              transition: 'width 0.65s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease',
+              filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.18))',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.width = '240px';
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(37,37,180,0.35)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.width = '52px';
+              e.currentTarget.style.boxShadow = 'none';
             }}
           >
-            <div className="absolute inset-0 w-full h-full rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none bg-gradient-to-r from-[rgb(44,35,185)] via-[rgb(37,37,180)] to-[rgb(0,212,255)]" />
+            {/* Gradient background overlay fading in on hover */}
+            <div
+              className="absolute inset-0 w-full h-full rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+              style={{
+                background: 'linear-gradient(90deg, rgb(44,35,185) 0%, rgb(37,37,180) 17%, rgb(0,212,255) 100%)',
+              }}
+            />
+            {/* 3D Sphere Icon (fades out smoothly on hover) */}
             <img
               id="ms_widget_change_img"
               src={BACKGROUNDS[currentIdx]?.img}
               alt="Help"
               width={50}
               height={50}
-              className="w-[50px] h-[50px] object-contain group-hover:hidden relative z-10 transition-opacity duration-200"
+              className="w-[50px] h-[50px] object-contain transition-opacity duration-300 group-hover:opacity-0 relative z-10 select-none pointer-events-none"
             />
-            <p className="hidden group-hover:block text-white text-[18px] font-bold text-center whitespace-nowrap tracking-wide relative z-10 m-0 p-0">
+            {/* Centered label smoothly revealed on slow-mo hover */}
+            <span
+              className="absolute inset-0 flex items-center justify-center text-white text-[18px] font-bold tracking-wide whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-400 delay-150 z-20 select-none pointer-events-none"
+            >
               Help
-            </p>
+            </span>
           </button>
         )}
 
@@ -134,20 +153,39 @@ export function MediasoftWidget({
                   type="button"
                   title={item.text}
                   onClick={() => handleItemClick(item.id)}
-                  className="w-[64px] h-[64px] rounded-full bg-white flex justify-center items-center cursor-pointer overflow-hidden relative shadow-[0_3px_6px_rgba(0,0,0,0.16),0_3px_6px_rgba(0,0,0,0.23)] group transition-all duration-400 ease-in-out hover:w-[250px] hover:shadow-[0_6px_16px_rgba(0,0,0,0.25)]"
+                  className="h-[52px] w-[52px] rounded-full bg-transparent p-0 border-0 outline-none flex items-center justify-center cursor-pointer overflow-hidden relative group"
+                  style={{
+                    transition: 'width 0.65s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease',
+                    filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.18))',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.width = '240px';
+                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(37,37,180,0.35)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.width = '52px';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
                 >
-                  <div className="absolute inset-0 w-full h-full rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none bg-gradient-to-r from-[rgb(44,35,185)] via-[rgb(37,37,180)] to-[rgb(0,212,255)]" />
+                  <div
+                    className="absolute inset-0 w-full h-full rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                    style={{
+                      background: 'linear-gradient(90deg, rgb(44,35,185) 0%, rgb(37,37,180) 17%, rgb(0,212,255) 100%)',
+                    }}
+                  />
                   <img
                     id={item.id}
                     src={item.img}
                     alt={item.text}
                     width={50}
                     height={50}
-                    className="w-[50px] h-[50px] object-contain group-hover:hidden relative z-10 transition-opacity duration-200"
+                    className="w-[50px] h-[50px] object-contain transition-opacity duration-300 group-hover:opacity-0 relative z-10 select-none pointer-events-none"
                   />
-                  <p className="hidden group-hover:block text-white text-[18px] font-bold text-center whitespace-nowrap tracking-wide relative z-10 m-0 p-0">
+                  <span
+                    className="absolute inset-0 flex items-center justify-center text-white text-[18px] font-bold tracking-wide whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-400 delay-150 z-20 select-none pointer-events-none"
+                  >
                     {item.text}
-                  </p>
+                  </span>
                 </button>
               </li>
             ))}
@@ -158,20 +196,39 @@ export function MediasoftWidget({
                 type="button"
                 title="Minimize"
                 onClick={() => handleItemClick('minimize')}
-                className="w-[64px] h-[64px] rounded-full bg-white flex justify-center items-center cursor-pointer overflow-hidden relative shadow-[0_3px_6px_rgba(0,0,0,0.16),0_3px_6px_rgba(0,0,0,0.23)] group transition-all duration-400 ease-in-out hover:w-[250px] hover:shadow-[0_6px_16px_rgba(0,0,0,0.25)]"
+                className="h-[52px] w-[52px] rounded-full bg-transparent p-0 border-0 outline-none flex items-center justify-center cursor-pointer overflow-hidden relative group"
+                style={{
+                  transition: 'width 0.65s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease',
+                  filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.18))',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.width = '240px';
+                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(37,37,180,0.35)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.width = '52px';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
               >
-                <div className="absolute inset-0 w-full h-full rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none bg-gradient-to-r from-[rgb(44,35,185)] via-[rgb(37,37,180)] to-[rgb(0,212,255)]" />
+                <div
+                  className="absolute inset-0 w-full h-full rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                  style={{
+                    background: 'linear-gradient(90deg, rgb(44,35,185) 0%, rgb(37,37,180) 17%, rgb(0,212,255) 100%)',
+                  }}
+                />
                 <img
                   id="ms_widget_Close"
                   src={CLOSE_PNG}
                   alt="Minimize"
                   width={50}
                   height={50}
-                  className="w-[50px] h-[50px] object-contain group-hover:hidden relative z-10 transition-opacity duration-200"
+                  className="w-[50px] h-[50px] object-contain transition-opacity duration-300 group-hover:opacity-0 relative z-10 select-none pointer-events-none"
                 />
-                <p className="hidden group-hover:block text-white text-[18px] font-bold text-center whitespace-nowrap tracking-wide relative z-10 m-0 p-0">
+                <span
+                  className="absolute inset-0 flex items-center justify-center text-white text-[18px] font-bold tracking-wide whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-400 delay-150 z-20 select-none pointer-events-none"
+                >
                   Minimize
-                </p>
+                </span>
               </button>
             </li>
           </ul>

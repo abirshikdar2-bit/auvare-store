@@ -16,6 +16,26 @@ _(no active items in progress)_
 
 ## Done
 
+- `#37` **2026-10-30** Shopping Bag Side Drawer Luxury Polish & Mediasoft Floating Widget Refinements (Slow-Mo Smooth Expansion & White Ring Removal):
+  - **Identified User Pain Point**:
+    - *Shopping Bag Drawer (`media_1793319911355_563bbce0.png`)*:
+      - Quantity and remove controls were unstyled inline text (`-1+Remove`), squished together with zero spacing or borders.
+      - Totals row lacked spacing between label and value (`Subtotal:TK 1,850`, `Delivery Charge:TK 70`, `Total Bill:TK 1,920`).
+      - Drawer overall felt raw rather than matching AUVARE's luxury aesthetic.
+    - *Mediasoft BD Multichannel Widget (`media_1793319931837_12b553cf.png`)*:
+      - Icons had an unwanted thick white outer border circle around them.
+      - Hover animation was jerky and fast, missing the smooth, slow-mo expansion effect seen on `mediasoftbd.com`.
+  - **Implemented Clean Solution**:
+    - *Shopping Bag Drawer Polish (`StorefrontClient.tsx`, `style.css`)*:
+      - Cart Item Cards: Upgraded to clean white cards (`#ffffff`, border `1px solid #f1f5f9`, rounded `12px`, padding `0.85rem`) with high-res thumbnails (`72px x 92px`, rounded `8px`).
+      - Quantity Controls: Crafted a modern pill selector (`border: 1px solid #cbd5e1`, `bg: #f8fafc`, rounded `6px`) with discrete `-` and `+` buttons and bold counter.
+      - Remove Button: Separated into a stylish red-accented action button with hover background.
+      - Totals Section: Implemented flexbox distribution with clear spacing between labels and values. Delivery destination pills styled with luxury active/inactive states. Final bill highlighted with dashed border separator and bold primary green typography.
+    - *Mediasoft Floating Widget Refinement (`MediasoftWidget.tsx`)*:
+      - Removed outer white circle completely by making container `h-[52px] w-[52px] bg-transparent p-0 border-0 outline-none` so the 3D glossy spherical icon floats naturally without any white ring.
+      - Slow-mo Expansion Animation: Implemented smooth cubic-bezier easing (`transition: width 0.65s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease`), expanding width smoothly to `240px` on hover with the signature Mediasoft gradient, icon fading out gracefully and centered label fading in with `delay-150`.
+      - Calmed icon rotation interval from 2s to 3.5s for a relaxed, non-distracting customer experience.
+
 - `#36` **2026-10-30** Product Screen Persistence on Add-to-Bag, Clean Button Typography & One-Click MFS Number Copy:
   - **Identified User Problem**:
     - When clicking "Add to Bag" inside the product details studio, it was kicking the customer back to the home screen instead of keeping them on the product page.
@@ -428,6 +448,26 @@ immediately. The 2h expiry is only the backstop for when
 nobody notices.
 
 ## Done
+
+- `#37` **2026-10-30** Shopping Bag Side Drawer Luxury Polish & Mediasoft Floating Widget Refinements (Slow-Mo Smooth Expansion & White Ring Removal):
+  - **Identified User Pain Point**:
+    - *Shopping Bag Drawer (`media_1793319911355_563bbce0.png`)*:
+      - Quantity and remove controls were unstyled inline text (`-1+Remove`), squished together with zero spacing or borders.
+      - Totals row lacked spacing between label and value (`Subtotal:TK 1,850`, `Delivery Charge:TK 70`, `Total Bill:TK 1,920`).
+      - Drawer overall felt raw rather than matching AUVARE's luxury aesthetic.
+    - *Mediasoft BD Multichannel Widget (`media_1793319931837_12b553cf.png`)*:
+      - Icons had an unwanted thick white outer border circle around them.
+      - Hover animation was jerky and fast, missing the smooth, slow-mo expansion effect seen on `mediasoftbd.com`.
+  - **Implemented Clean Solution**:
+    - *Shopping Bag Drawer Polish (`StorefrontClient.tsx`, `style.css`)*:
+      - Cart Item Cards: Upgraded to clean white cards (`#ffffff`, border `1px solid #f1f5f9`, rounded `12px`, padding `0.85rem`) with high-res thumbnails (`72px x 92px`, rounded `8px`).
+      - Quantity Controls: Crafted a modern pill selector (`border: 1px solid #cbd5e1`, `bg: #f8fafc`, rounded `6px`) with discrete `-` and `+` buttons and bold counter.
+      - Remove Button: Separated into a stylish red-accented action button with hover background.
+      - Totals Section: Implemented flexbox distribution with clear spacing between labels and values. Delivery destination pills styled with luxury active/inactive states. Final bill highlighted with dashed border separator and bold primary green typography.
+    - *Mediasoft Floating Widget Refinement (`MediasoftWidget.tsx`)*:
+      - Removed outer white circle completely by making container `h-[52px] w-[52px] bg-transparent p-0 border-0 outline-none` so the 3D glossy spherical icon floats naturally without any white ring.
+      - Slow-mo Expansion Animation: Implemented smooth cubic-bezier easing (`transition: width 0.65s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease`), expanding width smoothly to `240px` on hover with the signature Mediasoft gradient, icon fading out gracefully and centered label fading in with `delay-150`.
+      - Calmed icon rotation interval from 2s to 3.5s for a relaxed, non-distracting customer experience.
 
 - `#31` **2026-10-28** AUVARE Branded Confirmation Modal Dialog (Eliminated Browser Native `confirm()`):
   - **Identified User Pain Point**:

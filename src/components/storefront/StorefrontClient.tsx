@@ -1096,39 +1096,164 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
               <div
                 key={`${item.id}_${item.selectedSize}_${item.selectedVariantName || ''}_${idx}`}
                 className="cart-item"
+                style={{
+                  display: 'flex',
+                  gap: '1rem',
+                  padding: '0.85rem',
+                  marginBottom: '0.85rem',
+                  background: '#ffffff',
+                  border: '1px solid #f1f5f9',
+                  borderRadius: '12px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                  alignItems: 'center',
+                }}
               >
                 <img
                   src={item.image || item.images?.[0] || '/assets/images/logo.jpg'}
                   alt={item.title}
                   className="cart-item-img"
+                  style={{
+                    width: '72px',
+                    height: '92px',
+                    objectFit: 'cover',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    flexShrink: 0,
+                  }}
                 />
-                <div className="cart-item-info">
-                  <div className="cart-item-title">{item.title}</div>
-                  <div className="cart-item-meta">
-                    Size: {item.selectedSize}
-                    {item.selectedVariantName ? ` • ${item.selectedVariantName}` : ''}
+                <div className="cart-item-info" style={{ flexGrow: 1, minWidth: 0 }}>
+                  <div
+                    className="cart-item-title"
+                    style={{
+                      fontFamily: 'var(--font-serif)',
+                      fontSize: '0.95rem',
+                      fontWeight: 700,
+                      color: '#0f172a',
+                      lineHeight: 1.3,
+                      marginBottom: '0.25rem',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                    title={item.title}
+                  >
+                    {item.title}
                   </div>
-                  <div className="cart-item-price">TK {formatBDT(item.price)}</div>
-                  <div className="cart-item-controls">
-                    <button
-                      type="button"
-                      className="qty-btn"
-                      onClick={() => updateQuantity(idx, -1)}
+                  <div className="cart-item-meta" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        fontSize: '0.72rem',
+                        fontWeight: 600,
+                        color: '#475569',
+                        background: '#f1f5f9',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                      }}
                     >
-                      -
-                    </button>
-                    <span>{item.quantity}</span>
-                    <button
-                      type="button"
-                      className="qty-btn"
-                      onClick={() => updateQuantity(idx, 1)}
+                      Size: {item.selectedSize}
+                    </span>
+                    {item.selectedVariantName && (
+                      <span
+                        style={{
+                          fontSize: '0.72rem',
+                          color: '#64748b',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {item.selectedVariantName}
+                      </span>
+                    )}
+                  </div>
+                  <div className="cart-item-price" style={{ fontWeight: 800, color: 'var(--color-primary, #105036)', fontSize: '0.95rem', marginBottom: '0.5rem' }}>
+                    TK {formatBDT(item.price)}
+                  </div>
+                  <div className="cart-item-controls" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '6px',
+                        background: '#f8fafc',
+                        overflow: 'hidden',
+                        height: '28px',
+                      }}
                     >
-                      +
-                    </button>
+                      <button
+                        type="button"
+                        className="qty-btn"
+                        onClick={() => updateQuantity(idx, -1)}
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          border: 'none',
+                          background: 'transparent',
+                          cursor: 'pointer',
+                          fontWeight: 700,
+                          fontSize: '0.9rem',
+                          color: '#334155',
+                          transition: 'background 0.15s',
+                        }}
+                      >
+                        -
+                      </button>
+                      <span
+                        style={{
+                          minWidth: '24px',
+                          textAlign: 'center',
+                          fontSize: '0.82rem',
+                          fontWeight: 700,
+                          color: '#0f172a',
+                        }}
+                      >
+                        {item.quantity}
+                      </span>
+                      <button
+                        type="button"
+                        className="qty-btn"
+                        onClick={() => updateQuantity(idx, 1)}
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          border: 'none',
+                          background: 'transparent',
+                          cursor: 'pointer',
+                          fontWeight: 700,
+                          fontSize: '0.9rem',
+                          color: '#334155',
+                          transition: 'background 0.15s',
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
                     <button
                       type="button"
                       className="remove-btn"
                       onClick={() => removeFromBag(idx)}
+                      style={{
+                        border: 'none',
+                        background: 'transparent',
+                        color: '#ef4444',
+                        fontSize: '0.78rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '3px',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        transition: 'background 0.15s',
+                      }}
                     >
                       Remove
                     </button>
@@ -1142,8 +1267,8 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
         {bag.length > 0 && (
           <div className="drawer-footer">
             {/* Delivery Zone Selector */}
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: '0.4rem' }}>
+            <div style={{ marginBottom: '1.1rem' }}>
+              <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#64748b', marginBottom: '0.45rem' }}>
                 Delivery Destination:
               </label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
@@ -1151,14 +1276,16 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
                   type="button"
                   onClick={() => setDeliveryZone('inside')}
                   style={{
-                    padding: '0.5rem',
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    borderRadius: 'var(--radius-md)',
-                    border: `1.5px solid ${deliveryZone === 'inside' ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                    background: deliveryZone === 'inside' ? 'var(--color-primary-soft)' : 'white',
-                    color: deliveryZone === 'inside' ? 'var(--color-primary)' : 'var(--color-text-main)',
+                    padding: '0.65rem 0.5rem',
+                    fontSize: '0.78rem',
+                    fontWeight: deliveryZone === 'inside' ? 700 : 600,
+                    borderRadius: '8px',
+                    border: `1.5px solid ${deliveryZone === 'inside' ? 'var(--color-primary, #105036)' : '#e2e8f0'}`,
+                    background: deliveryZone === 'inside' ? '#f0fdf4' : '#ffffff',
+                    color: deliveryZone === 'inside' ? 'var(--color-primary, #105036)' : '#334155',
                     cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    boxShadow: deliveryZone === 'inside' ? '0 1px 2px rgba(16,80,54,0.08)' : 'none',
                   }}
                 >
                   Inside Dhaka (TK 70)
@@ -1167,14 +1294,16 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
                   type="button"
                   onClick={() => setDeliveryZone('outside')}
                   style={{
-                    padding: '0.5rem',
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    borderRadius: 'var(--radius-md)',
-                    border: `1.5px solid ${deliveryZone === 'outside' ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                    background: deliveryZone === 'outside' ? 'var(--color-primary-soft)' : 'white',
-                    color: deliveryZone === 'outside' ? 'var(--color-primary)' : 'var(--color-text-main)',
+                    padding: '0.65rem 0.5rem',
+                    fontSize: '0.78rem',
+                    fontWeight: deliveryZone === 'outside' ? 700 : 600,
+                    borderRadius: '8px',
+                    border: `1.5px solid ${deliveryZone === 'outside' ? 'var(--color-primary, #105036)' : '#e2e8f0'}`,
+                    background: deliveryZone === 'outside' ? '#f0fdf4' : '#ffffff',
+                    color: deliveryZone === 'outside' ? 'var(--color-primary, #105036)' : '#334155',
                     cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    boxShadow: deliveryZone === 'outside' ? '0 1px 2px rgba(16,80,54,0.08)' : 'none',
                   }}
                 >
                   Outside Dhaka (TK 130)
@@ -1182,23 +1311,51 @@ export function StorefrontClient({ initialProducts, siteSettings }: StorefrontCl
               </div>
             </div>
 
-            <div className="cart-total-row">
-              <span>Subtotal:</span>
-              <span>TK {formatBDT(bagSubtotal)}</span>
-            </div>
-            <div className="cart-total-row">
-              <span>Delivery Charge:</span>
-              <span>TK {formatBDT(deliveryCharge)}</span>
-            </div>
-            <div className="cart-total-row final" style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--color-primary)' }}>
-              <span>Total Bill:</span>
-              <span>TK {formatBDT(bagTotal)}</span>
+            {/* Financial Summary */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
+              <div className="cart-total-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.88rem', color: '#64748b' }}>
+                <span>Subtotal</span>
+                <span style={{ fontWeight: 600, color: '#0f172a' }}>TK {formatBDT(bagSubtotal)}</span>
+              </div>
+              <div className="cart-total-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.88rem', color: '#64748b' }}>
+                <span>Delivery Charge</span>
+                <span style={{ fontWeight: 600, color: '#0f172a' }}>TK {formatBDT(deliveryCharge)}</span>
+              </div>
+              <div
+                className="cart-total-row final"
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  borderTop: '1px dashed #cbd5e1',
+                  paddingTop: '0.75rem',
+                  marginTop: '0.35rem',
+                  fontSize: '1.15rem',
+                  fontWeight: 800,
+                  color: 'var(--color-primary, #105036)',
+                }}
+              >
+                <span>Total Bill</span>
+                <span>TK {formatBDT(bagTotal)}</span>
+              </div>
             </div>
 
             <button
               type="button"
               className="btn-primary"
-              style={{ width: '100%', marginTop: '0.85rem', padding: '0.85rem' }}
+              style={{
+                width: '100%',
+                padding: '0.95rem 1rem',
+                fontSize: '0.92rem',
+                fontWeight: 700,
+                borderRadius: '10px',
+                boxShadow: '0 4px 14px rgba(16,80,54,0.22)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                cursor: 'pointer',
+              }}
               onClick={() => {
                 setDirectCheckoutItem(null);
                 setIsBagOpen(false);
