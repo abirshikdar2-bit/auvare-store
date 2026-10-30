@@ -16,6 +16,42 @@ _(no active items in progress)_
 
 ## Done
 
+- `#44` **2026-10-31** Restored Google OAuth Security Auth Gate & Super Admin RBAC Approval System for `/admin`:
+  - **Identified User Problem**:
+    - The user accessed the Admin Panel URL (`/admin`) from another browser and found that it opened the dashboard directly without any login requirement!
+    - In their prior system:
+      - Nobody could access `/admin` directly.
+      - Any new user had to sign in with Google to send an administrative access request.
+      - That request appeared in the Super Admin's panel under the "Users" section.
+      - Only after the Super Admin (`abirshikdar2@gmail.com`) clicked "Approve" could that user access the admin dashboard.
+    - The user requested immediate restoration of this security barrier and full RBAC user management.
+  - **Root Cause Analysis**:
+    - During the Next.js migration, `src/app/admin/page.tsx` directly rendered `AdminPortal.tsx` without an auth session gate check.
+    - In the original `admin.js`, an `#adminAuthGate` modal evaluated Supabase user state (`loading`, `unauthenticated`, `pending`, `rejected`, `blocked`, `approved`) against the `auth_users` table.
+    - In the Next.js version, the Users tab had also been reduced to a static card.
+  - **Implemented Clean Solution**:
+    - *Backend Users & RBAC API (`src/app/api/admin/users/route.ts`)*:
+      - `GET`: Returns all `auth_users` sorted by `created_at DESC` with no-cache headers.
+      - `POST`: Validates Google OAuth session. Permanently approves `abirshikdar2@gmail.com` as `super_admin`. Creates or updates any other user with `role: 'admin'`, `status: 'pending'`, and `request_note: 'Requested admin portal access via Google OAuth'`.
+      - `PATCH`: Super Admin actions (`approve`, `reject`, `unblock`). Strictly blocks demoting or revoking `abirshikdar2@gmail.com`.
+      - `PUT`: Allows rejected users to re-apply for access, updating status back to `pending`.
+    - *Full-Screen Auth Gate Modal (`src/components/admin/AdminPortal.tsx`)*:
+      - Intercepts rendering when `authStatus !== 'approved'`.
+      - `loading`: Displays credential verification spinner.
+      - `unauthenticated`: Displays luxury branded AUVARE sign-in modal with official Google OAuth button.
+      - `pending`: Displays "Request Pending Approval" notice with user avatar/email and "Recheck Approval Status" button. Blocks access to all store data.
+      - `rejected`: Displays access denied notice with option to "Re-Apply for Access".
+      - `blocked`: Displays security restriction notice.
+    - *Full Interactive User Directory (`src/components/admin/AdminPortal.tsx`)*:
+      - Dynamic badge in sidebar showing live pending request count (`pendingUsersCount`).
+      - Topbar user profile pill showing avatar, name, role badge, and functional "Sign Out" button.
+      - Full interactive Users management table with stat cards (Total Accounts, Active Admins, Pending Approval), warning banner for pending requests, and Super Admin actions: `Approve`, `Reject`, `Revoke`, and `Re-Approve/Unblock`.
+    - *Middleware Hardening (`src/lib/supabase/middleware.ts`)*:
+      - Added fallback credentials to ensure middleware executes safely across edge environments.
+  - **Verification**:
+    - Build test passed (`npm run build`) with zero compilation errors across all routes.
+    - Tested direct unauthenticated access to `/admin` to confirm dashboard is locked behind the Auth Gate.
+
 - `#43` **2026-10-31** Real-Time Live Order Synchronization to Admin Panel & Resilient Guest Checkout Submission:
   - **Identified User Pain Point**:
     - The user tested the live storefront (`https://auvare-store.vercel.app`) and reported: "public panel থেকে order দিলে এটা admin panel এ এখনো আসতেছে না। এটা ঠিক করতে হবে".
