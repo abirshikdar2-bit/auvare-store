@@ -16,6 +16,27 @@ _(no active items in progress)_
 
 ## Done
 
+- `#42` **2026-10-31** Full End-to-End Supabase PostgreSQL Synchronization (Public Storefront <-> Admin Portal <-> Supabase):
+  - **Identified User Pain Point**:
+    - The user noticed that the Public Storefront was not properly connected to the Admin Panel, and neither was syncing reliably with Supabase.
+    - When orders were placed on the storefront, they did not appear in Supabase or the Admin Panel.
+    - When products were added or edited in Admin, they failed to persist to Supabase or update on the live storefront.
+  - **Root Cause Analysis**:
+    1. *Schema Mismatch in Checkout API*: `src/app/api/checkout/route.ts` was passing 15+ non-existent columns (`name`, `orderId`, `phone`, `address`, `deliveryZone`, `shipping`, `delivery_charge`, `total`, `paymentMethod`, `paymentNumber`, `trxId`, `status`, `orderStatus`, `date`) causing PostgREST to reject order inserts with `PGRST204`.
+    2. *Missing ID & Non-Existent Columns in Admin Products API*: `src/app/api/admin/products/route.ts` failed on product creation with `23502 (null id violates not-null constraint)` because `id` was not generated, and `images`/`variants` columns were sent directly to PostgREST even though Supabase `products` table stores variants and multi-images embedded in `description` metadata comments (`<!--AUVARE_VARIANTS:[...]-->` and `<!--AUVARE_IMAGES:[...]-->`).
+    3. *Non-Existent site_settings Table*: `src/app/page.tsx` was querying `site_settings` which returned HTTP 404. The actual Supabase table is `store_contact_info`.
+    4. *Cache Staleness*: Neither product creation nor checkout was triggering on-demand cache revalidation (`revalidatePath`), leaving the public storefront stale.
+  - **Implemented Clean Solution**:
+    - *Core Adapter (`src/lib/supabase/products.ts`)*: Built `parseSupabaseProduct`, `formatProductForSupabase`, `formatOrderForSupabase`, and `parseSupabaseOrder` strictly matching the actual Supabase PostgreSQL table schemas with full comment metadata embedding.
+    - *Checkout API (`src/app/api/checkout/route.ts`)*: Fixed order formatting, successfully saving real orders to Supabase and triggering `revalidatePath('/admin')` and `revalidatePath('/')`.
+    - *Admin Products API (`src/app/api/admin/products/route.ts` & `[id]/route.ts`)*: Fixed auto ID generation, embedded variants/images metadata, clean updates/deletions, and instant revalidation.
+    - *Admin Orders API (`src/app/api/admin/orders/route.ts` & `[id]/route.ts`)*: Fixed order status updates (`order_status`) and unified order fetching with fallback state.
+    - *Public Storefront (`src/app/page.tsx`)*: Connected to `store_contact_info` and applied `parseSupabaseProduct` for full variants/multi-images display.
+    - *Admin Portal Client (`src/components/admin/AdminPortal.tsx`)*: Unified `loadData()` to load authoritative data from `/api/admin/products` and `/api/admin/orders` with error checking.
+  - **Verification & Deployment**:
+    - Created and executed `scratch/test_e2e_connectivity.py` testing the complete 6-stage lifecycle (checkout order creation -> admin order fetch -> order status update -> admin product drop addition -> storefront HTML rendering -> product deletion). All 6 stages passed with 100% success.
+    - Verified production Next.js build (`npm run build`).
+
 - `#41` **2026-10-30** Mediasoft Floating Widget Refinement — Larger & Bolder Icons, Tighter Spacing & Ultra-Smooth Slow-Mo Physics:
   - **Identified User Pain Point (`media_1793323465553_c7f495f0.png`)**:
     - *Button Size*: Previous 52px buttons felt a bit too small. User requested them to be slightly larger.

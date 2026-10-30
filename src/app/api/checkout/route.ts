@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { formatOrderForSupabase } from '@/lib/supabase/products';
 
 const checkoutSchema = z.object({
   customerName: z.string().min(2, 'Name is required'),
@@ -36,13 +38,14 @@ export async function POST(req: NextRequest) {
       .in('id', productIds);
 
     if (pErr || !dbProducts || dbProducts.length === 0) {
+      console.warn('[Checkout API] Failed to verify items in bag:', pErr);
       return NextResponse.json({ error: 'Failed to verify items in bag' }, { status: 400 });
     }
 
     // 2. Authoritative Price Calculation
     let subtotal = 0;
     const verifiedItems = data.items.map(cartItem => {
-      const product = dbProducts.find(p => p.id === cartItem.productId);
+      const product = dbProducts.find(p => String(p.id) === String(cartItem.productId));
       if (!product) {
         throw new Error(`Product not found: ${cartItem.productId}`);
       }
@@ -50,14 +53,21 @@ export async function POST(req: NextRequest) {
       let unitPrice = typeof product.price === 'number' ? product.price : parseInt(product.price || '0', 10);
       let variantName: string | undefined = undefined;
 
+      // Extract variants if any
       let variants: any[] = [];
       if (Array.isArray(product.variants)) variants = product.variants;
       else if (typeof product.variants === 'string') {
         try { variants = JSON.parse(product.variants); } catch {}
       }
+      if (!variants || variants.length === 0) {
+        const varMatch = (product.description || '').match(/<!--AUVARE_VARIANTS:(.*?)-->/);
+        if (varMatch && varMatch[1]) {
+          try { variants = JSON.parse(varMatch[1]); } catch {}
+        }
+      }
 
       if (cartItem.variantId) {
-        const v = variants.find(v => v.id === cartItem.variantId);
+        const v = variants.find((v: any) => v.id === cartItem.variantId);
         if (v) {
           variantName = v.name;
           if (v.price) unitPrice = typeof v.price === 'number' ? v.price : parseInt(v.price, 10);
@@ -82,52 +92,47 @@ export async function POST(req: NextRequest) {
     const totalAmount = subtotal + deliveryCharge;
     const orderId = `AUV-${Math.floor(100000 + Math.random() * 900000)}`;
 
-    const orderRecord = {
-      order_id: orderId,
-      orderId: orderId,
-      name: data.customerName,
-      customer_name: data.customerName,
-      phone: data.customerPhone,
-      customer_phone: data.customerPhone,
-      address: data.deliveryAddress,
-      delivery_address: data.deliveryAddress,
-      delivery_zone: data.deliveryZone,
+    // 3. Format strictly to match Supabase 'orders' PostgreSQL schema
+    const orderRecord = formatOrderForSupabase({
+      orderId,
+      customerName: data.customerName,
+      customerPhone: data.customerPhone,
+      deliveryAddress: data.deliveryAddress,
       deliveryZone: data.deliveryZone,
-      notes: data.notes || null,
+      paymentMethod: data.paymentMethod,
+      paymentSenderNumber: data.paymentSenderNumber,
+      transactionId: data.transactionId,
       items: verifiedItems,
       subtotal,
-      shipping: deliveryCharge,
-      delivery_charge: deliveryCharge,
-      total: totalAmount,
-      total_amount: totalAmount,
-      payment_method: data.paymentMethod,
-      paymentMethod: data.paymentMethod,
-      payment_number: data.paymentSenderNumber || null,
-      paymentNumber: data.paymentSenderNumber || null,
-      payment_sender_number: data.paymentSenderNumber || null,
-      paymentSenderNumber: data.paymentSenderNumber || null,
-      trx_id: data.transactionId || null,
-      trxId: data.transactionId || null,
-      status: 'pending',
-      order_status: 'pending',
+      shippingCost: deliveryCharge,
+      totalAmount,
+      notes: data.notes,
       orderStatus: 'pending',
-      date: new Date().toLocaleString(),
-      created_at: new Date().toISOString(),
-    };
+    });
 
-    // 3. Save order into Supabase
-    const { error: insertErr } = await supabase
+    // 4. Save order into Supabase
+    const { data: insertedOrder, error: insertErr } = await supabase
       .from('orders')
-      .insert([orderRecord]);
+      .insert([orderRecord])
+      .select()
+      .single();
 
     if (insertErr) {
-      console.warn('[Checkout API] Supabase insert error:', insertErr);
+      console.error('[Checkout API] Supabase insert error:', insertErr);
+      return NextResponse.json({ error: `Supabase order failed: ${insertErr.message}` }, { status: 500 });
     }
+
+    // 5. Instantly invalidate cache so Admin Portal and storefront update
+    try {
+      revalidatePath('/admin');
+      revalidatePath('/');
+    } catch {}
 
     return NextResponse.json({
       success: true,
       orderId,
       totalAmount,
+      order: insertedOrder,
     }, { status: 201 });
   } catch (error: any) {
     console.error('[Checkout API Error]:', error);

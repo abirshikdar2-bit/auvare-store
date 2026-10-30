@@ -10,6 +10,7 @@ import {
 import type { Product, Order, ProductVariant, GarmentSize } from '@/types';
 import { formatBDT, getCleanWaNumber } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
+import { parseSupabaseProduct, parseSupabaseOrder } from '@/lib/supabase/products';
 
 const DEFAULT_PRESETS = [
   'Washed Black', 'Vintage Olive', 'Oatmeal Beige', 'Faded Navy', 
@@ -56,46 +57,27 @@ export function AdminPortal() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const { data: pData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-      if (pData) {
-        setProducts(pData.map((row: any) => ({
-          id: row.id,
-          title: row.title,
-          description: row.description || '',
-          category: row.category || 'T-Shirts',
-          price: typeof row.price === 'number' ? row.price : parseInt(row.price || '0', 10),
-          chest: row.chest || '38"-46"',
-          length: row.length || '26"-30"',
-          condition: row.condition || '9.5/10 (Mint Condition)',
-          status: (row.status || (row.sold ? 'sold' : 'available')) as any,
-          sold: !!row.sold,
-          image: row.image || (Array.isArray(row.images) ? row.images[0] : null) || '/assets/images/logo.jpg',
-          images: Array.isArray(row.images) ? row.images : (row.image ? [row.image] : []),
-          sizes: Array.isArray(row.sizes) ? row.sizes : ['S', 'M', 'L', 'XL', 'XXL'],
-          variants: Array.isArray(row.variants) ? row.variants : [],
-        })));
+      const [prodRes, ordRes] = await Promise.all([
+        fetch('/api/admin/products').then((r) => r.json()).catch(() => null),
+        fetch('/api/admin/orders').then((r) => r.json()).catch(() => null),
+      ]);
+
+      if (prodRes && prodRes.success && Array.isArray(prodRes.products)) {
+        setProducts(prodRes.products);
+      } else {
+        const { data: pData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+        if (pData) {
+          setProducts(pData.map(parseSupabaseProduct));
+        }
       }
 
-      const { data: oData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-      if (oData) {
-        setOrders(oData.map((row: any) => ({
-          id: row.order_id || row.id || row.orderId || 'AUV-000',
-          customerName: row.name || row.customer_name || 'Customer',
-          customerPhone: row.phone || row.customer_phone || '',
-          deliveryAddress: row.address || row.delivery_address || '',
-          deliveryZone: row.delivery_zone || row.deliveryZone || 'inside',
-          notes: row.notes,
-          items: Array.isArray(row.items) ? row.items : [],
-          subtotal: row.subtotal || 0,
-          deliveryCharge: row.shipping || row.delivery_charge || 70,
-          totalAmount: row.total || row.total_amount || 0,
-          paymentMethod: row.payment_method || row.paymentMethod || 'cod',
-          paymentSenderNumber: row.payment_number || row.payment_sender_number || null,
-          transactionId: row.trx_id || row.trxId || null,
-          status: row.status || row.order_status || 'pending',
-          createdAt: row.date || row.created_at || new Date().toISOString(),
-          updatedAt: row.updated_at,
-        })));
+      if (ordRes && ordRes.success && Array.isArray(ordRes.orders)) {
+        setOrders(ordRes.orders);
+      } else {
+        const { data: oData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+        if (oData) {
+          setOrders(oData.map(parseSupabaseOrder));
+        }
       }
     } catch (e) {
       console.warn('Error loading Supabase data:', e);
@@ -211,7 +193,7 @@ export function AdminPortal() {
     setCustomImageUrl('');
   };
 
-  // Save Product to Backend API
+  // Save Product to Backend API & Supabase
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProduct) return;
@@ -224,40 +206,63 @@ export function AdminPortal() {
     };
 
     try {
+      let res: Response;
       if (editingProduct.id) {
-        await fetch(`/api/admin/products/${editingProduct.id}`, {
+        res = await fetch(`/api/admin/products/${editingProduct.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
       } else {
-        await fetch('/api/admin/products', {
+        res = await fetch('/api/admin/products', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
       }
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || 'Failed to save product drop');
+      }
+
       setIsEditorOpen(false);
-      loadData();
-    } catch (err) {
-      alert('Failed to save product drop');
+      await loadData();
+    } catch (err: any) {
+      alert(`Save Error: ${err.message || 'Failed to save product drop'}`);
     }
   };
 
   const handleDeleteProduct = async (id: string) => {
     if (!confirm('Are you sure you want to delete this garment drop?')) return;
-    await fetch(`/api/admin/products/${id}`, { method: 'DELETE' });
-    loadData();
+    try {
+      const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Delete failed');
+      }
+      await loadData();
+    } catch (err: any) {
+      alert(`Delete Error: ${err.message || 'Failed to delete product drop'}`);
+    }
   };
 
   const handleUpdateOrderStatus = async (orderId: string, status: string) => {
-    await fetch(`/api/admin/orders/${orderId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    });
-    setActiveOrderModal(null);
-    loadData();
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Status update failed');
+      }
+      setActiveOrderModal(null);
+      await loadData();
+    } catch (err: any) {
+      alert(`Status Error: ${err.message || 'Failed to update order status'}`);
+    }
   };
 
   const copyToClipboard = (text: string, fieldId: string) => {
